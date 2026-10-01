@@ -49,6 +49,6 @@ python -m toys.t01_linear
 
 ### 发布状态与许可
 
-本次上传保留仓库的私有可见性。GitHub Pages 尚未启用；仓库上传不代表网站已经上线。页面资源、模块与下载链接均为相对路径，支持 `/ai-toys/` 这样的项目子路径。
+互动网页已发布至 [T1 样章](https://agischool.github.io/ai-toys/)。仓库为 Public，GitHub Pages 从 `main` 分支的 `/docs` 目录发布，使用 HTTPS。页面资源、模块与下载链接均为相对路径，已在 `/ai-toys/` 项目子路径实测。
 
 尚未选择开源许可证。公开可见性或下载能力本身不等于授予开放许可；本仓库没有添加 MIT、CC 或其他开源授权。
