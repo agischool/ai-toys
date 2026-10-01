@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>T1 · 一条直线，是怎样学会的？</title>
+<meta name="description" content="改变步长、噪声与样本量，亲眼看见线性回归怎样用梯度下降学习。附可复现的 Python 源码。">
+<link rel="icon" href="favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css">
+</head>
+<body>
+<a class="skip" href="#experiment">跳到互动实验</a>
+<header class="masthead"><a href="#top" class="brand"><span class="brand-mark" aria-hidden="true">T1</span><span>看得见的 AI</span></a><nav aria-label="章节导航"><a href="#mechanism">看懂原理</a><a href="#boundary">能力边界</a><a href="#source">下载源码</a></nav></header>
+<main id="top">
+<section class="intro"><p class="eyebrow">AI 机制 · 线性回归样章</p><h1>一条直线，是怎样学会的？</h1><p class="lead">把“学习”拆开：做出预测，算出误差，再把两个数改一点。</p></section>
+<section class="experiment" id="experiment" aria-labelledby="experiment-title">
+<div class="section-heading"><div><span class="index">01</span><h2 id="experiment-title">先让它动起来</h2></div><p id="status" role="status" aria-live="polite">正在准备默认实验</p></div>
+<div class="lab-grid">
+<div class="plot-panel"><div class="plot-heading"><h3>直线与数据</h3><p id="equation" class="equation">ŷ = 0x + 0</p></div><svg id="fit-chart" viewBox="0 0 720 370" role="img" aria-labelledby="fit-title fit-desc"><title id="fit-title">训练点、独立测试点与当前直线</title><desc id="fit-desc">圆点表示训练数据，叉号表示独立测试数据。实线是模型当前的预测。</desc></svg><div class="legend"><span><i class="dot" aria-hidden="true"></i>训练点</span><span><i class="cross" aria-hidden="true">×</i>独立测试点</span><span><i class="line" aria-hidden="true"></i>当前直线</span><span><i class="dash" aria-hidden="true"></i>生成规律</span></div><p class="chart-note">数据范围：−1 ≤ x ≤ 1。虚线略有弯曲，直线不可能完全贴合它。</p></div>
+<aside class="controls" aria-label="实验参数">
+<div class="control"><label for="lr">学习率 <output id="lr-value" for="lr">0.10</output></label><input id="lr" type="range" min="0" max="1.2" step="0.01" value="0.1" aria-describedby="lr-help"><p id="lr-help">每次走多远。试试 0、0.10 和 1.10。</p></div>
+<div class="control"><label for="noise">噪声 <output id="noise-value" for="noise">0.08</output></label><input id="noise" type="range" min="0" max="0.4" step="0.01" value="0.08" aria-describedby="noise-help"><p id="noise-help">观测的随机波动，数值为标准差。</p></div>
+<div class="paired"><div class="control"><label for="samples">训练样本</label><select id="samples"><option>8</option><option>16</option><option selected>32</option><option>64</option><option>128</option></select></div><div class="control"><label for="seed">随机种子</label><select id="seed"><option>7</option><option selected>42</option><option>2026</option></select></div></div>
+<p class="control-note">测试集独立生成，始终为 16 个点。相同设置可复现相同结果。</p>
+<button id="run" class="primary" type="button">从头看学习</button><div class="button-row"><button id="step" type="button">单步更新</button><button id="reset" type="button">恢复默认</button></div>
+<p class="safety-note">每轮最多 200 步；修改参数会停止当前训练并回到第 0 步。</p>
+</aside>
+</div>
+<div class="metrics" aria-label="当前实验结果"><div><span>更新次数</span><strong id="step-value">200<span> / 200</span></strong></div><div><span>训练均方误差 · MSE</span><strong id="train-value">—</strong></div><div><span>独立测试 MSE</span><strong id="test-value">—</strong></div><div><span>训练误差减少</span><strong id="reduction-value">—</strong></div></div>
+<div id="warning" class="warning" role="alert" hidden></div>
+<div class="loss-panel"><div class="plot-heading"><h3>误差怎样变化</h3><p>纵轴为对数刻度，每一步都是真实计算</p></div><svg id="loss-chart" viewBox="0 0 1040 210" role="img" aria-labelledby="loss-title loss-desc"><title id="loss-title">训练均方误差随更新次数的变化</title><desc id="loss-desc">对数纵轴显示从初始状态到当前更新次数的训练误差。</desc></svg></div>
+<p id="result-summary" class="result-summary"></p>
+</section>
+<article class="chapter">
+<section id="mechanism" class="explanation"><div class="section-heading"><div><span class="index">02</span><h2>“学习”，其实是改两个数</h2></div></div><div class="reading-grid"><div><p>一条直线可以写成 <strong>ŷ = wx + b</strong>。w 管倾斜，b 管上下。机器先拿这两个数做预测，再比较预测和观测之间的差距。</p><p>把每个差距平方，再取平均，就是<strong>均方误差（MSE）</strong>。平方让正负误差不会互相抵消，也让偏得远的点付出更大代价。</p></div><div class="formula-card"><span class="mini-label">只有四步</span><ol><li><b>预测</b><code>ŷ = wx + b</code></li><li><b>算误差</b><code>e = ŷ − y</code></li><li><b>找方向</b><code>dw = 平均(2ex)，db = 平均(2e)</code></li><li><b>改参数</b><code>w ← w − η·dw，b ← b − η·db</code></li></ol><p>η 是学习率。梯度告诉你局部上升方向，减去它，通常就能往误差较小的方向走。</p></div></div>
+<div class="handcalc"><h3>把第一步算在纸上</h3><p>只看一个点：x = 2，目标 y = 5。起点 w = 1、b = 0，预测是 2，平方误差是 9。</p><div class="calculation"><span>dw = 2 × (2 − 5) × 2 = <b>−12</b></span><span>db = 2 × (2 − 5) = <b>−6</b></span></div><p>学习率取 0.1，更新后 w = 2.2、b = 0.6，预测恰好变成 5。<strong>一步到位只是这组数字的巧合。</strong>完整实验里，梯度要对所有训练点取平均，通常要反复更新。</p></div></section>
+<section id="boundary" class="explanation"><div class="section-heading"><div><span class="index">03</span><h2>误差变小，不等于无所不能</h2></div></div><div class="insight-grid"><div><span class="mini-label">步长的边界</span><h3>走得快，也会走过头</h3><p>学习率为 0，参数不动；太小，进展缓慢；太大，可能来回越走越远。可以把学习率调到 1.10，再从头看一次。</p></div><div><span class="mini-label">模型的边界</span><h3>直线学不出所有弯曲</h3><p>这里的生成规律是 1.7x + 0.4 + 0.18x²，再加上噪声。即使噪声为 0，直线仍有表达限制。训练误差不为 0，不一定是训练失败。</p></div><div><span class="mini-label">数据的边界</span><h3>见过附近，不代表懂得远方</h3><p>默认模型在 x = 3 时预测约 5.559；生成规律的无噪声值是 7.12。训练只见过 [−1, 1]，范围内拟合好，不能保证范围外可靠。</p></div></div><p class="takeaway">这条直线没有神秘的“领悟”时刻。预测、误差、导数、更新，都是能逐步检查的数字运算。</p></section>
+<section id="source" class="explanation source-section"><div class="section-heading"><div><span class="index">04</span><h2>带走代码，自己复现</h2></div></div><div class="source-grid"><div><p>网页使用 JavaScript 执行与 Python 相同的全批量梯度下降。数据由 NumPy 预先生成，网页读取固定数据，不把浏览器随机数冒充 NumPy 随机数。</p><p>默认设置与原 T1 一致：种子 42、32 个训练点、16 个独立测试点、噪声 0.08、学习率 0.1、200 步。样本量选择是<strong>样章 v1 扩展</strong>，源码包保留原版并附扩展验证。</p><a class="download" href="t1-sample-python.zip" download>下载 T1 Python 源码 <span>ZIP</span></a><p class="small-note">包含原版 T1、必要依赖、扩展数据、测试和运行说明。此预览尚未指定开源许可证。</p></div><div class="reproduce"><h3>可核对的默认结果</h3><dl><div><dt>w / b</dt><dd>1.69727 / 0.46720</dd></div><div><dt>训练 MSE</dt><dd>1.52340 → 0.006264</dd></div><div><dt>独立测试 MSE</dt><dd>0.007891</dd></div></dl><p>网页还显示第 200 次更新后的损失；原脚本的 history 保存每次更新前的损失。两者索引含义不同，最终参数相同。</p></div></div><details><summary>实验约定与复现说明</summary><ul><li>训练与测试使用独立随机流。测试点不参与梯度更新。</li><li>改变噪声会同时改变训练与测试的观测噪声，因此不同噪声结果不是同一测试集上的严格因果比较。</li><li>改变样本量会改变训练数据，单次结果不保证样本越多误差就越小。</li><li>网页中的三组种子和五档样本量来自固定 NumPy 数据夹具。下载包可重新生成并验证它们。</li><li>误差过大或计算不再有限时，实验会提前停止；图表使用固定数据视窗，过大的直线会被裁切，但数值和警告仍会显示。</li><li>所有计算在浏览器本地进行，无需登录实验账户，也不会上传输入或采集分析数据。</li></ul></details></section>
+</article>
+</main><footer><span>T1 · 让一条直线学会调参数</span><a href="#top">回到开头</a></footer>
+<script type="module" src="app.js"></script>
+</body></html>
