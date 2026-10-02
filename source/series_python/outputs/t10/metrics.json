@@ -1,0 +1,133 @@
+{
+  "toy": "T10",
+  "seed": 42,
+  "codec": "MDL1",
+  "max_candidate_period": 16,
+  "candidate_family": "literal plus one modal pattern per period, deterministic ties",
+  "all_examples_roundtrip": true,
+  "all_noise_roundtrip": true,
+  "examples": {
+    "empty": {
+      "raw_utf8_bytes": 0,
+      "name": "literal",
+      "period": null,
+      "total_bytes": 6,
+      "header_bytes": 6,
+      "model_bytes": 0,
+      "residual_bytes": 0,
+      "exceptions": 0
+    },
+    "single": {
+      "raw_utf8_bytes": 3,
+      "name": "literal",
+      "period": null,
+      "total_bytes": 9,
+      "header_bytes": 6,
+      "model_bytes": 0,
+      "residual_bytes": 3,
+      "exceptions": 0
+    },
+    "short_repeat": {
+      "raw_utf8_bytes": 8,
+      "name": "rule-p2",
+      "period": 2,
+      "total_bytes": 10,
+      "header_bytes": 7,
+      "model_bytes": 3,
+      "residual_bytes": 0,
+      "exceptions": 0
+    },
+    "short_exception": {
+      "raw_utf8_bytes": 8,
+      "name": "rule-p2",
+      "period": 2,
+      "total_bytes": 13,
+      "header_bytes": 7,
+      "model_bytes": 3,
+      "residual_bytes": 3,
+      "exceptions": 1
+    },
+    "repeat_256": {
+      "raw_utf8_bytes": 256,
+      "name": "rule-p2",
+      "period": 2,
+      "total_bytes": 11,
+      "header_bytes": 8,
+      "model_bytes": 3,
+      "residual_bytes": 0,
+      "exceptions": 0
+    },
+    "four_exceptions": {
+      "raw_utf8_bytes": 256,
+      "name": "rule-p2",
+      "period": 2,
+      "total_bytes": 26,
+      "header_bytes": 8,
+      "model_bytes": 3,
+      "residual_bytes": 15,
+      "exceptions": 4
+    },
+    "noisy_256": {
+      "raw_utf8_bytes": 256,
+      "name": "literal",
+      "period": null,
+      "total_bytes": 263,
+      "header_bytes": 7,
+      "model_bytes": 0,
+      "residual_bytes": 256,
+      "exceptions": 0
+    },
+    "unicode_repeat": {
+      "raw_utf8_bytes": 384,
+      "name": "rule-p3",
+      "period": 3,
+      "total_bytes": 17,
+      "header_bytes": 8,
+      "model_bytes": 9,
+      "residual_bytes": 0,
+      "exceptions": 0
+    },
+    "literal_special": {
+      "raw_utf8_bytes": 17,
+      "name": "literal",
+      "period": null,
+      "total_bytes": 23,
+      "header_bytes": 6,
+      "model_bytes": 0,
+      "residual_bytes": 17,
+      "exceptions": 0
+    }
+  },
+  "noise_selected_bytes": [
+    11,
+    15,
+    18,
+    26,
+    41,
+    67,
+    126,
+    241,
+    263,
+    263,
+    263,
+    263
+  ],
+  "noise_counts": [
+    0,
+    1,
+    2,
+    4,
+    8,
+    16,
+    32,
+    64,
+    96,
+    128,
+    192,
+    256
+  ],
+  "plots": [
+    "cost_vs_noise.png",
+    "cost_breakdown.png"
+  ]
+}

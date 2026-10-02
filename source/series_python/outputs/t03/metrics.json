@@ -1,0 +1,68 @@
+{
+  "seed": 42,
+  "architecture": [
+    2,
+    4,
+    1
+  ],
+  "parameter_count": 17,
+  "train_n": 128,
+  "validation_n": 128,
+  "test_n": 128,
+  "steps": 1200,
+  "learning_rate": 0.03,
+  "train_loss": 0.00033197995961282685,
+  "validation_loss": 0.00038048489394113184,
+  "test_loss": 0.0005665980306882564,
+  "test_accuracy": 1.0,
+  "linear_ablation_test_accuracy": 0.4765625,
+  "larger_initialization_train_loss": 0.3186941731992492,
+  "larger_initialization_test_accuracy": 0.6640625,
+  "exact_four_xor_probabilities": [
+    5.007818371285715e-05,
+    0.9984351947964166,
+    0.9998328682524801,
+    0.0016075293293125335
+  ],
+  "shifted_noise_test_accuracy": 0.7421875,
+  "shifted_noise_failure_examples": [
+    {
+      "x": [
+        -0.06682313491252811,
+        2.818610819441363
+      ],
+      "true": 0,
+      "probability": 0.6814409222840607
+    },
+    {
+      "x": [
+        -0.5960507624244973,
+        0.8705227530657813
+      ],
+      "true": 0,
+      "probability": 0.9996826937634757
+    },
+    {
+      "x": [
+        -1.0710597472545655,
+        1.2588915404736882
+      ],
+      "true": 0,
+      "probability": 0.9998098135900553
+    },
+    {
+      "x": [
+        -3.2070349345161064,
+        -1.3432324632481933
+      ],
+      "true": 0,
+      "probability": 0.6686390460934929
+    }
+  ],
+  "gradient_check": {
+    "max_abs_error": 8.543084642487209e-12,
+    "max_relative_error": 5.5455975525954665e-08,
+    "checked": 17
+  },
+  "reload_max_abs_error": 0.0
+}

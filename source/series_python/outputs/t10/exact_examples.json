@@ -1,0 +1,1091 @@
+[
+  {
+    "example": "empty",
+    "text": "",
+    "encoded_hex": "4d444c314c00",
+    "decoded": "",
+    "roundtrip": true,
+    "raw_utf8_bytes": 0,
+    "selected": {
+      "name": "literal",
+      "period": null,
+      "total_bytes": 6,
+      "header_bytes": 6,
+      "model_bytes": 0,
+      "residual_bytes": 0,
+      "exceptions": 0
+    },
+    "candidates": [
+      {
+        "name": "literal",
+        "period": null,
+        "total_bytes": 6,
+        "header_bytes": 6,
+        "model_bytes": 0,
+        "residual_bytes": 0,
+        "exceptions": 0
+      }
+    ]
+  },
+  {
+    "example": "single",
+    "text": "界",
+    "encoded_hex": "4d444c314c03e7958c",
+    "decoded": "界",
+    "roundtrip": true,
+    "raw_utf8_bytes": 3,
+    "selected": {
+      "name": "literal",
+      "period": null,
+      "total_bytes": 9,
+      "header_bytes": 6,
+      "model_bytes": 0,
+      "residual_bytes": 3,
+      "exceptions": 0
+    },
+    "candidates": [
+      {
+        "name": "literal",
+        "period": null,
+        "total_bytes": 9,
+        "header_bytes": 6,
+        "model_bytes": 0,
+        "residual_bytes": 3,
+        "exceptions": 0
+      },
+      {
+        "name": "rule-p1",
+        "period": 1,
+        "total_bytes": 11,
+        "header_bytes": 7,
+        "model_bytes": 4,
+        "residual_bytes": 0,
+        "exceptions": 0
+      }
+    ]
+  },
+  {
+    "example": "short_repeat",
+    "text": "ABABABAB",
+    "encoded_hex": "4d444c31520802414200",
+    "decoded": "ABABABAB",
+    "roundtrip": true,
+    "raw_utf8_bytes": 8,
+    "selected": {
+      "name": "rule-p2",
+      "period": 2,
+      "total_bytes": 10,
+      "header_bytes": 7,
+      "model_bytes": 3,
+      "residual_bytes": 0,
+      "exceptions": 0
+    },
+    "candidates": [
+      {
+        "name": "literal",
+        "period": null,
+        "total_bytes": 14,
+        "header_bytes": 6,
+        "model_bytes": 0,
+        "residual_bytes": 8,
+        "exceptions": 0
+      },
+      {
+        "name": "rule-p1",
+        "period": 1,
+        "total_bytes": 21,
+        "header_bytes": 7,
+        "model_bytes": 2,
+        "residual_bytes": 12,
+        "exceptions": 4
+      },
+      {
+        "name": "rule-p2",
+        "period": 2,
+        "total_bytes": 10,
+        "header_bytes": 7,
+        "model_bytes": 3,
+        "residual_bytes": 0,
+        "exceptions": 0
+      },
+      {
+        "name": "rule-p3",
+        "period": 3,
+        "total_bytes": 20,
+        "header_bytes": 7,
+        "model_bytes": 4,
+        "residual_bytes": 9,
+        "exceptions": 3
+      },
+      {
+        "name": "rule-p4",
+        "period": 4,
+        "total_bytes": 12,
+        "header_bytes": 7,
+        "model_bytes": 5,
+        "residual_bytes": 0,
+        "exceptions": 0
+      },
+      {
+        "name": "rule-p5",
+        "period": 5,
+        "total_bytes": 22,
+        "header_bytes": 7,
+        "model_bytes": 6,
+        "residual_bytes": 9,
+        "exceptions": 3
+      },
+      {
+        "name": "rule-p6",
+        "period": 6,
+        "total_bytes": 14,
+        "header_bytes": 7,
+        "model_bytes": 7,
+        "residual_bytes": 0,
+        "exceptions": 0
+      },
+      {
+        "name": "rule-p7",
+        "period": 7,
+        "total_bytes": 18,
+        "header_bytes": 7,
+        "model_bytes": 8,
+        "residual_bytes": 3,
+        "exceptions": 1
+      },
+      {
+        "name": "rule-p8",
+        "period": 8,
+        "total_bytes": 16,
+        "header_bytes": 7,
+        "model_bytes": 9,
+        "residual_bytes": 0,
+        "exceptions": 0
+      }
+    ]
+  },
+  {
+    "example": "short_exception",
+    "text": "ABABABAC",
+    "encoded_hex": "4d444c31520802414201070143",
+    "decoded": "ABABABAC",
+    "roundtrip": true,
+    "raw_utf8_bytes": 8,
+    "selected": {
+      "name": "rule-p2",
+      "period": 2,
+      "total_bytes": 13,
+      "header_bytes": 7,
+      "model_bytes": 3,
+      "residual_bytes": 3,
+      "exceptions": 1
+    },
+    "candidates": [
+      {
+        "name": "literal",
+        "period": null,
+        "total_bytes": 14,
+        "header_bytes": 6,
+        "model_bytes": 0,
+        "residual_bytes": 8,
+        "exceptions": 0
+      },
+      {
+        "name": "rule-p1",
+        "period": 1,
+        "total_bytes": 21,
+        "header_bytes": 7,
+        "model_bytes": 2,
+        "residual_bytes": 12,
+        "exceptions": 4
+      },
+      {
+        "name": "rule-p2",
+        "period": 2,
+        "total_bytes": 13,
+        "header_bytes": 7,
+        "model_bytes": 3,
+        "residual_bytes": 3,
+        "exceptions": 1
+      },
+      {
+        "name": "rule-p3",
+        "period": 3,
+        "total_bytes": 23,
+        "header_bytes": 7,
+        "model_bytes": 4,
+        "residual_bytes": 12,
+        "exceptions": 4
+      },
+      {
+        "name": "rule-p4",
+        "period": 4,
+        "total_bytes": 15,
+        "header_bytes": 7,
+        "model_bytes": 5,
+        "residual_bytes": 3,
+        "exceptions": 1
+      },
+      {
+        "name": "rule-p5",
+        "period": 5,
+        "total_bytes": 22,
+        "header_bytes": 7,
+        "model_bytes": 6,
+        "residual_bytes": 9,
+        "exceptions": 3
+      },
+      {
+        "name": "rule-p6",
+        "period": 6,
+        "total_bytes": 17,
+        "header_bytes": 7,
+        "model_bytes": 7,
+        "residual_bytes": 3,
+        "exceptions": 1
+      },
+      {
+        "name": "rule-p7",
+        "period": 7,
+        "total_bytes": 18,
+        "header_bytes": 7,
+        "model_bytes": 8,
+        "residual_bytes": 3,
+        "exceptions": 1
+      },
+      {
+        "name": "rule-p8",
+        "period": 8,
+        "total_bytes": 16,
+        "header_bytes": 7,
+        "model_bytes": 9,
+        "residual_bytes": 0,
+        "exceptions": 0
+      }
+    ]
+  },
+  {
+    "example": "repeat_256",
+    "text": "ABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB",
+    "encoded_hex": "4d444c3152800202414200",
+    "decoded": "ABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB",
+    "roundtrip": true,
+    "raw_utf8_bytes": 256,
+    "selected": {
+      "name": "rule-p2",
+      "period": 2,
+      "total_bytes": 11,
+      "header_bytes": 8,
+      "model_bytes": 3,
+      "residual_bytes": 0,
+      "exceptions": 0
+    },
+    "candidates": [
+      {
+        "name": "literal",
+        "period": null,
+        "total_bytes": 263,
+        "header_bytes": 7,
+        "model_bytes": 0,
+        "residual_bytes": 256,
+        "exceptions": 0
+      },
+      {
+        "name": "rule-p1",
+        "period": 1,
+        "total_bytes": 459,
+        "header_bytes": 9,
+        "model_bytes": 2,
+        "residual_bytes": 448,
+        "exceptions": 128
+      },
+      {
+        "name": "rule-p2",
+        "period": 2,
+        "total_bytes": 11,
+        "header_bytes": 8,
+        "model_bytes": 3,
+        "residual_bytes": 0,
+        "exceptions": 0
+      },
+      {
+        "name": "rule-p3",
+        "period": 3,
+        "total_bytes": 457,
+        "header_bytes": 8,
+        "model_bytes": 4,
+        "residual_bytes": 445,
+        "exceptions": 127
+      },
+      {
+        "name": "rule-p4",
+        "period": 4,
+        "total_bytes": 13,
+        "header_bytes": 8,
+        "model_bytes": 5,
+        "residual_bytes": 0,
+        "exceptions": 0
+      },
+      {
+        "name": "rule-p5",
+        "period": 5,
+        "total_bytes": 455,
+        "header_bytes": 8,
+        "model_bytes": 6,
+        "residual_bytes": 441,
+        "exceptions": 126
+      },
+      {
+        "name": "rule-p6",
+        "period": 6,
+        "total_bytes": 15,
+        "header_bytes": 8,
+        "model_bytes": 7,
+        "residual_bytes": 0,
+        "exceptions": 0
+      },
+      {
+        "name": "rule-p7",
+        "period": 7,
+        "total_bytes": 457,
+        "header_bytes": 8,
+        "model_bytes": 8,
+        "residual_bytes": 441,
+        "exceptions": 126
+      },
+      {
+        "name": "rule-p8",
+        "period": 8,
+        "total_bytes": 17,
+        "header_bytes": 8,
+        "model_bytes": 9,
+        "residual_bytes": 0,
+        "exceptions": 0
+      },
+      {
+        "name": "rule-p9",
+        "period": 9,
+        "total_bytes": 459,
+        "header_bytes": 8,
+        "model_bytes": 10,
+        "residual_bytes": 441,
+        "exceptions": 126
+      },
+      {
+        "name": "rule-p10",
+        "period": 10,
+        "total_bytes": 19,
+        "header_bytes": 8,
+        "model_bytes": 11,
+        "residual_bytes": 0,
+        "exceptions": 0
+      },
+      {
+        "name": "rule-p11",
+        "period": 11,
+        "total_bytes": 454,
+        "header_bytes": 8,
+        "model_bytes": 12,
+        "residual_bytes": 434,
+        "exceptions": 124
+      },
+      {
+        "name": "rule-p12",
+        "period": 12,
+        "total_bytes": 21,
+        "header_bytes": 8,
+        "model_bytes": 13,
+        "residual_bytes": 0,
+        "exceptions": 0
+      },
+      {
+        "name": "rule-p13",
+        "period": 13,
+        "total_bytes": 463,
+        "header_bytes": 8,
+        "model_bytes": 14,
+        "residual_bytes": 441,
+        "exceptions": 126
+      },
+      {
+        "name": "rule-p14",
+        "period": 14,
+        "total_bytes": 23,
+        "header_bytes": 8,
+        "model_bytes": 15,
+        "residual_bytes": 0,
+        "exceptions": 0
+      },
+      {
+        "name": "rule-p15",
+        "period": 15,
+        "total_bytes": 448,
+        "header_bytes": 8,
+        "model_bytes": 16,
+        "residual_bytes": 424,
+        "exceptions": 121
+      },
+      {
+        "name": "rule-p16",
+        "period": 16,
+        "total_bytes": 25,
+        "header_bytes": 8,
+        "model_bytes": 17,
+        "residual_bytes": 0,
+        "exceptions": 0
+      }
+    ]
+  },
+  {
+    "example": "four_exceptions",
+    "text": "ABABABABABABABABABABABABABGBABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABFBABABABABAFABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAGABABABABABABABAB",
+    "encoded_hex": "4d444c31528002024142041a0147a8010146b3010146ef010147",
+    "decoded": "ABABABABABABABABABABABABABGBABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABABFBABABABABAFABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAGABABABABABABABAB",
+    "roundtrip": true,
+    "raw_utf8_bytes": 256,
+    "selected": {
+      "name": "rule-p2",
+      "period": 2,
+      "total_bytes": 26,
+      "header_bytes": 8,
+      "model_bytes": 3,
+      "residual_bytes": 15,
+      "exceptions": 4
+    },
+    "candidates": [
+      {
+        "name": "literal",
+        "period": null,
+        "total_bytes": 263,
+        "header_bytes": 7,
+        "model_bytes": 0,
+        "residual_bytes": 256,
+        "exceptions": 0
+      },
+      {
+        "name": "rule-p1",
+        "period": 1,
+        "total_bytes": 466,
+        "header_bytes": 9,
+        "model_bytes": 2,
+        "residual_bytes": 455,
+        "exceptions": 130
+      },
+      {
+        "name": "rule-p2",
+        "period": 2,
+        "total_bytes": 26,
+        "header_bytes": 8,
+        "model_bytes": 3,
+        "residual_bytes": 15,
+        "exceptions": 4
+      },
+      {
+        "name": "rule-p3",
+        "period": 3,
+        "total_bytes": 460,
+        "header_bytes": 9,
+        "model_bytes": 4,
+        "residual_bytes": 447,
+        "exceptions": 128
+      },
+      {
+        "name": "rule-p4",
+        "period": 4,
+        "total_bytes": 28,
+        "header_bytes": 8,
+        "model_bytes": 5,
+        "residual_bytes": 15,
+        "exceptions": 4
+      },
+      {
+        "name": "rule-p5",
+        "period": 5,
+        "total_bytes": 455,
+        "header_bytes": 8,
+        "model_bytes": 6,
+        "residual_bytes": 441,
+        "exceptions": 126
+      },
+      {
+        "name": "rule-p6",
+        "period": 6,
+        "total_bytes": 30,
+        "header_bytes": 8,
+        "model_bytes": 7,
+        "residual_bytes": 15,
+        "exceptions": 4
+      },
+      {
+        "name": "rule-p7",
+        "period": 7,
+        "total_bytes": 465,
+        "header_bytes": 9,
+        "model_bytes": 8,
+        "residual_bytes": 448,
+        "exceptions": 128
+      },
+      {
+        "name": "rule-p8",
+        "period": 8,
+        "total_bytes": 32,
+        "header_bytes": 8,
+        "model_bytes": 9,
+        "residual_bytes": 15,
+        "exceptions": 4
+      },
+      {
+        "name": "rule-p9",
+        "period": 9,
+        "total_bytes": 462,
+        "header_bytes": 8,
+        "model_bytes": 10,
+        "residual_bytes": 444,
+        "exceptions": 127
+      },
+      {
+        "name": "rule-p10",
+        "period": 10,
+        "total_bytes": 34,
+        "header_bytes": 8,
+        "model_bytes": 11,
+        "residual_bytes": 15,
+        "exceptions": 4
+      },
+      {
+        "name": "rule-p11",
+        "period": 11,
+        "total_bytes": 461,
+        "header_bytes": 8,
+        "model_bytes": 12,
+        "residual_bytes": 441,
+        "exceptions": 126
+      },
+      {
+        "name": "rule-p12",
+        "period": 12,
+        "total_bytes": 36,
+        "header_bytes": 8,
+        "model_bytes": 13,
+        "residual_bytes": 15,
+        "exceptions": 4
+      },
+      {
+        "name": "rule-p13",
+        "period": 13,
+        "total_bytes": 467,
+        "header_bytes": 8,
+        "model_bytes": 14,
+        "residual_bytes": 445,
+        "exceptions": 127
+      },
+      {
+        "name": "rule-p14",
+        "period": 14,
+        "total_bytes": 38,
+        "header_bytes": 8,
+        "model_bytes": 15,
+        "residual_bytes": 15,
+        "exceptions": 4
+      },
+      {
+        "name": "rule-p15",
+        "period": 15,
+        "total_bytes": 448,
+        "header_bytes": 8,
+        "model_bytes": 16,
+        "residual_bytes": 424,
+        "exceptions": 121
+      },
+      {
+        "name": "rule-p16",
+        "period": 16,
+        "total_bytes": 40,
+        "header_bytes": 8,
+        "model_bytes": 17,
+        "residual_bytes": 15,
+        "exceptions": 4
+      }
+    ]
+  },
+  {
+    "example": "noisy_256",
+    "text": "CDEHHCHCGHHDHCFEDCGEFEEHCGGEDCHHDCCCGHCGDEFGHCDDDHGDHEFECHCDDDCCGHCDFHGGFEDHGCGCGGCECFHCEHDCEFFDHFDHHECFFCFHCGCGECHCFDHGGEEFGHCFCDGDGEDEFGFHHGFDECEHECFHHDEFDDDHGHGHCHCEFECDGDDHCHHFCCDFCECFCGCDDGCEFFGGEGDHFGHGHFCEDHDDDFFHEDCCEHFHCCHCCEHGCHHGHDHDGFGFFFGGCGFD",
+    "encoded_hex": "4d444c314c800243444548484348434748484448434645444347454645454843474745444348484443434347484347444546474843444444484744484546454348434444444343474843444648474746454448474347434747434543464843454844434546464448464448484543464643464843474347454348434644484747454546474843464344474447454445464746484847464445434548454346484844454644444448474847484348434546454344474444484348484643434446434543464347434444474345464647474547444846474847484643454448444444464648454443434548464843434843434548474348484748444844474647464646474743474644",
+    "decoded": "CDEHHCHCGHHDHCFEDCGEFEEHCGGEDCHHDCCCGHCGDEFGHCDDDHGDHEFECHCDDDCCGHCDFHGGFEDHGCGCGGCECFHCEHDCEFFDHFDHHECFFCFHCGCGECHCFDHGGEEFGHCFCDGDGEDEFGFHHGFDECEHECFHHDEFDDDHGHGHCHCEFECDGDDHCHHFCCDFCECFCGCDDGCEFFGGEGDHFGHGHFCEDHDDDFFHEDCCEHFHCCHCCEHGCHHGHDHDGFGFFFGGCGFD",
+    "roundtrip": true,
+    "raw_utf8_bytes": 256,
+    "selected": {
+      "name": "literal",
+      "period": null,
+      "total_bytes": 263,
+      "header_bytes": 7,
+      "model_bytes": 0,
+      "residual_bytes": 256,
+      "exceptions": 0
+    },
+    "candidates": [
+      {
+        "name": "literal",
+        "period": null,
+        "total_bytes": 263,
+        "header_bytes": 7,
+        "model_bytes": 0,
+        "residual_bytes": 256,
+        "exceptions": 0
+      },
+      {
+        "name": "rule-p1",
+        "period": 1,
+        "total_bytes": 725,
+        "header_bytes": 9,
+        "model_bytes": 2,
+        "residual_bytes": 714,
+        "exceptions": 203
+      },
+      {
+        "name": "rule-p2",
+        "period": 2,
+        "total_bytes": 696,
+        "header_bytes": 9,
+        "model_bytes": 3,
+        "residual_bytes": 684,
+        "exceptions": 196
+      },
+      {
+        "name": "rule-p3",
+        "period": 3,
+        "total_bytes": 713,
+        "header_bytes": 9,
+        "model_bytes": 4,
+        "residual_bytes": 700,
+        "exceptions": 200
+      },
+      {
+        "name": "rule-p4",
+        "period": 4,
+        "total_bytes": 698,
+        "header_bytes": 9,
+        "model_bytes": 5,
+        "residual_bytes": 684,
+        "exceptions": 196
+      },
+      {
+        "name": "rule-p5",
+        "period": 5,
+        "total_bytes": 708,
+        "header_bytes": 9,
+        "model_bytes": 6,
+        "residual_bytes": 693,
+        "exceptions": 197
+      },
+      {
+        "name": "rule-p6",
+        "period": 6,
+        "total_bytes": 678,
+        "header_bytes": 9,
+        "model_bytes": 7,
+        "residual_bytes": 662,
+        "exceptions": 190
+      },
+      {
+        "name": "rule-p7",
+        "period": 7,
+        "total_bytes": 650,
+        "header_bytes": 9,
+        "model_bytes": 8,
+        "residual_bytes": 633,
+        "exceptions": 178
+      },
+      {
+        "name": "rule-p8",
+        "period": 8,
+        "total_bytes": 690,
+        "header_bytes": 9,
+        "model_bytes": 9,
+        "residual_bytes": 672,
+        "exceptions": 192
+      },
+      {
+        "name": "rule-p9",
+        "period": 9,
+        "total_bytes": 685,
+        "header_bytes": 9,
+        "model_bytes": 10,
+        "residual_bytes": 666,
+        "exceptions": 190
+      },
+      {
+        "name": "rule-p10",
+        "period": 10,
+        "total_bytes": 685,
+        "header_bytes": 9,
+        "model_bytes": 11,
+        "residual_bytes": 665,
+        "exceptions": 189
+      },
+      {
+        "name": "rule-p11",
+        "period": 11,
+        "total_bytes": 656,
+        "header_bytes": 9,
+        "model_bytes": 12,
+        "residual_bytes": 635,
+        "exceptions": 180
+      },
+      {
+        "name": "rule-p12",
+        "period": 12,
+        "total_bytes": 664,
+        "header_bytes": 9,
+        "model_bytes": 13,
+        "residual_bytes": 642,
+        "exceptions": 183
+      },
+      {
+        "name": "rule-p13",
+        "period": 13,
+        "total_bytes": 646,
+        "header_bytes": 9,
+        "model_bytes": 14,
+        "residual_bytes": 623,
+        "exceptions": 179
+      },
+      {
+        "name": "rule-p14",
+        "period": 14,
+        "total_bytes": 608,
+        "header_bytes": 9,
+        "model_bytes": 15,
+        "residual_bytes": 584,
+        "exceptions": 165
+      },
+      {
+        "name": "rule-p15",
+        "period": 15,
+        "total_bytes": 649,
+        "header_bytes": 9,
+        "model_bytes": 16,
+        "residual_bytes": 624,
+        "exceptions": 179
+      },
+      {
+        "name": "rule-p16",
+        "period": 16,
+        "total_bytes": 660,
+        "header_bytes": 9,
+        "model_bytes": 17,
+        "residual_bytes": 634,
+        "exceptions": 182
+      }
+    ]
+  },
+  {
+    "example": "unicode_repeat",
+    "text": "春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n",
+    "encoded_hex": "4d444c3152900108e698a5f09f8cb10a00",
+    "decoded": "春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n春🌱\n",
+    "roundtrip": true,
+    "raw_utf8_bytes": 384,
+    "selected": {
+      "name": "rule-p3",
+      "period": 3,
+      "total_bytes": 17,
+      "header_bytes": 8,
+      "model_bytes": 9,
+      "residual_bytes": 0,
+      "exceptions": 0
+    },
+    "candidates": [
+      {
+        "name": "literal",
+        "period": null,
+        "total_bytes": 391,
+        "header_bytes": 7,
+        "model_bytes": 0,
+        "residual_bytes": 384,
+        "exceptions": 0
+      },
+      {
+        "name": "rule-p1",
+        "period": 1,
+        "total_bytes": 548,
+        "header_bytes": 8,
+        "model_bytes": 2,
+        "residual_bytes": 538,
+        "exceptions": 96
+      },
+      {
+        "name": "rule-p2",
+        "period": 2,
+        "total_bytes": 549,
+        "header_bytes": 8,
+        "model_bytes": 3,
+        "residual_bytes": 538,
+        "exceptions": 96
+      },
+      {
+        "name": "rule-p3",
+        "period": 3,
+        "total_bytes": 17,
+        "header_bytes": 8,
+        "model_bytes": 9,
+        "residual_bytes": 0,
+        "exceptions": 0
+      },
+      {
+        "name": "rule-p4",
+        "period": 4,
+        "total_bytes": 551,
+        "header_bytes": 8,
+        "model_bytes": 5,
+        "residual_bytes": 538,
+        "exceptions": 96
+      },
+      {
+        "name": "rule-p5",
+        "period": 5,
+        "total_bytes": 501,
+        "header_bytes": 8,
+        "model_bytes": 11,
+        "residual_bytes": 482,
+        "exceptions": 94
+      },
+      {
+        "name": "rule-p6",
+        "period": 6,
+        "total_bytes": 25,
+        "header_bytes": 8,
+        "model_bytes": 17,
+        "residual_bytes": 0,
+        "exceptions": 0
+      },
+      {
+        "name": "rule-p7",
+        "period": 7,
+        "total_bytes": 538,
+        "header_bytes": 8,
+        "model_bytes": 10,
+        "residual_bytes": 520,
+        "exceptions": 95
+      },
+      {
+        "name": "rule-p8",
+        "period": 8,
+        "total_bytes": 555,
+        "header_bytes": 8,
+        "model_bytes": 9,
+        "residual_bytes": 538,
+        "exceptions": 96
+      },
+      {
+        "name": "rule-p9",
+        "period": 9,
+        "total_bytes": 33,
+        "header_bytes": 8,
+        "model_bytes": 25,
+        "residual_bytes": 0,
+        "exceptions": 0
+      },
+      {
+        "name": "rule-p10",
+        "period": 10,
+        "total_bytes": 534,
+        "header_bytes": 8,
+        "model_bytes": 15,
+        "residual_bytes": 511,
+        "exceptions": 94
+      },
+      {
+        "name": "rule-p11",
+        "period": 11,
+        "total_bytes": 460,
+        "header_bytes": 8,
+        "model_bytes": 30,
+        "residual_bytes": 422,
+        "exceptions": 89
+      },
+      {
+        "name": "rule-p12",
+        "period": 12,
+        "total_bytes": 41,
+        "header_bytes": 8,
+        "model_bytes": 33,
+        "residual_bytes": 0,
+        "exceptions": 0
+      },
+      {
+        "name": "rule-p13",
+        "period": 13,
+        "total_bytes": 523,
+        "header_bytes": 8,
+        "model_bytes": 22,
+        "residual_bytes": 493,
+        "exceptions": 92
+      },
+      {
+        "name": "rule-p14",
+        "period": 14,
+        "total_bytes": 469,
+        "header_bytes": 8,
+        "model_bytes": 35,
+        "residual_bytes": 426,
+        "exceptions": 88
+      },
+      {
+        "name": "rule-p15",
+        "period": 15,
+        "total_bytes": 49,
+        "header_bytes": 8,
+        "model_bytes": 41,
+        "residual_bytes": 0,
+        "exceptions": 0
+      },
+      {
+        "name": "rule-p16",
+        "period": 16,
+        "total_bytes": 563,
+        "header_bytes": 8,
+        "model_bytes": 17,
+        "residual_bytes": 538,
+        "exceptions": 96
+      }
+    ]
+  },
+  {
+    "example": "literal_special",
+    "text": "L|R:4\\AB\n零\u0000🙂",
+    "encoded_hex": "4d444c314c114c7c523a345c41420ae99bb600f09f9982",
+    "decoded": "L|R:4\\AB\n零\u0000🙂",
+    "roundtrip": true,
+    "raw_utf8_bytes": 17,
+    "selected": {
+      "name": "literal",
+      "period": null,
+      "total_bytes": 23,
+      "header_bytes": 6,
+      "model_bytes": 0,
+      "residual_bytes": 17,
+      "exceptions": 0
+    },
+    "candidates": [
+      {
+        "name": "literal",
+        "period": null,
+        "total_bytes": 23,
+        "header_bytes": 6,
+        "model_bytes": 0,
+        "residual_bytes": 17,
+        "exceptions": 0
+      },
+      {
+        "name": "rule-p1",
+        "period": 1,
+        "total_bytes": 47,
+        "header_bytes": 7,
+        "model_bytes": 2,
+        "residual_bytes": 38,
+        "exceptions": 11
+      },
+      {
+        "name": "rule-p2",
+        "period": 2,
+        "total_bytes": 45,
+        "header_bytes": 7,
+        "model_bytes": 3,
+        "residual_bytes": 35,
+        "exceptions": 10
+      },
+      {
+        "name": "rule-p3",
+        "period": 3,
+        "total_bytes": 43,
+        "header_bytes": 7,
+        "model_bytes": 4,
+        "residual_bytes": 32,
+        "exceptions": 9
+      },
+      {
+        "name": "rule-p4",
+        "period": 4,
+        "total_bytes": 41,
+        "header_bytes": 7,
+        "model_bytes": 5,
+        "residual_bytes": 29,
+        "exceptions": 8
+      },
+      {
+        "name": "rule-p5",
+        "period": 5,
+        "total_bytes": 39,
+        "header_bytes": 7,
+        "model_bytes": 6,
+        "residual_bytes": 26,
+        "exceptions": 7
+      },
+      {
+        "name": "rule-p6",
+        "period": 6,
+        "total_bytes": 37,
+        "header_bytes": 7,
+        "model_bytes": 7,
+        "residual_bytes": 23,
+        "exceptions": 6
+      },
+      {
+        "name": "rule-p7",
+        "period": 7,
+        "total_bytes": 35,
+        "header_bytes": 7,
+        "model_bytes": 8,
+        "residual_bytes": 20,
+        "exceptions": 5
+      },
+      {
+        "name": "rule-p8",
+        "period": 8,
+        "total_bytes": 33,
+        "header_bytes": 7,
+        "model_bytes": 9,
+        "residual_bytes": 17,
+        "exceptions": 4
+      },
+      {
+        "name": "rule-p9",
+        "period": 9,
+        "total_bytes": 31,
+        "header_bytes": 7,
+        "model_bytes": 10,
+        "residual_bytes": 14,
+        "exceptions": 3
+      },
+      {
+        "name": "rule-p10",
+        "period": 10,
+        "total_bytes": 29,
+        "header_bytes": 7,
+        "model_bytes": 13,
+        "residual_bytes": 9,
+        "exceptions": 2
+      },
+      {
+        "name": "rule-p11",
+        "period": 11,
+        "total_bytes": 27,
+        "header_bytes": 7,
+        "model_bytes": 14,
+        "residual_bytes": 6,
+        "exceptions": 1
+      },
+      {
+        "name": "rule-p12",
+        "period": 12,
+        "total_bytes": 25,
+        "header_bytes": 7,
+        "model_bytes": 18,
+        "residual_bytes": 0,
+        "exceptions": 0
+      }
+    ]
+  }
+]

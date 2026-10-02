@@ -1,0 +1,175 @@
+{
+  "seed": 42,
+  "dtype": "float64",
+  "architecture": "D16, FF32, one pre-LN causal single-head block",
+  "parameter_count": 2648,
+  "dataset": {
+    "train_sequences": 400,
+    "test_sequences": 100,
+    "unique_complete_sequence_overlap": 0,
+    "complete_sequence_length": 11,
+    "vocabulary": "<abcde|>",
+    "split_before_next_token_slicing": true
+  },
+  "training": {
+    "steps": 1600,
+    "batch_size": 32,
+    "learning_rate": 0.003,
+    "clip_global_norm": 1.0,
+    "checkpoint_selection": "fixed final step; no test-based checkpoint selection"
+  },
+  "train": {
+    "loss": 0.6426009812608986,
+    "token_accuracy": 0.687,
+    "copy_token_accuracy": 1.0
+  },
+  "test": {
+    "loss": 0.6513218430638974,
+    "token_accuracy": 0.667,
+    "copy_token_accuracy": 1.0
+  },
+  "test_free_generation_exact_match": 1.0,
+  "ablation_no_attention": {
+    "loss": 1.307988074542026,
+    "token_accuracy": 0.341,
+    "copy_token_accuracy": 0.1875,
+    "free_generation_exact_match": 0.0,
+    "same_initialization_data_steps_and_minibatch_seed": true
+  },
+  "gradient_check_per_parameter": {
+    "embedding": {
+      "max_abs_error": 1.4469660886140545e-10,
+      "max_relative_error": 1.3282043185879564e-09,
+      "checked": 20
+    },
+    "position": {
+      "max_abs_error": 1.4469660886140545e-10,
+      "max_relative_error": 3.737673491370976e-08,
+      "checked": 16
+    },
+    "ln1_gain": {
+      "max_abs_error": 2.0572672038143835e-11,
+      "max_relative_error": 8.9384708721479e-10,
+      "checked": 4
+    },
+    "ln1_bias": {
+      "max_abs_error": 1.0026443217348024e-11,
+      "max_relative_error": 4.50615261530648e-10,
+      "checked": 4
+    },
+    "attn_Wq": {
+      "max_abs_error": 1.5442544812338532e-11,
+      "max_relative_error": 9.511403328258464e-09,
+      "checked": 16
+    },
+    "attn_Wk": {
+      "max_abs_error": 1.643722354408017e-11,
+      "max_relative_error": 2.6296065347128235e-06,
+      "checked": 16
+    },
+    "attn_Wv": {
+      "max_abs_error": 3.471098408702744e-11,
+      "max_relative_error": 6.431218652526683e-09,
+      "checked": 16
+    },
+    "attn_Wo": {
+      "max_abs_error": 3.220483602017765e-11,
+      "max_relative_error": 8.173354027848973e-10,
+      "checked": 16
+    },
+    "ln2_gain": {
+      "max_abs_error": 1.0579044584790864e-11,
+      "max_relative_error": 7.72938232775963e-10,
+      "checked": 4
+    },
+    "ln2_bias": {
+      "max_abs_error": 2.0995760685593723e-11,
+      "max_relative_error": 1.2255811574424477e-09,
+      "checked": 4
+    },
+    "ff_W1": {
+      "max_abs_error": 1.77147405902231e-11,
+      "max_relative_error": 1.3820425099278755e-08,
+      "checked": 24
+    },
+    "ff_b1": {
+      "max_abs_error": 1.0974371585092957e-11,
+      "max_relative_error": 1.466242007898523e-09,
+      "checked": 6
+    },
+    "ff_W2": {
+      "max_abs_error": 1.5118566121241628e-11,
+      "max_relative_error": 8.147826847364825e-10,
+      "checked": 24
+    },
+    "ff_b2": {
+      "max_abs_error": 9.332127084982211e-12,
+      "max_relative_error": 1.4150491992529036e-09,
+      "checked": 4
+    },
+    "head_W": {
+      "max_abs_error": 1.6334808505824583e-11,
+      "max_relative_error": 9.331193081508713e-09,
+      "checked": 20
+    },
+    "head_b": {
+      "max_abs_error": 6.69597016722534e-12,
+      "max_relative_error": 2.478986531365747e-10,
+      "checked": 5
+    }
+  },
+  "gradient_check_max_abs_error": 1.4469660886140545e-10,
+  "causal_prefix_max_error": 0.0,
+  "reload_logits_bitwise_equal": true,
+  "generation_examples": [
+    {
+      "prompt": "<edec|",
+      "expected": "<edec|edec>",
+      "generated": "<edec|edec>",
+      "exact_match": true
+    },
+    {
+      "prompt": "<ceda|",
+      "expected": "<ceda|ceda>",
+      "generated": "<ceda|ceda>",
+      "exact_match": true
+    },
+    {
+      "prompt": "<baee|",
+      "expected": "<baee|baee>",
+      "generated": "<baee|baee>",
+      "exact_match": true
+    }
+  ],
+  "out_of_distribution_examples": [
+    {
+      "prompt": "<abc|",
+      "expected": "<abc|abc>",
+      "generated": "<abc||abc",
+      "exact_match": false,
+      "distribution": "分布外长度"
+    },
+    {
+      "prompt": "<edc|",
+      "expected": "<edc|edc>",
+      "generated": "<edc||edc",
+      "exact_match": false,
+      "distribution": "分布外长度"
+    },
+    {
+      "prompt": "<abcde|",
+      "expected": "<abcde|abcde>",
+      "generated": "<abcde|bcd>",
+      "exact_match": false,
+      "distribution": "分布外长度"
+    },
+    {
+      "prompt": "<edcba|",
+      "expected": "<edcba|edcba>",
+      "generated": "<edcba|dcbbca",
+      "exact_match": false,
+      "distribution": "分布外长度"
+    }
+  ],
+  "loss_interpretation": "Random four-character prompts are intrinsically unpredictable; uniform prompt lower bound ≈4*ln(5)/10=0.644 nats/token. Held-out finite-split correlations can differ."
+}

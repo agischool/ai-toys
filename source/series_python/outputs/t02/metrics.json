@@ -1,0 +1,81 @@
+{
+  "seed": 42,
+  "train_n": 160,
+  "test_n": 120,
+  "steps": 500,
+  "learning_rate": 0.15,
+  "train_loss": 0.2586392707557007,
+  "test_loss": 0.19841997831541092,
+  "test_accuracy": 0.925,
+  "confusion_at_0.5": [
+    [
+      62,
+      7
+    ],
+    [
+      2,
+      49
+    ]
+  ],
+  "confusion_at_0.8": [
+    [
+      67,
+      2
+    ],
+    [
+      9,
+      42
+    ]
+  ],
+  "changed_decisions": 12,
+  "gradient_check": {
+    "max_abs_error": 3.952116411909401e-12,
+    "max_relative_error": 8.310851038249074e-11,
+    "checked": 3
+  },
+  "reload_max_abs_error": 0.0,
+  "data_comparisons": {
+    "较少重叠": {
+      "test_accuracy": 1.0,
+      "positive_fraction_requested": 0.5,
+      "confusion": [
+        [
+          69,
+          0
+        ],
+        [
+          0,
+          51
+        ]
+      ]
+    },
+    "明显重叠": {
+      "test_accuracy": 0.8083333333333333,
+      "positive_fraction_requested": 0.5,
+      "confusion": [
+        [
+          53,
+          16
+        ],
+        [
+          7,
+          44
+        ]
+      ]
+    },
+    "正类较少": {
+      "test_accuracy": 0.9333333333333333,
+      "positive_fraction_requested": 0.2,
+      "confusion": [
+        [
+          97,
+          4
+        ],
+        [
+          4,
+          15
+        ]
+      ]
+    }
+  }
+}
