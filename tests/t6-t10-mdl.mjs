@@ -1,3 +1,4 @@
+import {installNativeSelects} from './native-select.mjs';
 // Python reference fixtures generated from the original toys/t10_mdl.py.
 // This suite imports source directly; no build step or external dependency.
 import assert from 'node:assert/strict';
@@ -93,6 +94,7 @@ class Element {
 }
 const elements = {};
 for (const match of html.matchAll(/<([a-z0-9]+)\b[^>]*\bid="([^"]+)"/g)) { assert.ok(!elements[match[2]], `duplicate ID ${match[2]}`); elements[match[2]] = new Element(match[1]); }
+installNativeSelects(elements,html);
 const originalDocument = globalThis.document;
 globalThis.document = {getElementById(id) { assert.ok(elements[id], `missing ID ${id}`); return elements[id]; }, createElement(tag) { return new Element(tag); }};
 const $ = id => elements[id];

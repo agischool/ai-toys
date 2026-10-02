@@ -2,7 +2,7 @@ import {makeDataset,initParams,logit,predict,bceFromLogit,lossAndGrads,trainStep
 const $=id=>document.getElementById(id), text=(id,value)=>{$(id).textContent=value;};
 let state;
 const fmt=(v,n=3)=>Math.abs(v)<10**(-n)/2?(0).toFixed(n):v.toFixed(n);
-function restart(defaults=false){if(defaults){$('threshold').value='.5';$('overlap').value='.8';$('inspect').value='0';}const overlap=+$('overlap').value;state={p:initParams(),steps:0,train:makeDataset(42,48,overlap),test:makeDataset(1042,48,overlap)};render();}
+function restart(defaults=false){if(defaults){$('threshold').value='.5';$('overlap').value='0.8';$('inspect').value='0';}const overlap=+$('overlap').value;state={p:initParams(),steps:0,train:makeDataset(42,48,overlap),test:makeDataset(1042,48,overlap)};render();}
 function map(threshold,index){
  const points=[...state.train,...state.test],extent=Math.max(2,...points.flatMap(q=>q.x.map(Math.abs)))+.25;
  const left=48,top=14,w=632,h=366,px=x=>left+(x+extent)/(2*extent)*w,py=y=>top+(extent-y)/(2*extent)*h;
