@@ -1,3 +1,4 @@
+import {installNativeSelects} from './native-select.mjs';
 // DOM-adapter behavioral tests. These are not real-browser visual/accessibility tests.
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
@@ -9,6 +10,7 @@ class Element{
  dispatch(event){for(const fn of this.handlers[event]??[])fn();}
 }
 async function boot(n){const html=fs.readFileSync(new URL(`../source/web/t${n}.html`,import.meta.url),'utf8'),elements={};for(const match of html.matchAll(/<([\w-]+)\b[^>]*\bid="([^"]+)"[^>]*>/g)){const [tag,name,id]=match,e=elements[id]=new Element(id);e.value=tag.match(/\bvalue="([^"]*)"/)?.[1]??'';e.checked=/\bchecked\b/.test(tag);e.hidden=/\bhidden\b/.test(tag);e.disabled=/\bdisabled\b/.test(tag);if(name==='select'){const body=html.slice(match.index+tag.length).split('</select>')[0],options=[...body.matchAll(/<option\b([^>]*)>([^<]*)<\/option>/g)],option=options.find(o=>/\bselected\b/.test(o[1]))??options[0];e.value=option?.[1].match(/\bvalue="([^"]*)"/)?.[1]??option?.[2]??'';}}
+ installNativeSelects(elements,html);
  globalThis.document={getElementById(id){assert.ok(elements[id],`T${n} missing #${id}`);return elements[id];}};await import(`../source/web/t${n}.js?dom-test`);
  const click=id=>{assert.equal(elements[id].disabled,false,`#${id} disabled`);elements[id].dispatch('click');};const input=(id,value,event='input')=>{if(typeof value==='boolean')elements[id].checked=value;else elements[id].value=String(value);elements[id].dispatch(event);};return {elements,click,input};}
 {

@@ -1,3 +1,4 @@
+import {installNativeSelects} from './native-select.mjs';
 // Exact numerical mechanism tests and DOM adapter behavior. Browser rendering is checked separately.
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -67,6 +68,7 @@ class Element {
 function mockDOM(chapter){
   const html=fs.readFileSync(new URL(`../source/web/${chapter}.html`,import.meta.url),'utf8'),elements={};
   for(const m of html.matchAll(/id="([^"]+)"/g)){assert.ok(!elements[m[1]],`Duplicate id ${m[1]}`);elements[m[1]]=new Element(m[1]);}
+  installNativeSelects(elements,html);
   globalThis.document={getElementById:id=>{assert.ok(elements[id],`Missing ${id}`);return elements[id];}};globalThis.window={addEventListener(){}};
   const frames=new Map();let id=0,time=0;
   globalThis.requestAnimationFrame=fn=>{frames.set(++id,fn);return id;};globalThis.cancelAnimationFrame=id=>frames.delete(id);
