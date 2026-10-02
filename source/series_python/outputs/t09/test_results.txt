@@ -1,0 +1,17 @@
+test_beta_zero_and_large_finite_inputs (test_t09_memory.TestExternalMemory.test_beta_zero_and_large_finite_inputs) ... ok
+test_content_address_prefers_matching_slot (test_t09_memory.TestExternalMemory.test_content_address_prefers_matching_slot) ... ok
+test_erasing_to_zero (test_t09_memory.TestExternalMemory.test_erasing_to_zero) ... ok
+test_identity_noops (test_t09_memory.TestExternalMemory.test_identity_noops) ... ok
+test_invalid_inputs (test_t09_memory.TestExternalMemory.test_invalid_inputs) ... ok
+test_manual_overwrite (test_t09_memory.TestExternalMemory.test_manual_overwrite) ... ok
+test_manual_read (test_t09_memory.TestExternalMemory.test_manual_read) ... ok
+test_one_hot_read (test_t09_memory.TestExternalMemory.test_one_hot_read) ... ok
+test_serialization (test_t09_memory.TestExternalMemory.test_serialization) ... ok
+test_soft_write_is_exact_formula_and_not_in_place (test_t09_memory.TestExternalMemory.test_soft_write_is_exact_formula_and_not_in_place) ... ok
+test_untouched_zero_slots (test_t09_memory.TestExternalMemory.test_untouched_zero_slots) ... ok
+test_zero_norms_and_zero_weights_are_finite (test_t09_memory.TestExternalMemory.test_zero_norms_and_zero_weights_are_finite) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.013s
+
+OK

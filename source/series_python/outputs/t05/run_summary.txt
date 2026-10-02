@@ -1,0 +1,46 @@
+{
+  "toy": "T05 residual",
+  "seed": 42,
+  "dtype": "float64",
+  "width": 8,
+  "blocks": 3,
+  "epochs": 300,
+  "learning_rate": 0.01,
+  "n_train": 96,
+  "n_test": 128,
+  "parameter_count_each": 432,
+  "manual": {
+    "x": 2.0,
+    "a": 0.5,
+    "y": 3.0,
+    "dy_dx": 1.5
+  },
+  "zero_branch_identity_max_abs_error": 0.0,
+  "gradient_check": {
+    "residual": {
+      "max_abs_error": 6.596539980918692e-11,
+      "max_relative_error": 2.2381849267678427e-09,
+      "checked": 57
+    },
+    "plain": {
+      "max_abs_error": 1.4171497308979042e-11,
+      "max_relative_error": 5.62602645775227e-09,
+      "checked": 57
+    }
+  },
+  "summary": {
+    "residual": {
+      "test_mse_mean": 0.003422279462487293,
+      "test_mse_std_population": 0.0003295481331114105,
+      "test_mse_min": 0.002956319610297108,
+      "test_mse_max": 0.0036632606488580955
+    },
+    "plain": {
+      "test_mse_mean": 0.0299794178117964,
+      "test_mse_std_population": 0.002904598022500511,
+      "test_mse_min": 0.02587234514266786,
+      "test_mse_max": 0.032096200303112346
+    }
+  },
+  "protocol": "Paired identical initial branch parameters and shared fixed train/test data for seeds [seed,seed+1,seed+2]; width=8, 3 two-layer blocks, Adam 0.01, 300 full-batch updates. No best-seed selection. Target y=0.6*x+0.4*tanh(x*A) deliberately contains an identity-like component."
+}

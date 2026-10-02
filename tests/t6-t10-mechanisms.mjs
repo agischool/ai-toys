@@ -1,0 +1,23 @@
+import assert from 'node:assert/strict';
+import {DEFAULT as RDEFAULT,sequence,finiteDifference} from '../source/web/t6-engine.js';
+import {attention,experiment,softmax as aSoftmax} from '../source/web/t7-engine.js';
+import {forward,norm,prefixDifference,PARAMETERS} from '../source/web/t8-engine.js';
+import {contentAddress,read,write,oneHot,emptyMemory,populatedMemory} from '../source/web/t9-engine.js';
+const near=(a,b,tol=1e-10)=>assert.ok(Math.abs(a-b)<tol,`${a} != ${b}`);
+const r=sequence();near(r.steps[0].hidden,Math.tanh(1));near(r.steps[1].hidden,0.3633994843890525);near(r.steps[1].derivative,.1822564360659187);
+for(const first of [-1,1])for(const recurrent of [0,.1,.5,1,1.5,1.8])for(const delay of [1,8,24])for(const distraction of [0,.35,1]){const c={first,recurrent,delay,distraction};const x=sequence(c);near(x.steps.at(-1).derivative,finiteDifference(c),1e-6);assert.equal(x.steps.length,delay+1);assert.ok(x.steps.every(x=>Math.abs(x.hidden)<=1));}
+for(const c of [{delay:0},{delay:1.1},{first:0},{recurrent:NaN},{distraction:-1}])assert.throws(()=>sequence(c));
+const z=sequence({...RDEFAULT,recurrent:0});assert.ok(z.steps.slice(1).every(r=>r.hidden===0&&r.derivative===0));
+const mirror=sequence({...RDEFAULT,first:-1});r.steps.forEach((s,i)=>near(s.hidden,-mirror.steps[i].hidden));
+const avg=attention([[0,0],[0,0]],[[0,0],[0,0]],[2,6],false);assert.deepEqual(avg.weights,[[.5,.5],[.5,.5]]);assert.deepEqual(avg.outputs,[4,4]);assert.deepEqual(attention([[0,0],[0,0]],[[0,0],[0,0]],[2,6],true).outputs,[2,4]);
+for(const causal of [false,true])for(const row of [0,1,2,3])for(const qx of [-4,0,4])for(const qy of [-4,0,4]){const x=experiment({causal,row,qx,qy});x.weights.forEach((w,i)=>{near(w.reduce((a,b)=>a+b,0),1);assert.ok(w.every(a=>a>=0));if(causal)assert.ok(w.slice(i+1).every(a=>a===0));const values=causal?x.values.slice(0,i+1):x.values;assert.ok(x.outputs[i]>=Math.min(...values)-1e-12&&x.outputs[i]<=Math.max(...values)+1e-12);});}
+const a=experiment(),b=experiment({lastValue:-20});assert.deepEqual(a.weights,b.weights);assert.deepEqual(a.outputs.slice(0,3),b.outputs.slice(0,3));assert.notEqual(a.outputs[3],b.outputs[3]);assert.throws(()=>aSoftmax([-Infinity]));assert.throws(()=>experiment({row:4}));
+const block=forward();assert.deepEqual(block.x[0],[1,0,.2,-.3]);near(block.n1[0][0],1.609405104339579);near(block.h[0][0],1.2008788163872746);near(block.probabilities[0][0],.4004499182682107);assert.deepEqual(block.weights[0],[1,0,0,0,0,0]);
+for(const seq of ['A','AB','ABCAA','CCCCCC','ABCABC'])for(const enabled of [false,true]){const result=forward(seq,enabled);const last=seq.at(-1)==='A'?'B':'A',changed=forward(seq.slice(0,-1)+last,enabled);assert.equal(prefixDifference(result,changed),0);for(const [i,w]of result.weights.entries()){near(w.reduce((a,b)=>a+b,0),1);assert.ok(w.slice(i+1).every(v=>v===0));near(result.probabilities[i].reduce((a,b)=>a+b,0),1);assert.ok(result.h[i].every(Number.isFinite));if(!enabled)assert.deepEqual(result.attention[i],[0,0,0,0]);}}
+assert.deepEqual(norm([4,4,4,4]),[0,0,0,0]);for(const bad of ['','abcdef','AAAAAAA','a','A C',null])assert.throws(()=>forward(bad));assert.equal(PARAMETERS.W1.length,4);assert.equal(PARAMETERS.W1[0].length,6);
+const base=populatedMemory(),clone=JSON.stringify(base),hard=write(base,oneHot(1),[1,1,1],[2,3,0]);assert.equal(JSON.stringify(base),clone);assert.deepEqual(hard[1],[2,3,0]);assert.deepEqual(hard.filter((_,i)=>i!==1),base.filter((_,i)=>i!==1));
+assert.deepEqual(read([[1,0],[0,1]],[.25,.75]),[.25,.75]);const wrong=write(base,[.6,.4,0,0,0,0],[1,1,1],[2,3,0]);near(wrong[0][0],1.6);near(wrong[0][1],1.8);near(wrong[1][0],.8);near(wrong[1][1],1.8);
+near(contentAddress(base,[0,1,0],8).weights[1],Math.exp(8)/(Math.exp(8)+5));for(const beta of [0,8,20,1e308]){const a=contentAddress(base,[0,1,0],beta);near(a.weights.reduce((a,b)=>a+b,0),1);assert.ok(a.weights.every(Number.isFinite));}
+assert.deepEqual(contentAddress(base,[0,0,0]).weights,Array(6).fill(1/6));assert.deepEqual(read(emptyMemory(),contentAddress(emptyMemory(),[1,0,0]).weights),[0,0,0]);assert.deepEqual(write(base,Array(6).fill(0),[1,1,1],[99,99,99]),base);assert.deepEqual(write(base,oneHot(1),[0,0,0],[2,3,0])[1],[2,4,0]);
+for(const fn of [()=>read(base,[1,1,0,0,0,0]),()=>contentAddress(base,[NaN,0,0]),()=>contentAddress(base,[1,0,0],-1),()=>write(base,oneHot(1),[2,0,0],[0,0,0]),()=>oneHot(6)])assert.throws(fn);
+console.log('PASS T6–T9: scalar analytic/finite-difference derivatives across 108 settings, attention normalization/masking/value isolation, full D4 decoder intermediate values/causality/ablation, and external-memory read/write/addressing/error contracts.');

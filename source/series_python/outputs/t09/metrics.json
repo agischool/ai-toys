@@ -1,0 +1,45 @@
+{
+  "toy": "T09",
+  "seed": 42,
+  "controller": "fixed, not trained",
+  "slots": 6,
+  "width": 3,
+  "copy_max_abs_error": 0.0,
+  "manual_read": [
+    0.25,
+    0.75
+  ],
+  "manual_overwrite": [
+    [
+      1.0,
+      0.0
+    ],
+    [
+      2.0,
+      3.0
+    ]
+  ],
+  "overwrite_slot_2": [
+    2.0,
+    3.0,
+    0.0
+  ],
+  "untouched_slots_max_abs_change": 0.0,
+  "correct_key_target_weight": 0.9983254955288396,
+  "correct_key_read_l2_error": 0.001740196092930635,
+  "wrong_key_read_l2_error": 1.4127930554584618,
+  "misaddress_write_frobenius_error": 2.545584412271571,
+  "serialization_max_abs_error": 0.0,
+  "zero_key_weights": [
+    0.16666666666666666,
+    0.16666666666666666,
+    0.16666666666666666,
+    0.16666666666666666,
+    0.16666666666666666,
+    0.16666666666666666
+  ],
+  "plots": [
+    "memory_trajectory.png",
+    "addressing_failure.png"
+  ]
+}

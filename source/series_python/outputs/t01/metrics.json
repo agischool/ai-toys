@@ -1,0 +1,36 @@
+{
+  "seed": 42,
+  "train_n": 32,
+  "test_n": 16,
+  "steps": 200,
+  "learning_rate": 0.1,
+  "w": 1.697269770221289,
+  "b": 0.4672040346857401,
+  "initial_train_mse": 1.5233951954207863,
+  "train_mse": 0.006263976715061485,
+  "test_mse": 0.007890755977448243,
+  "gradient_check": {
+    "max_abs_error": 1.2083445355415279e-11,
+    "max_relative_error": 3.415940084333555e-12,
+    "checked": 2
+  },
+  "reload_max_abs_error": 0.0,
+  "noise_comparison": {
+    "0.02": {
+      "train_mse": 0.0029056972309321766,
+      "test_mse": 0.003330200459900879
+    },
+    "0.08": {
+      "train_mse": 0.006263976715061485,
+      "test_mse": 0.007890755977448243
+    },
+    "0.25": {
+      "train_mse": 0.037049037221775216,
+      "test_mse": 0.04824847924321687
+    }
+  },
+  "extrapolation_x": 3.0,
+  "extrapolation_prediction": 5.559013345349608,
+  "extrapolation_true_noiseless": 7.12,
+  "note": "生成函数包含轻微二次项；训练和测试在[-1,1]，范围外不是同分布评估。"
+}

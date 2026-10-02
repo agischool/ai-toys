@@ -1,0 +1,60 @@
+{
+  "toy": "T04 tinyCNN",
+  "seed": 42,
+  "dtype": "float64",
+  "epochs": 200,
+  "learning_rate": 0.025,
+  "parameter_count": 74,
+  "input_shape": [
+    128,
+    8,
+    8
+  ],
+  "feature_shape": [
+    128,
+    6,
+    6,
+    6
+  ],
+  "initial_train": {
+    "loss": 0.6949067750049742,
+    "accuracy": 0.5,
+    "n": 128
+  },
+  "train": {
+    "loss": 0.003028603958343686,
+    "accuracy": 1.0,
+    "n": 128
+  },
+  "test": {
+    "loss": 0.0034530717588829914,
+    "accuracy": 1.0,
+    "n": 128
+  },
+  "shifted": {
+    "loss": 0.07523347929706331,
+    "accuracy": 1.0,
+    "n": 128
+  },
+  "noisy": {
+    "loss": 0.11931369520167477,
+    "accuracy": 0.9609375,
+    "n": 128
+  },
+  "border": {
+    "loss": 0.1663015971435162,
+    "accuracy": 0.96875,
+    "n": 128
+  },
+  "manual": {
+    "vertical_dot": 3.0,
+    "horizontal_dot": 1.0
+  },
+  "gradient_check": {
+    "max_abs_error": 6.176014299779002e-12,
+    "max_relative_error": 1.7611472022686345e-06,
+    "checked": 60
+  },
+  "reload_max_abs_error": 0.0,
+  "protocol": "Train: 128 central lines, noise=0.10. Independently generated test: 128 per split. Shifted=positions 1,6; noisy=0.35; border=positions 0,7. Fixed hyperparameters; no test-driven tuning."
+}

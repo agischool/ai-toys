@@ -1,11 +1,12 @@
 {
-  "name": "ai-toys-t1",
-  "version": "1.0.0",
+  "name": "ai-toys",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "build": "python scripts/build.py",
-    "test": "node tests/numerical.mjs && node tests/dom-behavior.mjs",
-    "serve": "python -m http.server 4173 --bind 127.0.0.1 --directory docs"
+    "test": "node tests/numerical.mjs && node tests/dom-behavior.mjs && node tests/chapters.mjs && python tests/site-integrity.py",
+    "serve": "python -m http.server 4173 --bind 127.0.0.1 --directory docs",
+    "test:browser": "node tests/browser-smoke.cjs"
   }
 }

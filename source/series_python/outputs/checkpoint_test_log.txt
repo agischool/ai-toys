@@ -1,0 +1,27 @@
+test_gradient_shapes_finite (test_t01_linear.TestLinear.test_gradient_shapes_finite) ... ok
+test_independent_reproducible_data (test_t01_linear.TestLinear.test_independent_reproducible_data) ... ok
+test_manual_example (test_t01_linear.TestLinear.test_manual_example) ... ok
+test_train_and_serialization (test_t01_linear.TestLinear.test_train_and_serialization) ... ok
+test_zero_learning_rate (test_t01_linear.TestLinear.test_zero_learning_rate) ... ok
+test_confusion_and_threshold (test_t02_logistic.TestLogistic.test_confusion_and_threshold) ... ok
+test_extreme_logits_finite (test_t02_logistic.TestLogistic.test_extreme_logits_finite) ... ok
+test_gradients (test_t02_logistic.TestLogistic.test_gradients) ... ok
+test_manual_probabilities (test_t02_logistic.TestLogistic.test_manual_probabilities) ... ok
+test_train_independence_reload (test_t02_logistic.TestLogistic.test_train_independence_reload) ... ok
+test_all_parameter_gradients (test_t03_mlp.TestMLP.test_all_parameter_gradients) ... ok
+test_data_independent_reproducible (test_t03_mlp.TestMLP.test_data_independent_reproducible) ... ok
+test_linear_ablation_gradients (test_t03_mlp.TestMLP.test_linear_ablation_gradients) ... ok
+test_manual_chain_rule (test_t03_mlp.TestMLP.test_manual_chain_rule) ... ok
+test_seed_repeatability (test_t03_mlp.TestMLP.test_seed_repeatability) ... ok
+test_xor_and_saved_reload (test_t03_mlp.TestMLP.test_xor_and_saved_reload) ... ok
+test_extreme_softmax_cross_entropy (test_common.TestNumericalUtilities.test_extreme_softmax_cross_entropy) ... ok
+test_gradient_nan_is_rejected (test_common.TestNumericalUtilities.test_gradient_nan_is_rejected) ... ok
+test_objective_exception_restores_parameter (test_common.TestNumericalUtilities.test_objective_exception_restores_parameter) ... ok
+test_objective_nan_is_rejected_and_parameter_restored (test_common.TestNumericalUtilities.test_objective_nan_is_rejected_and_parameter_restored) ... ok
+test_scalar_quadratic_check (test_common.TestNumericalUtilities.test_scalar_quadratic_check) ... ok
+test_shape_and_steps_rejected (test_common.TestNumericalUtilities.test_shape_and_steps_rejected) ... ok
+
+----------------------------------------------------------------------
+Ran 22 tests in 0.091s
+
+OK

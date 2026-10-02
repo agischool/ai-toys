@@ -1,0 +1,194 @@
+[
+  {
+    "noise_count": 0,
+    "noise_fraction": 0.0,
+    "literal_bytes": 263,
+    "best_rule_bytes": 11,
+    "selected": {
+      "name": "rule-p2",
+      "period": 2,
+      "total_bytes": 11,
+      "header_bytes": 8,
+      "model_bytes": 3,
+      "residual_bytes": 0,
+      "exceptions": 0
+    },
+    "roundtrip": true
+  },
+  {
+    "noise_count": 1,
+    "noise_fraction": 0.00390625,
+    "literal_bytes": 263,
+    "best_rule_bytes": 15,
+    "selected": {
+      "name": "rule-p2",
+      "period": 2,
+      "total_bytes": 15,
+      "header_bytes": 8,
+      "model_bytes": 3,
+      "residual_bytes": 4,
+      "exceptions": 1
+    },
+    "roundtrip": true
+  },
+  {
+    "noise_count": 2,
+    "noise_fraction": 0.0078125,
+    "literal_bytes": 263,
+    "best_rule_bytes": 18,
+    "selected": {
+      "name": "rule-p2",
+      "period": 2,
+      "total_bytes": 18,
+      "header_bytes": 8,
+      "model_bytes": 3,
+      "residual_bytes": 7,
+      "exceptions": 2
+    },
+    "roundtrip": true
+  },
+  {
+    "noise_count": 4,
+    "noise_fraction": 0.015625,
+    "literal_bytes": 263,
+    "best_rule_bytes": 26,
+    "selected": {
+      "name": "rule-p2",
+      "period": 2,
+      "total_bytes": 26,
+      "header_bytes": 8,
+      "model_bytes": 3,
+      "residual_bytes": 15,
+      "exceptions": 4
+    },
+    "roundtrip": true
+  },
+  {
+    "noise_count": 8,
+    "noise_fraction": 0.03125,
+    "literal_bytes": 263,
+    "best_rule_bytes": 41,
+    "selected": {
+      "name": "rule-p2",
+      "period": 2,
+      "total_bytes": 41,
+      "header_bytes": 8,
+      "model_bytes": 3,
+      "residual_bytes": 30,
+      "exceptions": 8
+    },
+    "roundtrip": true
+  },
+  {
+    "noise_count": 16,
+    "noise_fraction": 0.0625,
+    "literal_bytes": 263,
+    "best_rule_bytes": 67,
+    "selected": {
+      "name": "rule-p2",
+      "period": 2,
+      "total_bytes": 67,
+      "header_bytes": 8,
+      "model_bytes": 3,
+      "residual_bytes": 56,
+      "exceptions": 16
+    },
+    "roundtrip": true
+  },
+  {
+    "noise_count": 32,
+    "noise_fraction": 0.125,
+    "literal_bytes": 263,
+    "best_rule_bytes": 126,
+    "selected": {
+      "name": "rule-p2",
+      "period": 2,
+      "total_bytes": 126,
+      "header_bytes": 8,
+      "model_bytes": 3,
+      "residual_bytes": 115,
+      "exceptions": 32
+    },
+    "roundtrip": true
+  },
+  {
+    "noise_count": 64,
+    "noise_fraction": 0.25,
+    "literal_bytes": 263,
+    "best_rule_bytes": 241,
+    "selected": {
+      "name": "rule-p2",
+      "period": 2,
+      "total_bytes": 241,
+      "header_bytes": 8,
+      "model_bytes": 3,
+      "residual_bytes": 230,
+      "exceptions": 64
+    },
+    "roundtrip": true
+  },
+  {
+    "noise_count": 96,
+    "noise_fraction": 0.375,
+    "literal_bytes": 263,
+    "best_rule_bytes": 353,
+    "selected": {
+      "name": "literal",
+      "period": null,
+      "total_bytes": 263,
+      "header_bytes": 7,
+      "model_bytes": 0,
+      "residual_bytes": 256,
+      "exceptions": 0
+    },
+    "roundtrip": true
+  },
+  {
+    "noise_count": 128,
+    "noise_fraction": 0.5,
+    "literal_bytes": 263,
+    "best_rule_bytes": 462,
+    "selected": {
+      "name": "literal",
+      "period": null,
+      "total_bytes": 263,
+      "header_bytes": 7,
+      "model_bytes": 0,
+      "residual_bytes": 256,
+      "exceptions": 0
+    },
+    "roundtrip": true
+  },
+  {
+    "noise_count": 192,
+    "noise_fraction": 0.75,
+    "literal_bytes": 263,
+    "best_rule_bytes": 634,
+    "selected": {
+      "name": "literal",
+      "period": null,
+      "total_bytes": 263,
+      "header_bytes": 7,
+      "model_bytes": 0,
+      "residual_bytes": 256,
+      "exceptions": 0
+    },
+    "roundtrip": true
+  },
+  {
+    "noise_count": 256,
+    "noise_fraction": 1.0,
+    "literal_bytes": 263,
+    "best_rule_bytes": 608,
+    "selected": {
+      "name": "literal",
+      "period": null,
+      "total_bytes": 263,
+      "header_bytes": 7,
+      "model_bytes": 0,
+      "residual_bytes": 256,
+      "exceptions": 0
+    },
+    "roundtrip": true
+  }
+]

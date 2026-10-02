@@ -1,0 +1,35 @@
+// Pure numerical + DOM-adapter tests; these are not visual/browser QA.
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import * as L from '../source/web/t2-engine.js';
+import * as M from '../source/web/t3-engine.js';
+const near=(a,b,t=1e-7)=>assert.ok(Math.abs(a-b)<t,`${a} differs from ${b}`);
+near(L.sigmoid(0),.5);assert.equal(L.sigmoid(1000),1);assert.equal(L.sigmoid(-1000),0);
+near(L.bceFromLogit(1000,1),0);near(L.bceFromLogit(-1000,0),0);near(L.bceFromLogit(1000,0),1000);
+const train=L.makeDataset(),test=L.makeDataset(1042);assert.deepEqual(train,L.makeDataset());assert.notDeepEqual(train,test);
+assert.equal(train.length,48);assert.equal(train.reduce((s,q)=>s+q.y,0),24);
+const p={w:[.2,-.3],b:.1},g=L.lossAndGrads(train,p).grads,eps=1e-5;
+for(let i=0;i<2;i++){const before=p.w[i];p.w[i]=before+eps;const plus=L.lossAndGrads(train,p).loss;p.w[i]=before-eps;const minus=L.lossAndGrads(train,p).loss;p.w[i]=before;near(g.w[i],(plus-minus)/(2*eps));}
+p.b+=eps;const plus=L.lossAndGrads(train,p).loss;p.b-=2*eps;const minus=L.lossAndGrads(train,p).loss;p.b+=eps;near(g.b,(plus-minus)/(2*eps));
+const manual=L.initParams();L.trainStep([{x:[1,0],y:1}],manual,.1);near(manual.w[0],.05);near(manual.w[1],0);near(manual.b,.05);near(L.predict([1,0],manual),.52497918747894);
+for(const overlap of [.45,.8,1.2]){const d=L.makeDataset(42,48,overlap),q=L.initParams(),initial=L.lossAndGrads(d,q).loss;for(let i=0;i<500;i++)L.trainStep(d,q);assert.ok(L.lossAndGrads(d,q).loss<initial);let prior=49;for(let t=.05;t<1;t+=.05){const cm=L.confusion(test,q,t),positive=cm[0][1]+cm[1][1];assert.equal(cm.flat().reduce((a,b)=>a+b,0),48);assert.ok(positive<=prior);prior=positive;}}
+const zero=L.initParams();assert.deepEqual(L.confusion(test,zero,.5),[[0,24],[0,24]]);assert.deepEqual(L.confusion(test,zero,.8),[[24,0],[24,0]]);
+assert.equal(Object.values(M.initialize()).flat().length,17);
+for(const nonlinear of [true,false]){const p=M.initialize(77),{grads}=M.lossAndGrads(M.XOR,p,nonlinear);for(const key of Object.keys(p))for(let i=0;i<p[key].length;i++){const before=p[key][i];p[key][i]=before+eps;const plus=M.lossAndGrads(M.XOR,p,nonlinear).loss;p[key][i]=before-eps;const minus=M.lossAndGrads(M.XOR,p,nonlinear).loss;p[key][i]=before;near(grads[key][i],(plus-minus)/(2*eps),2e-8);}}
+const ap=M.initialize(),ao=M.createAdam(ap),grad=M.lossAndGrads(M.XOR,ap).grads,before=structuredClone(ap);M.trainStep(M.XOR,ap,ao);for(const k of Object.keys(ap))for(let j=0;j<ap[k].length;j++)near(ap[k][j],before[k][j]-.03*grad[k][j]/(Math.abs(grad[k][j])+1e-8));
+for(const nonlinear of [true,false]){const p=M.initialize(),o=M.createAdam(p);for(let i=0;i<1200;i++)M.trainStep(M.XOR,p,o,nonlinear);const loss=M.lossAndGrads(M.XOR,p,nonlinear).loss;if(nonlinear){assert.ok(loss<.001);assert.equal(M.accuracy(M.XOR,p),1);}else{near(loss,Math.log(2),1e-10);const c=M.collapsedLinear(p);for(const x of [[-1,1],[.4,1.3],[-2,-3]])near(M.forward(x,p,false).z,L.logit(x,c),1e-10);}}
+console.log('PASS T2/T3 numerical: stable extremes, seeded data, gradient finite differences, hand calculation, threshold monotonicity, paired XOR learning and linear collapse.');
+class Element{constructor(id){this.id=id;this.value='';this.textContent='';this.innerHTML='';this.disabled=false;this.handlers={};}addEventListener(type,fn){(this.handlers[type]??=[]).push(fn);}dispatch(type){for(const fn of this.handlers[type]||[])fn();}}
+function setup(chapter){const html=fs.readFileSync(new URL(`../source/web/t${chapter}.html`,import.meta.url),'utf8'),elements={};for(const match of html.matchAll(/id="([^"]+)"/g)){assert.ok(!elements[match[1]],`Duplicate ID ${match[1]}`);elements[match[1]]=new Element(match[1]);}globalThis.document={getElementById(id){assert.ok(elements[id],`Missing ID ${id}`);return elements[id];}};return elements;}
+function event(e,id,value,type='input'){if(value!==undefined)e[id].value=String(value);e[id].dispatch(type);}
+let e=setup(2);await import('../source/web/t2.js');assert.equal(e.steps.textContent,'0 / 500');assert.equal(e['train-loss'].textContent,'0.6931');assert.equal(e.tp.textContent,24);const initialMap=e['probability-map'].innerHTML;
+event(e,'step',undefined,'click');assert.equal(e.steps.textContent,'1 / 500');assert.ok(+e['train-loss'].textContent<.6931);assert.notEqual(e['probability-map'].innerHTML,initialMap);
+event(e,'run',undefined,'click');assert.equal(e.steps.textContent,'101 / 500');const loss=e['train-loss'].textContent,score=e['sample-detail'].textContent.split('→ 预测')[0];event(e,'threshold',.8);assert.equal(e['train-loss'].textContent,loss);assert.equal(e.steps.textContent,'101 / 500');assert.equal(e['sample-detail'].textContent.split('→ 预测')[0],score);
+event(e,'inspect',47);assert.equal(e['inspect-value'].textContent,'48 / 48');assert.ok(e['sample-detail'].textContent.startsWith('点 48'));
+event(e,'overlap',1.2,'change');assert.equal(e.steps.textContent,'0 / 500');assert.equal(e['threshold-value'].textContent,'0.80');for(let i=0;i<8;i++)event(e,'run',undefined,'click');assert.equal(e.steps.textContent,'500 / 500');assert.equal(e.run.disabled,true);assert.equal(e.step.disabled,true);
+for(let i=0;i<3;i++){event(e,'reset',undefined,'click');assert.equal(e.steps.textContent,'0 / 500');assert.equal(e.run.disabled,false);assert.equal(e['probability-map'].innerHTML,initialMap);event(e,'run',undefined,'click');assert.equal(e.steps.textContent,'100 / 500');}
+e=setup(3);await import('../source/web/t3.js');assert.equal(e.steps.textContent,'0 / 1200');assert.ok(!e.network.innerHTML.includes('NaN'));const start=e['xor-map'].innerHTML,startParams=e['parameter-table'].innerHTML;event(e,'step',undefined,'click');assert.equal(e.steps.textContent,'1 / 1200');event(e,'run',undefined,'click');assert.equal(e.steps.textContent,'101 / 1200');const nl=e['nonlinear-loss'].textContent,ll=e['linear-loss'].textContent;
+event(e,'mode','linear','change');assert.equal(e.steps.textContent,'101 / 1200');assert.equal(e['nonlinear-loss'].textContent,nl);assert.equal(e['linear-loss'].textContent,ll);assert.ok(e['inspect-detail'].textContent.includes('合并后的分数'));event(e,'x1',1.5);event(e,'x2',-1.5);assert.equal(e['x1-value'].textContent,'1.5');assert.equal(e['x2-value'].textContent,'-1.5');assert.equal(e['nonlinear-loss'].textContent,nl);
+for(let i=0;i<15;i++)event(e,'run',undefined,'click');assert.equal(e.steps.textContent,'1200 / 1200');assert.equal(e.run.disabled,true);assert.ok(+e['nonlinear-loss'].textContent<.001);assert.equal(e['linear-loss'].textContent,'0.6931');assert.ok(!e['loss-chart'].innerHTML.includes('NaN'));
+for(let i=0;i<3;i++){event(e,'reset',undefined,'click');assert.equal(e.steps.textContent,'0 / 1200');assert.equal(e.run.disabled,false);assert.equal(e['xor-map'].innerHTML,start);assert.equal(e['parameter-table'].innerHTML,startParams);event(e,'run',undefined,'click');}
+console.log('PASS T2/T3 DOM-adapter: initial render, one-step/multi-step, non-mutating threshold/inspection, dataset reset, cap, paired-model switch, reproducible repeated run/reset. Updates are synchronous; no animation callbacks need cancellation. Browser/visual QA remains separate.');

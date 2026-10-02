@@ -1,0 +1,602 @@
+[
+  {
+    "prompt": "<edec|",
+    "expected": "<edec|edec>",
+    "generated": "<edec|edec>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<ceda|",
+    "expected": "<ceda|ceda>",
+    "generated": "<ceda|ceda>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<baee|",
+    "expected": "<baee|baee>",
+    "generated": "<baee|baee>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<dabc|",
+    "expected": "<dabc|dabc>",
+    "generated": "<dabc|dabc>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<dbec|",
+    "expected": "<dbec|dbec>",
+    "generated": "<dbec|dbec>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<acea|",
+    "expected": "<acea|acea>",
+    "generated": "<acea|acea>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<caba|",
+    "expected": "<caba|caba>",
+    "generated": "<caba|caba>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<dceb|",
+    "expected": "<dceb|dceb>",
+    "generated": "<dceb|dceb>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<bdbb|",
+    "expected": "<bdbb|bdbb>",
+    "generated": "<bdbb|bdbb>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<acae|",
+    "expected": "<acae|acae>",
+    "generated": "<acae|acae>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<eacd|",
+    "expected": "<eacd|eacd>",
+    "generated": "<eacd|eacd>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<ccdd|",
+    "expected": "<ccdd|ccdd>",
+    "generated": "<ccdd|ccdd>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<ebac|",
+    "expected": "<ebac|ebac>",
+    "generated": "<ebac|ebac>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<bbde|",
+    "expected": "<bbde|bbde>",
+    "generated": "<bbde|bbde>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<edee|",
+    "expected": "<edee|edee>",
+    "generated": "<edee|edee>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<ccec|",
+    "expected": "<ccec|ccec>",
+    "generated": "<ccec|ccec>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<eccc|",
+    "expected": "<eccc|eccc>",
+    "generated": "<eccc|eccc>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<bdda|",
+    "expected": "<bdda|bdda>",
+    "generated": "<bdda|bdda>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<abdd|",
+    "expected": "<abdd|abdd>",
+    "generated": "<abdd|abdd>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<aaed|",
+    "expected": "<aaed|aaed>",
+    "generated": "<aaed|aaed>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<bbbd|",
+    "expected": "<bbbd|bbbd>",
+    "generated": "<bbbd|bbbd>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<bacb|",
+    "expected": "<bacb|bacb>",
+    "generated": "<bacb|bacb>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<eded|",
+    "expected": "<eded|eded>",
+    "generated": "<eded|eded>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<adea|",
+    "expected": "<adea|adea>",
+    "generated": "<adea|adea>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<cdbe|",
+    "expected": "<cdbe|cdbe>",
+    "generated": "<cdbe|cdbe>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<cded|",
+    "expected": "<cded|cded>",
+    "generated": "<cded|cded>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<bcaa|",
+    "expected": "<bcaa|bcaa>",
+    "generated": "<bcaa|bcaa>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<cddb|",
+    "expected": "<cddb|cddb>",
+    "generated": "<cddb|cddb>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<decc|",
+    "expected": "<decc|decc>",
+    "generated": "<decc|decc>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<bccb|",
+    "expected": "<bccb|bccb>",
+    "generated": "<bccb|bccb>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<cacd|",
+    "expected": "<cacd|cacd>",
+    "generated": "<cacd|cacd>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<dbcb|",
+    "expected": "<dbcb|dbcb>",
+    "generated": "<dbcb|dbcb>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<cabc|",
+    "expected": "<cabc|cabc>",
+    "generated": "<cabc|cabc>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<deec|",
+    "expected": "<deec|deec>",
+    "generated": "<deec|deec>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<ccdb|",
+    "expected": "<ccdb|ccdb>",
+    "generated": "<ccdb|ccdb>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<dedd|",
+    "expected": "<dedd|dedd>",
+    "generated": "<dedd|dedd>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<edcc|",
+    "expected": "<edcc|edcc>",
+    "generated": "<edcc|edcc>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<eacb|",
+    "expected": "<eacb|eacb>",
+    "generated": "<eacb|eacb>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<adcd|",
+    "expected": "<adcd|adcd>",
+    "generated": "<adcd|adcd>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<adad|",
+    "expected": "<adad|adad>",
+    "generated": "<adad|adad>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<beda|",
+    "expected": "<beda|beda>",
+    "generated": "<beda|beda>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<ebde|",
+    "expected": "<ebde|ebde>",
+    "generated": "<ebde|ebde>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<beed|",
+    "expected": "<beed|beed>",
+    "generated": "<beed|beed>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<daab|",
+    "expected": "<daab|daab>",
+    "generated": "<daab|daab>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<cdcc|",
+    "expected": "<cdcc|cdcc>",
+    "generated": "<cdcc|cdcc>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<bdce|",
+    "expected": "<bdce|bdce>",
+    "generated": "<bdce|bdce>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<abcc|",
+    "expected": "<abcc|abcc>",
+    "generated": "<abcc|abcc>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<dced|",
+    "expected": "<dced|dced>",
+    "generated": "<dced|dced>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<dbdd|",
+    "expected": "<dbdd|dbdd>",
+    "generated": "<dbdd|dbdd>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<eecd|",
+    "expected": "<eecd|eecd>",
+    "generated": "<eecd|eecd>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<caea|",
+    "expected": "<caea|caea>",
+    "generated": "<caea|caea>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<aacd|",
+    "expected": "<aacd|aacd>",
+    "generated": "<aacd|aacd>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<cbab|",
+    "expected": "<cbab|cbab>",
+    "generated": "<cbab|cbab>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<dbda|",
+    "expected": "<dbda|dbda>",
+    "generated": "<dbda|dbda>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<dead|",
+    "expected": "<dead|dead>",
+    "generated": "<dead|dead>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<bbcb|",
+    "expected": "<bbcb|bbcb>",
+    "generated": "<bbcb|bbcb>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<dadc|",
+    "expected": "<dadc|dadc>",
+    "generated": "<dadc|dadc>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<bddb|",
+    "expected": "<bddb|bddb>",
+    "generated": "<bddb|bddb>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<bdbc|",
+    "expected": "<bdbc|bdbc>",
+    "generated": "<bdbc|bdbc>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<ebcd|",
+    "expected": "<ebcd|ebcd>",
+    "generated": "<ebcd|ebcd>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<bbed|",
+    "expected": "<bbed|bbed>",
+    "generated": "<bbed|bbed>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<aecc|",
+    "expected": "<aecc|aecc>",
+    "generated": "<aecc|aecc>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<aadd|",
+    "expected": "<aadd|aadd>",
+    "generated": "<aadd|aadd>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<bbad|",
+    "expected": "<bbad|bbad>",
+    "generated": "<bbad|bbad>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<aacb|",
+    "expected": "<aacb|aacb>",
+    "generated": "<aacb|aacb>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<bbbc|",
+    "expected": "<bbbc|bbbc>",
+    "generated": "<bbbc|bbbc>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<edeb|",
+    "expected": "<edeb|edeb>",
+    "generated": "<edeb|edeb>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<bdba|",
+    "expected": "<bdba|bdba>",
+    "generated": "<bdba|bdba>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<cdca|",
+    "expected": "<cdca|cdca>",
+    "generated": "<cdca|cdca>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<ddbd|",
+    "expected": "<ddbd|ddbd>",
+    "generated": "<ddbd|ddbd>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<deac|",
+    "expected": "<deac|deac>",
+    "generated": "<deac|deac>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<edae|",
+    "expected": "<edae|edae>",
+    "generated": "<edae|edae>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<acdb|",
+    "expected": "<acdb|acdb>",
+    "generated": "<acdb|acdb>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<aabe|",
+    "expected": "<aabe|aabe>",
+    "generated": "<aabe|aabe>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<cecc|",
+    "expected": "<cecc|cecc>",
+    "generated": "<cecc|cecc>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<eccb|",
+    "expected": "<eccb|eccb>",
+    "generated": "<eccb|eccb>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<acbe|",
+    "expected": "<acbe|acbe>",
+    "generated": "<acbe|acbe>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<bded|",
+    "expected": "<bded|bded>",
+    "generated": "<bded|bded>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<dbbc|",
+    "expected": "<dbbc|dbbc>",
+    "generated": "<dbbc|dbbc>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<cbec|",
+    "expected": "<cbec|cbec>",
+    "generated": "<cbec|cbec>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<eabc|",
+    "expected": "<eabc|eabc>",
+    "generated": "<eabc|eabc>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<ddda|",
+    "expected": "<ddda|ddda>",
+    "generated": "<ddda|ddda>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<aaae|",
+    "expected": "<aaae|aaae>",
+    "generated": "<aaae|aaae>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<adde|",
+    "expected": "<adde|adde>",
+    "generated": "<adde|adde>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<abed|",
+    "expected": "<abed|abed>",
+    "generated": "<abed|abed>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<debb|",
+    "expected": "<debb|debb>",
+    "generated": "<debb|debb>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<cced|",
+    "expected": "<cced|cced>",
+    "generated": "<cced|cced>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<addd|",
+    "expected": "<addd|addd>",
+    "generated": "<addd|addd>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<ceaa|",
+    "expected": "<ceaa|ceaa>",
+    "generated": "<ceaa|ceaa>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<eaee|",
+    "expected": "<eaee|eaee>",
+    "generated": "<eaee|eaee>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<ebbc|",
+    "expected": "<ebbc|ebbc>",
+    "generated": "<ebbc|ebbc>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<daba|",
+    "expected": "<daba|daba>",
+    "generated": "<daba|daba>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<cdad|",
+    "expected": "<cdad|cdad>",
+    "generated": "<cdad|cdad>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<caab|",
+    "expected": "<caab|caab>",
+    "generated": "<caab|caab>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<dace|",
+    "expected": "<dace|dace>",
+    "generated": "<dace|dace>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<daec|",
+    "expected": "<daec|daec>",
+    "generated": "<daec|daec>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<eeca|",
+    "expected": "<eeca|eeca>",
+    "generated": "<eeca|eeca>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<abbc|",
+    "expected": "<abbc|abbc>",
+    "generated": "<abbc|abbc>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<dacb|",
+    "expected": "<dacb|dacb>",
+    "generated": "<dacb|dacb>",
+    "exact_match": true
+  },
+  {
+    "prompt": "<eabe|",
+    "expected": "<eabe|eabe>",
+    "generated": "<eabe|eabe>",
+    "exact_match": true
+  }
+]
