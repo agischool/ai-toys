@@ -1,0 +1,6 @@
+Use case: scientific-educational. ONE finished premium Chinese editorial cover for a WeChat youth AI series, ages 12–17. Portrait 3:4, 1440×1920 preferred. Consistent series art direction: warm ivory paper #FFF8E8, deep navy #142C42 bold modern Chinese sans-serif, cobalt #2466E8, coral #F37365, sunny yellow #FFCD44. Sophisticated screenprint / tactile paper-cut illustration with subtle paper grain, vivid but restrained. No black background, no people, no robots, no fake logos. Top small line 少年 AI 观察室, two huge readable headline lines in upper third; a SINGLE conceptual main illustration lower middle; supporting subtitle legible below headline; generous margins. No extra text beyond explicitly permitted copy and allowed object labels. All extra notebooks/papers are blank or abstract strokes with no pseudo text. Bottom footer legible, not tiny. Avoid overcrowding, no overlapping text. High polish, coherent youth science magazine aesthetic.
+Exact title, two lines: AI 答错以后，
+到底改了什么？
+Exact subtitle: 输入不变，答案不变，谁在变？
+Main illustration: A big blue rotary parameter knob with three clear tick positions, a math worksheet with three small exact expressions 1+2=3, 2+2=4, 3+2=5. Orange pencil beside fixed paper, circular arrows around knob. No mystical AI brain.
+Exact footer: 手动试数示意. No additional slogans or paragraph text.

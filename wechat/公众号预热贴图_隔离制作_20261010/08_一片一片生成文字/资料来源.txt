@@ -1,0 +1,22 @@
+衍生内容对应原稿：08_一次接一片文字怎样生成一段话.md
+
+文中算例与图解用于说明原理，不是实际模型的测评结果。研究结论对应以下资料。
+
+〔1〕 Karpathy，2015，The Unreasonable Effectiveness of Recurrent Neural Networks（作者文章）。
+
+https://karpathy.github.io/2015/05/21/rnn-effectiveness/
+
+〔2〕 Hugging Face Transformers，GenerationConfig（官方文档；访问日期：2026-10-05）。
+
+https://huggingface.co/docs/transformers/main_classes/text_generation
+
+〔3〕 Brown 等，2020，Language Models are Few-Shot Learners。arXiv:2005.14165。
+
+https://arxiv.org/abs/2005.14165
+
+〔4〕 Hugging Face Transformers，Tokenization algorithms（官方文档；原题 Summary of the tokenizers；访问日期：2026-10-05）。
+
+https://huggingface.co/docs/transformers/tokenizer_summary
+
+以上书目信息沿用原稿，本轮未重新核验外部网页的可访问性。
+插画来源：原制作阶段的内置图像生成工具；本轮保留。未使用外部人物照片或论文截图。字体许可证保留在项目制作记录/fonts。

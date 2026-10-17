@@ -1,0 +1,33 @@
+第 13 期｜八个字母，能写得更短吗？
+状态：审阅稿，未发布
+
+导语
+“AB”重复四次，可以写成短规则。但如果最后一位变了，修正说明也必须计入成本。
+
+图片顺序
+发布图片/01.png → 02.png → 03.png → 04.png → 05.png
+
+本期带走
+比较描述长度时，规则、标记和例外都要计入。
+
+互动问题
+如果补充三个例外，重复规则还比照抄更省吗？
+
+参考思路（供审阅，可按互动需要另行使用）
+本例不省。重复规则 R4AB 占 4 个字符，每个替换再占“位置＋字母”2 个字符，三个替换合计 10 单位。照抄模式 L 加八个字符占 9 单位。比较前要先确认两种编码能还原同一个目标串。
+
+文末说明
+编码和解码约定在本例中共享。每字符计 1 单位，单位不是文件字节；替换位置限于八位串。短描述不保证新数据上的预测更准。
+
+正文首图为 AI 辅助生成的概念插画；第 2—5 张图按核对过的文字与规则绘制。
+
+延伸阅读资料
+文中算例与图解用于说明原理，不是实际模型的测评结果。研究结论对应以下资料。
+
+〔1〕 Grünwald，2004，A Tutorial Introduction to the Minimum Description Length Principle。arXiv:math/0406077。
+
+https://arxiv.org/abs/math/0406077
+
+〔2〕 Hinton、van Camp，1993，Keeping Neural Networks Simple by Minimizing the Description Length of the Weights。DOI:10.1145/168304.168306。
+
+https://www.cs.toronto.edu/~hinton/absps/colt93.html

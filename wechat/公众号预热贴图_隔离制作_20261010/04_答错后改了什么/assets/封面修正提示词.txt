@@ -1,0 +1,1 @@
+Keep the entire cover composition, title, palette, illustration, and all other content. Change the subtitle from 输入不变，答案不变，谁在变？ to EXACTLY 输入不变，目标不变，谁在变？. On the blue parameter dial, remove invented decimal values 0.1,1.0,10.0 and use three tick labels exactly 0,1,2 in ascending order. Preserve exact worksheet 1+2=3,2+2=4,3+2=5. Do not add text.

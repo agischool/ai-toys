@@ -1,0 +1,166 @@
+{
+  "tf": [
+    "TensorFlow，Image classification（官方教程；访问日期：2026-10-05）。",
+    "https://www.tensorflow.org/tutorials/images/classification"
+  ],
+  "alex": [
+    "Krizhevsky、Sutskever、Hinton，2012，ImageNet Classification with Deep Convolutional Neural Networks，NeurIPS。",
+    "https://proceedings.neurips.cc/paper/2012/hash/c399862d3b9d6b76c8436e924a68c45b-Abstract.html"
+  ],
+  "super": [
+    "Google Developers，Supervised Learning（官方课程；访问日期：2026-10-05）。",
+    "https://developers.google.com/machine-learning/intro-to-ml/supervised"
+  ],
+  "lime": [
+    "Ribeiro、Singh、Guestrin，2016，\"Why Should I Trust You?\": Explaining the Predictions of Any Classifier，第 6.4 节。arXiv:1602.04938。狼与哈士奇实验由研究者刻意构造。",
+    "https://arxiv.org/abs/1602.04938"
+  ],
+  "cal": [
+    "Guo 等，2017，On Calibration of Modern Neural Networks，ICML，PMLR 70:1321–1330。",
+    "https://proceedings.mlr.press/v70/guo17a.html"
+  ],
+  "csclass": [
+    "Stanford CS231n，Image Classification（课程笔记；访问日期：2026-10-05）。",
+    "https://cs231n.github.io/classification/"
+  ],
+  "general": [
+    "Google Developers，Generalization（官方课程；访问日期：2026-10-05）。",
+    "https://developers.google.com/machine-learning/crash-course/overfitting/generalization"
+  ],
+  "shortcut": [
+    "Geirhos 等，2020，Shortcut Learning in Deep Neural Networks，Nature Machine Intelligence。arXiv:2004.07780。",
+    "https://arxiv.org/abs/2004.07780"
+  ],
+  "png": [
+    "W3C，Portable Network Graphics (PNG) Specification，第三版，第 4.2、4.6、6.1、7.2 节（访问日期：2026-10-05）。",
+    "https://www.w3.org/TR/png-3/"
+  ],
+  "pillow": [
+    "Pillow，Concepts / Modes（官方文档；访问日期：2026-10-05）。",
+    "https://pillow.readthedocs.io/en/stable/handbook/concepts.html#modes"
+  ],
+  "color": [
+    "W3C，CSS Color Module Level 4，sRGB 表示（访问日期：2026-10-05）。",
+    "https://www.w3.org/TR/css-color-4/#sRGB-space"
+  ],
+  "linear": [
+    "Google Developers，Linear regression（官方课程；访问日期：2026-10-05）。",
+    "https://developers.google.com/machine-learning/crash-course/linear-regression"
+  ],
+  "loss": [
+    "Google Developers，Linear regression: Loss（官方课程；访问日期：2026-10-05）。",
+    "https://developers.google.com/machine-learning/crash-course/linear-regression/loss"
+  ],
+  "gradient": [
+    "Google Developers，Linear regression: Gradient descent（官方课程；访问日期：2026-10-05）。",
+    "https://developers.google.com/machine-learning/crash-course/linear-regression/gradient-descent"
+  ],
+  "hyper": [
+    "Google Developers，Linear regression: Hyperparameters（官方课程；访问日期：2026-10-05）。",
+    "https://developers.google.com/machine-learning/crash-course/linear-regression/hyperparameters"
+  ],
+  "conv": [
+    "PyTorch，Conv2d（官方文档；访问日期：2026-10-05）。",
+    "https://docs.pytorch.org/docs/stable/generated/torch.nn.Conv2d.html"
+  ],
+  "cscnn": [
+    "Stanford CS231n，Convolutional Neural Networks（课程笔记；访问日期：2026-10-05）。",
+    "https://cs231n.github.io/convolutional-networks/"
+  ],
+  "resnet": [
+    "He 等，Deep Residual Learning for Image Recognition，2015 预印本／CVPR 2016。arXiv:1512.03385。",
+    "https://arxiv.org/abs/1512.03385"
+  ],
+  "identity": [
+    "He 等，2016，Identity Mappings in Deep Residual Networks，ECCV。arXiv:1603.05027。",
+    "https://arxiv.org/abs/1603.05027"
+  ],
+  "rnn": [
+    "PyTorch，RNN（官方文档；访问日期：2026-10-05）。",
+    "https://docs.pytorch.org/docs/stable/generated/torch.nn.RNN.html"
+  ],
+  "lstm": [
+    "PyTorch，LSTM（官方文档；访问日期：2026-10-05）。",
+    "https://docs.pytorch.org/docs/stable/generated/torch.nn.LSTM.html"
+  ],
+  "forget": [
+    "Gers、Schmidhuber、Cummins，2000，Learning to Forget: Continual Prediction with LSTM，Neural Computation 12(10):2451–2471。DOI:10.1162/089976600300015015。",
+    "https://doi.org/10.1162/089976600300015015"
+  ],
+  "karpathy": [
+    "Karpathy，2015，The Unreasonable Effectiveness of Recurrent Neural Networks（作者文章）。",
+    "https://karpathy.github.io/2015/05/21/rnn-effectiveness/"
+  ],
+  "generation": [
+    "Hugging Face Transformers，GenerationConfig（官方文档；访问日期：2026-10-05）。",
+    "https://huggingface.co/docs/transformers/main_classes/text_generation"
+  ],
+  "gpt3": [
+    "Brown 等，2020，Language Models are Few-Shot Learners。arXiv:2005.14165。",
+    "https://arxiv.org/abs/2005.14165"
+  ],
+  "token": [
+    "Hugging Face Transformers，Tokenization algorithms（官方文档；原题 Summary of the tokenizers；访问日期：2026-10-05）。",
+    "https://huggingface.co/docs/transformers/tokenizer_summary"
+  ],
+  "bahdanau": [
+    "Bahdanau、Cho、Bengio，2014 预印本／ICLR 2015，Neural Machine Translation by Jointly Learning to Align and Translate。arXiv:1409.0473。",
+    "https://arxiv.org/abs/1409.0473"
+  ],
+  "transformer": [
+    "Vaswani 等，2017，Attention Is All You Need，第 3 节。arXiv:1706.03762。",
+    "https://arxiv.org/abs/1706.03762"
+  ],
+  "explain": [
+    "Jain、Wallace，2019，Attention is not Explanation，NAACL-HLT。DOI:10.18653/v1/N19-1357。",
+    "https://aclanthology.org/N19-1357/"
+  ],
+  "gpt1": [
+    "Radford 等，2018，Improving Language Understanding by Generative Pre-Training，第 3 节（技术报告）。",
+    "https://cdn.openai.com/research-covers/language-unsupervised/language_understanding_paper.pdf"
+  ],
+  "norm": [
+    "Ba、Kiros、Hinton，2016，Layer Normalization。arXiv:1607.06450。",
+    "https://arxiv.org/abs/1607.06450"
+  ],
+  "ntm": [
+    "Graves、Wayne、Danihelka，2014，Neural Turing Machines，第 3、4 节。arXiv:1410.5401。",
+    "https://arxiv.org/abs/1410.5401"
+  ],
+  "rag": [
+    "Lewis 等，2020，Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks。arXiv:2005.11401。",
+    "https://arxiv.org/abs/2005.11401"
+  ],
+  "scaling": [
+    "Kaplan 等，2020，Scaling Laws for Neural Language Models。arXiv:2001.08361。",
+    "https://arxiv.org/abs/2001.08361"
+  ],
+  "chinchilla": [
+    "Hoffmann 等，2022，Training Compute-Optimal Large Language Models，第 4.2.2 节及表 6。arXiv:2203.15556。",
+    "https://arxiv.org/abs/2203.15556"
+  ],
+  "gpipe": [
+    "Huang 等，2019，GPipe: Efficient Training of Giant Neural Networks using Pipeline Parallelism，NeurIPS。arXiv:1811.06965。",
+    "https://arxiv.org/abs/1811.06965"
+  ],
+  "mdl": [
+    "Grünwald，2004，A Tutorial Introduction to the Minimum Description Length Principle。arXiv:math/0406077。",
+    "https://arxiv.org/abs/math/0406077"
+  ],
+  "weights": [
+    "Hinton、van Camp，1993，Keeping Neural Networks Simple by Minimizing the Description Length of the Weights。DOI:10.1145/168304.168306。",
+    "https://www.cs.toronto.edu/~hinton/absps/colt93.html"
+  ],
+  "relation": [
+    "Santoro 等，2017，A Simple Neural Network Module for Relational Reasoning。arXiv:1706.01427。",
+    "https://arxiv.org/abs/1706.01427"
+  ],
+  "cite": [
+    "Gao、Yen、Yu、Chen，2023，Enabling Large Language Models to Generate Text with Citations，EMNLP。arXiv:2305.14627。",
+    "https://arxiv.org/abs/2305.14627"
+  ],
+  "unesco": [
+    "UNESCO，2024，AI Competency Framework for Students。DOI:10.54675/JKJB9835。作为批判判断、隐私与责任的背景参考。",
+    "https://www.unesco.org/en/articles/ai-competency-framework-students"
+  ]
+}

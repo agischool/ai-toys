@@ -1,0 +1,18 @@
+衍生内容对应原稿：12_大模型越大就一定越好吗.md
+
+文中算例与图解用于说明原理，不是实际模型的测评结果。研究结论对应以下资料。
+
+〔1〕 Kaplan 等，2020，Scaling Laws for Neural Language Models。arXiv:2001.08361。
+
+https://arxiv.org/abs/2001.08361
+
+〔2〕 Hoffmann 等，2022，Training Compute-Optimal Large Language Models，第 4.2.2 节及表 6。arXiv:2203.15556。
+
+https://arxiv.org/abs/2203.15556
+
+〔3〕 Huang 等，2019，GPipe: Efficient Training of Giant Neural Networks using Pipeline Parallelism，NeurIPS。arXiv:1811.06965。
+
+https://arxiv.org/abs/1811.06965
+
+以上书目信息沿用原稿，本轮未重新核验外部网页的可访问性。
+插画来源：原制作阶段的内置图像生成工具；本轮保留。未使用外部人物照片或论文截图。字体许可证保留在项目制作记录/fonts。

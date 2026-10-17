@@ -1,0 +1,26 @@
+衍生内容对应原稿：01_AI到底在做什么 从认猫开始.md
+
+文中算例与图解用于说明原理，不是实际模型的测评结果。研究结论对应以下资料。
+
+〔1〕 TensorFlow，Image classification（官方教程；访问日期：2026-10-05）。
+
+https://www.tensorflow.org/tutorials/images/classification
+
+Krizhevsky、Sutskever、Hinton，2012，ImageNet Classification with Deep Convolutional Neural Networks，NeurIPS。
+
+https://proceedings.neurips.cc/paper/2012/hash/c399862d3b9d6b76c8436e924a68c45b-Abstract.html
+
+〔2〕 Google Developers，Supervised Learning（官方课程；访问日期：2026-10-05）。
+
+https://developers.google.com/machine-learning/intro-to-ml/supervised
+
+〔3〕 Ribeiro、Singh、Guestrin，2016，"Why Should I Trust You?": Explaining the Predictions of Any Classifier，第 6.4 节。arXiv:1602.04938。狼与哈士奇实验由研究者刻意构造。
+
+https://arxiv.org/abs/1602.04938
+
+〔4〕 Guo 等，2017，On Calibration of Modern Neural Networks，ICML，PMLR 70:1321–1330。
+
+https://proceedings.mlr.press/v70/guo17a.html
+
+以上书目信息沿用原稿，本轮未重新核验外部网页的可访问性。
+插画来源：原制作阶段的内置图像生成工具；本轮保留。未使用外部人物照片或论文截图。字体许可证保留在项目制作记录/fonts。

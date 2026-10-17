@@ -1,0 +1,18 @@
+衍生内容对应原稿：10_把语言模型的零件连成Transformer.md
+
+文中算例与图解用于说明原理，不是实际模型的测评结果。研究结论对应以下资料。
+
+〔1〕 Vaswani 等，2017，Attention Is All You Need，第 3 节。arXiv:1706.03762。
+
+https://arxiv.org/abs/1706.03762
+
+〔2〕 Radford 等，2018，Improving Language Understanding by Generative Pre-Training，第 3 节（技术报告）。
+
+https://cdn.openai.com/research-covers/language-unsupervised/language_understanding_paper.pdf
+
+〔3〕 Ba、Kiros、Hinton，2016，Layer Normalization。arXiv:1607.06450。
+
+https://arxiv.org/abs/1607.06450
+
+以上书目信息沿用原稿，本轮未重新核验外部网页的可访问性。
+插画来源：原制作阶段的内置图像生成工具；本轮保留。未使用外部人物照片或论文截图。字体许可证保留在项目制作记录/fonts。

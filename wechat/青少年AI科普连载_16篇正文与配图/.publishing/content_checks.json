@@ -1,0 +1,130 @@
+[
+  {
+    "article": "01",
+    "text_agrees": true,
+    "images_agree": true,
+    "references_agree": true,
+    "figures": 2,
+    "body_hanzi": 1570
+  },
+  {
+    "article": "02",
+    "text_agrees": true,
+    "images_agree": true,
+    "references_agree": true,
+    "figures": 2,
+    "body_hanzi": 1453
+  },
+  {
+    "article": "03",
+    "text_agrees": true,
+    "images_agree": true,
+    "references_agree": true,
+    "figures": 2,
+    "body_hanzi": 1486
+  },
+  {
+    "article": "04",
+    "text_agrees": true,
+    "images_agree": true,
+    "references_agree": true,
+    "figures": 2,
+    "body_hanzi": 1430
+  },
+  {
+    "article": "05",
+    "text_agrees": true,
+    "images_agree": true,
+    "references_agree": true,
+    "figures": 2,
+    "body_hanzi": 1525
+  },
+  {
+    "article": "06",
+    "text_agrees": true,
+    "images_agree": true,
+    "references_agree": true,
+    "figures": 2,
+    "body_hanzi": 1221
+  },
+  {
+    "article": "07",
+    "text_agrees": true,
+    "images_agree": true,
+    "references_agree": true,
+    "figures": 2,
+    "body_hanzi": 1595
+  },
+  {
+    "article": "08",
+    "text_agrees": true,
+    "images_agree": true,
+    "references_agree": true,
+    "figures": 2,
+    "body_hanzi": 1536
+  },
+  {
+    "article": "09",
+    "text_agrees": true,
+    "images_agree": true,
+    "references_agree": true,
+    "figures": 2,
+    "body_hanzi": 1435
+  },
+  {
+    "article": "10",
+    "text_agrees": true,
+    "images_agree": true,
+    "references_agree": true,
+    "figures": 2,
+    "body_hanzi": 1493
+  },
+  {
+    "article": "11",
+    "text_agrees": true,
+    "images_agree": true,
+    "references_agree": true,
+    "figures": 2,
+    "body_hanzi": 1437
+  },
+  {
+    "article": "12",
+    "text_agrees": true,
+    "images_agree": true,
+    "references_agree": true,
+    "figures": 2,
+    "body_hanzi": 1655
+  },
+  {
+    "article": "13",
+    "text_agrees": true,
+    "images_agree": true,
+    "references_agree": true,
+    "figures": 1,
+    "body_hanzi": 1221
+  },
+  {
+    "article": "14",
+    "text_agrees": true,
+    "images_agree": true,
+    "references_agree": true,
+    "figures": 1,
+    "body_hanzi": 1431
+  },
+  {
+    "article": "15",
+    "text_agrees": true,
+    "images_agree": true,
+    "references_agree": true,
+    "figures": 2,
+    "body_hanzi": 1530
+  },
+  {
+    "article": "16",
+    "text_agrees": true,
+    "images_agree": true,
+    "references_agree": true,
+    "figures": 2,
+    "body_hanzi": 1662
+  }
+]

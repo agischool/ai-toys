@@ -1,0 +1,18 @@
+衍生内容对应原稿：09_这句话里的它到底指谁.md
+
+文中算例与图解用于说明原理，不是实际模型的测评结果。研究结论对应以下资料。
+
+〔1〕 Bahdanau、Cho、Bengio，2014 预印本／ICLR 2015，Neural Machine Translation by Jointly Learning to Align and Translate。arXiv:1409.0473。
+
+https://arxiv.org/abs/1409.0473
+
+〔2〕 Vaswani 等，2017，Attention Is All You Need，第 3 节。arXiv:1706.03762。
+
+https://arxiv.org/abs/1706.03762
+
+〔3〕 Jain、Wallace，2019，Attention is not Explanation，NAACL-HLT。DOI:10.18653/v1/N19-1357。
+
+https://aclanthology.org/N19-1357/
+
+以上书目信息沿用原稿，本轮未重新核验外部网页的可访问性。
+插画来源：原制作阶段的内置图像生成工具；本轮保留。未使用外部人物照片或论文截图。字体许可证保留在项目制作记录/fonts。

@@ -1,0 +1,41 @@
+第 04 期｜AI 答错以后，到底改了什么？
+状态：审阅稿，未发布
+
+导语
+输入和目标答案都不动，只拧一个参数旋钮，预测就会改变。用三组输入和目标答案算一遍。
+
+图片顺序
+发布图片/01.png → 02.png → 03.png → 04.png → 05.png
+
+本期带走
+在同一任务和比较标准下，调整参数来改变预测。
+
+互动问题
+把目标答案改成预测，误差也能变成零。这算完成原任务吗？
+
+参考思路（供审阅，可按互动需要另行使用）
+不算。把目标改成预测，相当于修改了原任务的评分依据。原任务是让输入 1、2、3 分别对应目标 3、4、5；应保持目标不变，比较不同 b 的预测。
+
+文末说明
+预测＝输入＋b 是极简模型；误差指三个绝对误差的总和。这里手动试 b，不是梯度下降，也没有验证新样本上的效果。
+
+正文首图为 AI 辅助生成的概念插画；第 2—5 张图按核对过的文字与规则绘制。
+
+延伸阅读资料
+文中算例与图解用于说明原理，不是实际模型的测评结果。研究结论对应以下资料。
+
+〔1〕 Google Developers，Linear regression（官方课程；访问日期：2026-10-05）。
+
+https://developers.google.com/machine-learning/crash-course/linear-regression
+
+〔2〕 Google Developers，Linear regression: Loss（官方课程；访问日期：2026-10-05）。
+
+https://developers.google.com/machine-learning/crash-course/linear-regression/loss
+
+〔3〕 Google Developers，Linear regression: Gradient descent（官方课程；访问日期：2026-10-05）。
+
+https://developers.google.com/machine-learning/crash-course/linear-regression/gradient-descent
+
+〔4〕 Google Developers，Linear regression: Hyperparameters（官方课程；访问日期：2026-10-05）。
+
+https://developers.google.com/machine-learning/crash-course/linear-regression/hyperparameters

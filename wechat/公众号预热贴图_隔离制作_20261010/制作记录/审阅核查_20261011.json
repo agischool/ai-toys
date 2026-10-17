@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "html_files": 49,
+  "local_references": 386,
+  "inner_pages": 64,
+  "text_boxes": 1017,
+  "text_box_overlaps": 0,
+  "original_illustrations_unchanged": 16,
+  "original_bibliographies_preserved": 16,
+  "figure_descriptions": 80,
+  "reference_answers": 16,
+  "zip_files": 214,
+  "zip_matches_workspace": true,
+  "zip_sha256": "5950dbc29f5b30706989b547e0e4017bdd0872ba285c95ef4d2e0511fbe8a4df",
+  "published": false,
+  "external_links_rechecked": false
+}

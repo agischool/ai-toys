@@ -1,0 +1,206 @@
+{
+  "tf": {
+    "status": 200,
+    "url": "https://www.tensorflow.org/tutorials/images/classification",
+    "title": "Image classification &nbsp;|&nbsp; TensorFlow Core"
+  },
+  "alex": {
+    "status": 200,
+    "url": "https://proceedings.neurips.cc/paper/2012/hash/c399862d3b9d6b76c8436e924a68c45b-Abstract.html",
+    "title": "ImageNet Classification with Deep Convolutional Neural Networks"
+  },
+  "super": {
+    "status": 200,
+    "url": "https://developers.google.com/machine-learning/intro-to-ml/supervised",
+    "title": "Supervised Learning &nbsp;|&nbsp; Machine Learning &nbsp;|&nbsp; Google for Developers"
+  },
+  "lime": {
+    "status": 200,
+    "url": "https://arxiv.org/abs/1602.04938",
+    "title": "[1602.04938] &#34;Why Should I Trust You?&#34;: Explaining the Predictions of Any Classifier"
+  },
+  "cal": {
+    "status": 200,
+    "url": "https://proceedings.mlr.press/v70/guo17a.html",
+    "title": "On Calibration of Modern Neural Networks"
+  },
+  "csclass": {
+    "status": 200,
+    "url": "https://cs231n.github.io/classification/",
+    "title": "CS231n Deep Learning for Computer Vision"
+  },
+  "general": {
+    "status": 200,
+    "url": "https://developers.google.com/machine-learning/crash-course/overfitting/generalization",
+    "title": "Generalization &nbsp;|&nbsp; Machine Learning &nbsp;|&nbsp; Google for Developers"
+  },
+  "shortcut": {
+    "status": 200,
+    "url": "https://arxiv.org/abs/2004.07780",
+    "title": "[2004.07780] Shortcut Learning in Deep Neural Networks"
+  },
+  "png": {
+    "status": 200,
+    "url": "https://www.w3.org/TR/png-3/",
+    "title": "Portable Network Graphics (PNG) Specification (Third Edition)"
+  },
+  "pillow": {
+    "status": 200,
+    "url": "https://pillow.readthedocs.io/en/stable/handbook/concepts.html#modes",
+    "title": "Concepts - Pillow (PIL Fork) 12.3.0 documentation"
+  },
+  "color": {
+    "status": 200,
+    "url": "https://www.w3.org/TR/css-color-4/#sRGB-space",
+    "title": "CSS Color Module Level 4"
+  },
+  "linear": {
+    "status": 200,
+    "url": "https://developers.google.com/machine-learning/crash-course/linear-regression",
+    "title": "Linear regression &nbsp;|&nbsp; Machine Learning &nbsp;|&nbsp; Google for Developers"
+  },
+  "loss": {
+    "status": 200,
+    "url": "https://developers.google.com/machine-learning/crash-course/linear-regression/loss",
+    "title": "Linear regression: Loss &nbsp;|&nbsp; Machine Learning &nbsp;|&nbsp; Google for Developers"
+  },
+  "gradient": {
+    "status": 200,
+    "url": "https://developers.google.com/machine-learning/crash-course/linear-regression/gradient-descent",
+    "title": "Linear regression: Gradient descent &nbsp;|&nbsp; Machine Learning &nbsp;|&nbsp; Google for Developers"
+  },
+  "hyper": {
+    "status": 200,
+    "url": "https://developers.google.com/machine-learning/crash-course/linear-regression/hyperparameters",
+    "title": "Linear regression: Hyperparameters &nbsp;|&nbsp; Machine Learning &nbsp;|&nbsp; Google for Developers"
+  },
+  "conv": {
+    "status": 200,
+    "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.Conv2d.html",
+    "title": "Redirecting&hellip;"
+  },
+  "cscnn": {
+    "status": 200,
+    "url": "https://cs231n.github.io/convolutional-networks/",
+    "title": "CS231n Deep Learning for Computer Vision"
+  },
+  "resnet": {
+    "status": 200,
+    "url": "https://arxiv.org/abs/1512.03385",
+    "title": "[1512.03385] Deep Residual Learning for Image Recognition"
+  },
+  "identity": {
+    "status": 200,
+    "url": "https://arxiv.org/abs/1603.05027",
+    "title": "[1603.05027] Identity Mappings in Deep Residual Networks"
+  },
+  "rnn": {
+    "status": 200,
+    "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.RNN.html",
+    "title": "Redirecting&hellip;"
+  },
+  "lstm": {
+    "status": 200,
+    "url": "https://docs.pytorch.org/docs/stable/generated/torch.nn.LSTM.html",
+    "title": "Redirecting&hellip;"
+  },
+  "forget": {
+    "error": "HTTP Error 403: Forbidden",
+    "url": "https://doi.org/10.1162/089976600300015015"
+  },
+  "karpathy": {
+    "status": 200,
+    "url": "https://karpathy.github.io/2015/05/21/rnn-effectiveness/",
+    "title": "The Unreasonable Effectiveness of Recurrent Neural Networks"
+  },
+  "generation": {
+    "status": 200,
+    "url": "https://huggingface.co/docs/transformers/main_classes/text_generation",
+    "title": "Generation · Hugging Face"
+  },
+  "gpt3": {
+    "status": 200,
+    "url": "https://arxiv.org/abs/2005.14165",
+    "title": "[2005.14165] Language Models are Few-Shot Learners"
+  },
+  "token": {
+    "status": 200,
+    "url": "https://huggingface.co/docs/transformers/tokenizer_summary",
+    "title": "Tokenization algorithms · Hugging Face"
+  },
+  "bahdanau": {
+    "status": 200,
+    "url": "https://arxiv.org/abs/1409.0473",
+    "title": "[1409.0473] Neural Machine Translation by Jointly Learning to Align and Translate"
+  },
+  "transformer": {
+    "status": 200,
+    "url": "https://arxiv.org/abs/1706.03762",
+    "title": "[1706.03762] Attention Is All You Need"
+  },
+  "explain": {
+    "status": 200,
+    "url": "https://aclanthology.org/N19-1357/",
+    "title": "Attention is not Explanation - ACL Anthology"
+  },
+  "gpt1": {
+    "status": 200,
+    "url": "https://cdn.openai.com/research-covers/language-unsupervised/language_understanding_paper.pdf",
+    "title": "PDF or no title"
+  },
+  "norm": {
+    "status": 200,
+    "url": "https://arxiv.org/abs/1607.06450",
+    "title": "[1607.06450] Layer Normalization"
+  },
+  "ntm": {
+    "status": 200,
+    "url": "https://arxiv.org/abs/1410.5401",
+    "title": "[1410.5401] Neural Turing Machines"
+  },
+  "rag": {
+    "status": 200,
+    "url": "https://arxiv.org/abs/2005.11401",
+    "title": "[2005.11401] Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks"
+  },
+  "scaling": {
+    "status": 200,
+    "url": "https://arxiv.org/abs/2001.08361",
+    "title": "[2001.08361] Scaling Laws for Neural Language Models"
+  },
+  "chinchilla": {
+    "status": 200,
+    "url": "https://arxiv.org/abs/2203.15556",
+    "title": "[2203.15556] Training Compute-Optimal Large Language Models"
+  },
+  "gpipe": {
+    "status": 200,
+    "url": "https://arxiv.org/abs/1811.06965",
+    "title": "[1811.06965] GPipe: Efficient Training of Giant Neural Networks using Pipeline Parallelism"
+  },
+  "mdl": {
+    "status": 200,
+    "url": "https://arxiv.org/abs/math/0406077",
+    "title": "[math/0406077] A tutorial introduction to the minimum description length principle"
+  },
+  "weights": {
+    "status": 200,
+    "url": "https://www.cs.toronto.edu/~hinton/absps/colt93.html",
+    "title": "Abstract: Keeping Neural Networks Simple by Minimizing the Description Length of the Weights"
+  },
+  "relation": {
+    "status": 200,
+    "url": "https://arxiv.org/abs/1706.01427",
+    "title": "[1706.01427] A simple neural network module for relational reasoning"
+  },
+  "cite": {
+    "status": 200,
+    "url": "https://arxiv.org/abs/2305.14627",
+    "title": "[2305.14627] Enabling Large Language Models to Generate Text with Citations"
+  },
+  "unesco": {
+    "status": 200,
+    "url": "https://www.unesco.org/en/articles/ai-competency-framework-students",
+    "title": "PDF or no title"
+  }
+}

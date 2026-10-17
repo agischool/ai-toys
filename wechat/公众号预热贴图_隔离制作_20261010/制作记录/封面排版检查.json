@@ -1,0 +1,226 @@
+[
+  {
+    "dir": "01_认猫的计算路线",
+    "id": "wide",
+    "width": 2100,
+    "height": 900,
+    "passed": true
+  },
+  {
+    "dir": "01_认猫的计算路线",
+    "id": "square",
+    "width": 1080,
+    "height": 1080,
+    "passed": true
+  },
+  {
+    "dir": "02_满分就学会了吗",
+    "id": "wide",
+    "width": 2100,
+    "height": 900,
+    "passed": true
+  },
+  {
+    "dir": "02_满分就学会了吗",
+    "id": "square",
+    "width": 1080,
+    "height": 1080,
+    "passed": true
+  },
+  {
+    "dir": "03_图片的数字密码",
+    "id": "wide",
+    "width": 2100,
+    "height": 900,
+    "passed": true
+  },
+  {
+    "dir": "03_图片的数字密码",
+    "id": "square",
+    "width": 1080,
+    "height": 1080,
+    "passed": true
+  },
+  {
+    "dir": "04_答错后改了什么",
+    "id": "wide",
+    "width": 2100,
+    "height": 900,
+    "passed": true
+  },
+  {
+    "dir": "04_答错后改了什么",
+    "id": "square",
+    "width": 1080,
+    "height": 1080,
+    "passed": true
+  },
+  {
+    "dir": "05_小窗口找线索",
+    "id": "wide",
+    "width": 2100,
+    "height": 900,
+    "passed": true
+  },
+  {
+    "dir": "05_小窗口找线索",
+    "id": "square",
+    "width": 1080,
+    "height": 1080,
+    "passed": true
+  },
+  {
+    "dir": "06_网络深度与残差",
+    "id": "wide",
+    "width": 2100,
+    "height": 900,
+    "passed": true
+  },
+  {
+    "dir": "06_网络深度与残差",
+    "id": "square",
+    "width": 1080,
+    "height": 1080,
+    "passed": true
+  },
+  {
+    "dir": "07_红伞线索传下去",
+    "id": "wide",
+    "width": 2100,
+    "height": 900,
+    "passed": true
+  },
+  {
+    "dir": "07_红伞线索传下去",
+    "id": "square",
+    "width": 1080,
+    "height": 1080,
+    "passed": true
+  },
+  {
+    "dir": "08_一片一片生成文字",
+    "id": "wide",
+    "width": 2100,
+    "height": 900,
+    "passed": true
+  },
+  {
+    "dir": "08_一片一片生成文字",
+    "id": "square",
+    "width": 1080,
+    "height": 1080,
+    "passed": true
+  },
+  {
+    "dir": "09_它到底指谁",
+    "id": "wide",
+    "width": 2100,
+    "height": 900,
+    "passed": true
+  },
+  {
+    "dir": "09_它到底指谁",
+    "id": "square",
+    "width": 1080,
+    "height": 1080,
+    "passed": true
+  },
+  {
+    "dir": "10_下一片文字的路线",
+    "id": "wide",
+    "width": 2100,
+    "height": 900,
+    "passed": true
+  },
+  {
+    "dir": "10_下一片文字的路线",
+    "id": "square",
+    "width": 1080,
+    "height": 1080,
+    "passed": true
+  },
+  {
+    "dir": "11_笔记本与查找",
+    "id": "wide",
+    "width": 2100,
+    "height": 900,
+    "passed": true
+  },
+  {
+    "dir": "11_笔记本与查找",
+    "id": "square",
+    "width": 1080,
+    "height": 1080,
+    "passed": true
+  },
+  {
+    "dir": "12_模型选择看条件",
+    "id": "wide",
+    "width": 2100,
+    "height": 900,
+    "passed": true
+  },
+  {
+    "dir": "12_模型选择看条件",
+    "id": "square",
+    "width": 1080,
+    "height": 1080,
+    "passed": true
+  },
+  {
+    "dir": "13_短规则的账本",
+    "id": "wide",
+    "width": 2100,
+    "height": 900,
+    "passed": true
+  },
+  {
+    "dir": "13_短规则的账本",
+    "id": "square",
+    "width": 1080,
+    "height": 1080,
+    "passed": true
+  },
+  {
+    "dir": "14_物体之间的关系",
+    "id": "wide",
+    "width": 2100,
+    "height": 900,
+    "passed": true
+  },
+  {
+    "dir": "14_物体之间的关系",
+    "id": "square",
+    "width": 1080,
+    "height": 1080,
+    "passed": true
+  },
+  {
+    "dir": "15_有链接也要核对",
+    "id": "wide",
+    "width": 2100,
+    "height": 900,
+    "passed": true
+  },
+  {
+    "dir": "15_有链接也要核对",
+    "id": "square",
+    "width": 1080,
+    "height": 1080,
+    "passed": true
+  },
+  {
+    "dir": "16_校园助手的边界",
+    "id": "wide",
+    "width": 2100,
+    "height": 900,
+    "passed": true
+  },
+  {
+    "dir": "16_校园助手的边界",
+    "id": "square",
+    "width": 1080,
+    "height": 1080,
+    "passed": true
+  }
+]

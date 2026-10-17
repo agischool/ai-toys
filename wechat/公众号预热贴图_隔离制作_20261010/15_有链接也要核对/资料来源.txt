@@ -1,0 +1,18 @@
+衍生内容对应原稿：15_AI答得像真的应该怎样检查.md
+
+文中算例与图解用于说明原理，不是实际模型的测评结果。研究结论对应以下资料。
+
+〔1〕 Gao、Yen、Yu、Chen，2023，Enabling Large Language Models to Generate Text with Citations，EMNLP。arXiv:2305.14627。
+
+https://arxiv.org/abs/2305.14627
+
+〔2〕 Guo 等，2017，On Calibration of Modern Neural Networks，ICML，PMLR 70:1321–1330。
+
+https://proceedings.mlr.press/v70/guo17a.html
+
+〔3〕 UNESCO，2024，AI Competency Framework for Students。DOI:10.54675/JKJB9835。作为批判判断、隐私与责任的背景参考。
+
+https://www.unesco.org/en/articles/ai-competency-framework-students
+
+以上书目信息沿用原稿，本轮未重新核验外部网页的可访问性。
+插画来源：原制作阶段的内置图像生成工具；本轮保留。未使用外部人物照片或论文截图。字体许可证保留在项目制作记录/fonts。

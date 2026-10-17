@@ -1,0 +1,18 @@
+衍生内容对应原稿：16_一个有边界的校园AI助手怎样工作.md
+
+学校、公告D1、系统与五种检查结果均为虚构案例及纸面推演，不是已部署产品或软件实测。
+
+〔1〕 UNESCO，2024，AI Competency Framework for Students。DOI:10.54675/JKJB9835。作为批判判断、隐私与责任的背景参考。
+
+https://www.unesco.org/en/articles/ai-competency-framework-students
+
+〔2〕 Lewis 等，2020，Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks。arXiv:2005.11401。
+
+https://arxiv.org/abs/2005.11401
+
+〔3〕 Gao、Yen、Yu、Chen，2023，Enabling Large Language Models to Generate Text with Citations，EMNLP。arXiv:2305.14627。
+
+https://arxiv.org/abs/2305.14627
+
+以上书目信息沿用原稿，本轮未重新核验外部网页的可访问性。
+插画来源：原制作阶段的内置图像生成工具；本轮保留。未使用外部人物照片或论文截图。字体许可证保留在项目制作记录/fonts。

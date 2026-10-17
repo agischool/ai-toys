@@ -8,3 +8,12 @@ node_modules/
 /outputs/
 /outputs_local/
 /outputs_seed*/
+
+# WeChat publishing bundles: zip archives and pre-revision snapshots are
+# regenerable, and their size does not belong in git history.
+/wechat/**/*.zip
+/wechat/**/_原稿备份/
+
+# Third-party OFL fonts stay on disk for local rendering; sources and
+# SHA256 are recorded in 制作记录/fonts/来源与许可证.json.
+/wechat/**/fonts/*.ttf

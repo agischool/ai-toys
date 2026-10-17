@@ -1,0 +1,90 @@
+{
+  "episodes": 16,
+  "images": 80,
+  "fields": [
+    {
+      "n": 1,
+      "title_chars": 16,
+      "description_chars": 201
+    },
+    {
+      "n": 2,
+      "title_chars": 12,
+      "description_chars": 218
+    },
+    {
+      "n": 3,
+      "title_chars": 12,
+      "description_chars": 201
+    },
+    {
+      "n": 4,
+      "title_chars": 15,
+      "description_chars": 213
+    },
+    {
+      "n": 5,
+      "title_chars": 12,
+      "description_chars": 202
+    },
+    {
+      "n": 6,
+      "title_chars": 12,
+      "description_chars": 198
+    },
+    {
+      "n": 7,
+      "title_chars": 13,
+      "description_chars": 203
+    },
+    {
+      "n": 8,
+      "title_chars": 14,
+      "description_chars": 223
+    },
+    {
+      "n": 9,
+      "title_chars": 15,
+      "description_chars": 213
+    },
+    {
+      "n": 10,
+      "title_chars": 14,
+      "description_chars": 239
+    },
+    {
+      "n": 11,
+      "title_chars": 18,
+      "description_chars": 198
+    },
+    {
+      "n": 12,
+      "title_chars": 12,
+      "description_chars": 234
+    },
+    {
+      "n": 13,
+      "title_chars": 12,
+      "description_chars": 208
+    },
+    {
+      "n": 14,
+      "title_chars": 14,
+      "description_chars": 199
+    },
+    {
+      "n": 15,
+      "title_chars": 14,
+      "description_chars": 221
+    },
+    {
+      "n": 16,
+      "title_chars": 17,
+      "description_chars": 224
+    }
+  ],
+  "published": false,
+  "backend_modified": false,
+  "package_files": 130,
+  "zip_sha256": "ee3b642db7af55ab97129b7fd30b1ea6484033f53388258f1d7ffddc68e19ffe"
+}

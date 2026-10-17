@@ -1,0 +1,264 @@
+{
+  "passed": true,
+  "clipboard_checks": 32,
+  "fallback_selection": true,
+  "layouts": [
+    {
+      "episode": 1,
+      "width": 360,
+      "scrollWidth": 360,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 2,
+      "width": 360,
+      "scrollWidth": 360,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 3,
+      "width": 360,
+      "scrollWidth": 360,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 4,
+      "width": 360,
+      "scrollWidth": 360,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 5,
+      "width": 360,
+      "scrollWidth": 360,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 6,
+      "width": 360,
+      "scrollWidth": 360,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 7,
+      "width": 360,
+      "scrollWidth": 360,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 8,
+      "width": 360,
+      "scrollWidth": 360,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 9,
+      "width": 360,
+      "scrollWidth": 360,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 10,
+      "width": 360,
+      "scrollWidth": 360,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 11,
+      "width": 360,
+      "scrollWidth": 360,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 12,
+      "width": 360,
+      "scrollWidth": 360,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 13,
+      "width": 360,
+      "scrollWidth": 360,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 14,
+      "width": 360,
+      "scrollWidth": 360,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 15,
+      "width": 360,
+      "scrollWidth": 360,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 16,
+      "width": 360,
+      "scrollWidth": 360,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 1,
+      "width": 1280,
+      "scrollWidth": 1280,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 2,
+      "width": 1280,
+      "scrollWidth": 1280,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 3,
+      "width": 1280,
+      "scrollWidth": 1280,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 4,
+      "width": 1280,
+      "scrollWidth": 1280,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 5,
+      "width": 1280,
+      "scrollWidth": 1280,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 6,
+      "width": 1280,
+      "scrollWidth": 1280,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 7,
+      "width": 1280,
+      "scrollWidth": 1280,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 8,
+      "width": 1280,
+      "scrollWidth": 1280,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 9,
+      "width": 1280,
+      "scrollWidth": 1280,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 10,
+      "width": 1280,
+      "scrollWidth": 1280,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 11,
+      "width": 1280,
+      "scrollWidth": 1280,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 12,
+      "width": 1280,
+      "scrollWidth": 1280,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 13,
+      "width": 1280,
+      "scrollWidth": 1280,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 14,
+      "width": 1280,
+      "scrollWidth": 1280,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 15,
+      "width": 1280,
+      "scrollWidth": 1280,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    },
+    {
+      "episode": 16,
+      "width": 1280,
+      "scrollWidth": 1280,
+      "images": 5,
+      "loaded": true,
+      "passed": true
+    }
+  ],
+  "backend_tested": false
+}
