@@ -20,9 +20,12 @@
 - `source/web/`：所有页面、交互控制器与纯数值引擎
 - `source/t1_python/`：T1 原版、样章扩展、固定 NumPy 数据与测试
 - `source/series_python/`：十篇完整 Python 原始实现与实测输出
+- `wechat/`：公众号发布内容，含封面与配图源文件、排版 HTML 和构建脚本
 - `tests/`：数值、状态、站点链接、下载完整性与浏览器检查
 - `scripts/build.py`：无 npm 构建依赖；重建网页与固定元数据 ZIP
 - `VALIDATION.md`：本轮检查记录与明确限制
+
+`wechat/` 下的 zip 发布包、`_原稿备份/` 修订前快照和 `制作记录/fonts/` 的第三方 OFL 字体不进入 git，来源与 SHA256 见 `wechat/公众号预热贴图_隔离制作_20261010/制作记录/fonts/来源与许可证.json`。
 
 ## 本地运行
 
