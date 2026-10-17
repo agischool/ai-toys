@@ -6,3 +6,5 @@ node_modules/
 
 # Local reruns of run_all.py write here; source/series_python/outputs/ stays tracked.
 /outputs/
+/outputs_local/
+/outputs_seed*/

@@ -1,10 +1,12 @@
 # 十个 AI 机制的小实现
 
-一组可独立运行、可逐项核对的中文科普代码。每篇从手算例子开始，再看真正运行的曲线，最后交代模型做不到什么。完整算法使用 NumPy 显式实现，未使用 PyTorch、TensorFlow 或自动求导；不下载模型，不调用API。
+一套配有可运行代码的中文机制说明：从两个参数的直线开始，逐步读到卷积、残差、RNN、注意力与微型 Transformer，最后用外部记忆和无损编码观察另外两类机制。每篇都有手算、实现对应关系、实测图表和适用边界。
+
+适合会读基础 Python、希望把公式与代码接起来的读者。前几篇会解释损失和梯度；后几篇需要矩阵乘法与数组形状的基础。所有核心算法都用 NumPy 显式实现，没有 PyTorch、TensorFlow 或自动求导；运行示例不下载模型，也不调用外部 API。
 
 ## 从这里开始
 
-已经附上运行图表和实测结果，不运行代码也能先阅读 `docs/`。需要复现时，在本目录打开终端：
+随包已经包含图表与测量记录，可以直接阅读下面的文章。需要运行时，在本目录打开终端，使用 Python 3.11–3.13 创建环境：
 
 ```bash
 python -m venv .venv
@@ -13,10 +15,12 @@ source .venv/bin/activate
 # Windows PowerShell 改用: .venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
 python -m unittest discover -s tests -v
-python run_all.py
+python run_all.py --output outputs_local
 ```
 
-实测环境为 Python 3.12.14、NumPy 2.3.5、Matplotlib 3.10.8，CPU、float64。建议 Python 3.11–3.13。只需要 NumPy 和 Matplotlib，测试使用标准库 unittest。若已有上述依赖，可直接执行最后两条命令；运行示例不需要联网。
+最后一条命令将本机结果另存到 `outputs_local/`，不会覆盖文章引用的随包图表。只运行部分示例可用 `python run_all.py --only t01 t02 t03 --output outputs_local`；换种子可用 `python run_all.py --seed 7 --output outputs_seed7`。各篇列出的单独运行命令默认写入 `outputs/tXX/`，会替换该篇已有产物；`python run_all.py` 则会覆盖全部默认输出及运行报告。
+
+依赖只需 NumPy 和 Matplotlib，测试使用标准库 unittest。安装依赖通常需要联网，安装完成后运行示例不需要网络。出现 `No module named ...` 时，先确认已激活虚拟环境，并在同一个 Python 环境安装 `requirements.txt`。
 
 首次运行会生成中文图。当前环境使用 Noto Sans CJK；其他电脑若没有中文字体，数值结果不受影响，但绘图可能缺字。可以在系统安装常用中文字体后，在 `toys/common.py` 中指定 Matplotlib 字体。脚本只在临时目录保存字体缓存，不更改系统设置。
 
@@ -34,6 +38,8 @@ python run_all.py
 | T8 | 迷你因果Transformer | `python -m toys.t08_transformer` | [Transformer](docs/T08_Transformer.md) |
 | T9 | 外部记忆寻址、读取与写入 | `python -m toys.t09_memory` | [外部记忆](docs/T09_外部记忆.md) |
 | T10 | 可逆编码、总描述长度 | `python -m toys.t10_mdl` | [MDL](docs/T10_MDL.md) |
+
+初次阅读可按 T1→T2→T3 建立训练基础。T4 与 T5 分别观察参数共享和梯度分支；T6 看状态递推；T7→T8 看注意力怎样接进完整模型。T8 会复用 T5 的残差概念和 T7 的算子。T9、T10 可以独立阅读，不是前面训练成绩的延续。
 
 只跑某几篇：`python run_all.py --only t01 t02 t03`。换种子：`python run_all.py --seed 7 --output outputs_seed7`。默认输出目录里的图表会被本次运行替换；文中引用的数字对应随包的种子42记录，改种子后不应照抄。
 
