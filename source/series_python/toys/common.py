@@ -25,9 +25,24 @@ def softmax(x, axis=-1):
 
 
 def cross_entropy(logits, labels):
-    """Mean CE and derivative w.r.t. logits; labels shape logits.shape[:-1]."""
+    """Mean CE and derivative w.r.t. logits, averaged over all predictions.
+
+    Labels must be integer class IDs with exactly logits.shape[:-1]; no
+    broadcasting or implicit reshaping of labels is accepted. Empty inputs
+    and labels outside [0, number of classes) raise ValueError.
+    """
+    logits = np.asarray(logits, dtype=np.float64)
+    labels = np.asarray(labels)
+    if logits.ndim < 1 or logits.size == 0:
+        raise ValueError("logits must contain at least one prediction and class")
+    if labels.shape != logits.shape[:-1]:
+        raise ValueError("labels shape must equal logits.shape[:-1]")
+    if not np.issubdtype(labels.dtype, np.integer):
+        raise ValueError("labels must be integer class IDs")
+    if np.any(labels < 0) or np.any(labels >= logits.shape[-1]):
+        raise ValueError("label outside class range")
     flat = logits.reshape(-1, logits.shape[-1])
-    y = np.asarray(labels).reshape(-1)
+    y = labels.reshape(-1)
     z = flat - flat.max(axis=-1, keepdims=True)
     logp = z - np.log(np.exp(z).sum(axis=-1, keepdims=True))
     loss = -logp[np.arange(len(y)), y].mean()

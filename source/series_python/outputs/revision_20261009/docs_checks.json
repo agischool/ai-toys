@@ -1,0 +1,84 @@
+{
+  "local_links_checked": 110,
+  "python_snippets_executed": [
+    {
+      "file": "docs/T06_RNN.md",
+      "block": 1,
+      "output": "A\n"
+    },
+    {
+      "file": "docs/T06_RNN.md",
+      "block": 2,
+      "output": "Ay1y1y1x0x0x0x0>\n"
+    },
+    {
+      "file": "docs/T07_注意力.md",
+      "block": 1,
+      "output": "(2, 4, 3) (2, 4, 3)\n"
+    },
+    {
+      "file": "docs/T08_Transformer.md",
+      "block": 1,
+      "output": "<edec|edec>\n"
+    },
+    {
+      "file": "docs/T09_外部记忆.md",
+      "block": 1,
+      "output": ""
+    },
+    {
+      "file": "docs/T10_MDL.md",
+      "block": 1,
+      "output": "{'name': 'rule-p2', 'period': 2, 'total_bytes': 13, 'header_bytes': 7, 'model_bytes': 3, 'residual_bytes': 3, 'exceptions': 1}\n"
+    }
+  ],
+  "articles": [
+    {
+      "file": "docs/T01_线性回归.md",
+      "images": 2
+    },
+    {
+      "file": "docs/T02_逻辑回归.md",
+      "images": 2
+    },
+    {
+      "file": "docs/T03_反向传播.md",
+      "images": 3
+    },
+    {
+      "file": "docs/T04_CNN.md",
+      "images": 3
+    },
+    {
+      "file": "docs/T05_残差网络.md",
+      "images": 2
+    },
+    {
+      "file": "docs/T06_RNN.md",
+      "images": 3
+    },
+    {
+      "file": "docs/T07_注意力.md",
+      "images": 1
+    },
+    {
+      "file": "docs/T08_Transformer.md",
+      "images": 3
+    },
+    {
+      "file": "docs/T09_外部记忆.md",
+      "images": 2
+    },
+    {
+      "file": "docs/T10_MDL.md",
+      "images": 2
+    }
+  ],
+  "date": "2026-10-09",
+  "article_count": 10,
+  "original_image_references_preserved": 23,
+  "original_output_files_sha256_unchanged": 66,
+  "original_fenced_code_blocks_preserved": true,
+  "code_fences_balanced": true,
+  "previous_next_navigation_checked": true
+}

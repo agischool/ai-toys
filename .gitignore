@@ -2,5 +2,7 @@ __pycache__/
 *.py[cod]
 .venv/
 node_modules/
-outputs/
 .DS_Store
+
+# Local reruns of run_all.py write here; source/series_python/outputs/ stays tracked.
+/outputs/

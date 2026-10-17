@@ -36,3 +36,39 @@ class TestNumericalUtilities(unittest.TestCase):
         loss,g=cross_entropy(logits,np.array([1,0]))
         self.assertEqual(loss,2000.);self.assertTrue(np.isfinite(g).all())
         np.testing.assert_array_equal(softmax(logits),[[1.,0.],[0.,1.]])
+
+    def test_cross_entropy_rejects_mismatched_label_shape(self):
+        logits = np.array([[1., 2.], [3., 4.]])
+        for labels in (np.array([1]), np.array([0, 1, 0]), np.array([[0, 1]])):
+            with self.subTest(shape=labels.shape), self.assertRaises(ValueError):
+                cross_entropy(logits, labels)
+
+    def test_cross_entropy_rejects_invalid_label_type_and_range(self):
+        logits = np.array([[1., 2.], [3., 4.]])
+        for labels in ([0., 1.], [False, True], [-1, 0], [0, 2]):
+            with self.subTest(labels=labels), self.assertRaises(ValueError):
+                cross_entropy(logits, labels)
+
+    def test_cross_entropy_rejects_empty_or_scalar_logits(self):
+        for logits, labels in ((np.array(1.), np.array(0)),
+                               (np.empty((0, 2)), np.array([], dtype=int)),
+                               (np.empty((2, 0)), np.array([0, 0]))):
+            with self.subTest(shape=logits.shape), self.assertRaises(ValueError):
+                cross_entropy(logits, labels)
+
+    def test_cross_entropy_sequence_gradient_matches_loss(self):
+        logits = np.random.default_rng(7).normal(size=(2, 3, 4))
+        labels = np.array([[0, 1, 2], [3, 0, 1]])
+        loss, grads = cross_entropy(logits, labels)
+        flat_loss, flat_grads = cross_entropy(logits.reshape(-1, 4), labels.ravel())
+        self.assertEqual(loss, flat_loss)
+        np.testing.assert_array_equal(grads.reshape(-1, 4), flat_grads)
+        report = gradcheck(lambda: cross_entropy(logits, labels)[0],
+                           {'logits': logits}, {'logits': grads}, samples=100)
+        self.assertLess(report['max_abs_error'], 1e-9)
+        np.testing.assert_allclose(grads.sum(axis=-1), 0., atol=1e-15)
+
+    def test_cross_entropy_single_prediction(self):
+        loss, grads = cross_entropy(np.array([0., 0.]), np.array(1))
+        self.assertAlmostEqual(loss, np.log(2.))
+        np.testing.assert_array_equal(grads, [.5, -.5])
