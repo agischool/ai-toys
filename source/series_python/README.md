@@ -20,7 +20,7 @@ python run_all.py --output outputs_local
 
 最后一条命令将本机结果另存到 `outputs_local/`，不会覆盖文章引用的随包图表。只运行部分示例可用 `python run_all.py --only t01 t02 t03 --output outputs_local`；换种子可用 `python run_all.py --seed 7 --output outputs_seed7`。各篇列出的单独运行命令默认写入 `outputs/tXX/`，会替换该篇已有产物；`python run_all.py` 则会覆盖全部默认输出及运行报告。
 
-依赖只需 NumPy 和 Matplotlib，测试使用标准库 unittest。安装依赖通常需要联网，安装完成后运行示例不需要网络。出现 `No module named ...` 时，先确认已激活虚拟环境，并在同一个 Python 环境安装 `requirements.txt`。
+随包图表对应的实测环境为 Python 3.12.14、NumPy 2.3.5、Matplotlib 3.10.8，CPU、float64；建议使用 Python 3.11–3.13。2026-10-09 的修订回归检查在 Python 3.13.9 下进行，见 `VERIFICATION.md`。依赖只需 NumPy 和 Matplotlib，测试使用标准库 unittest。安装依赖通常需要联网，安装完成后运行示例不需要网络。出现 `No module named ...` 时，先确认已激活虚拟环境，并在同一个 Python 环境安装 `requirements.txt`。
 
 首次运行会生成中文图。当前环境使用 Noto Sans CJK；其他电脑若没有中文字体，数值结果不受影响，但绘图可能缺字。可以在系统安装常用中文字体后，在 `toys/common.py` 中指定 Matplotlib 字体。脚本只在临时目录保存字体缓存，不更改系统设置。
 
