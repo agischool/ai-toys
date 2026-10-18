@@ -58,6 +58,8 @@ npm test
 
 ## GitHub 网页与许可
 
-GitHub 仓库中的 README 提供三个项目的文件入口；HTML 网页由 GitHub Pages 展示。此结构的发布源应为 **`main` 分支的 `/(root)`**，以根目录 `index.html` 为首页。旧配置发布根目录 `/docs`；上线新版时需同步调整 Pages 配置，互动实验的新路径为 `Python实现/docs/`。本地构建不代表公网部署已完成。
+GitHub 仓库中的 README 提供三个项目的文件入口；HTML 网页由 GitHub Pages 展示。仓库 Settings → Pages 的发布源使用 **GitHub Actions**。推送到 `main` 后，[发布工作流](https://github.com/agischool/ai-toys/blob/main/.github/workflows/pages.yml) 会重新构建、运行测试、检查站内链接，再发布以根目录 `index.html` 为首页的完整站点；也可在 Actions 中手动运行 `Publish website`。互动实验位于 `Python实现/docs/`。
+
+发布包包含 `.site/` 中的样式、复制脚本和 README 阅读页，不包含 Git 元数据和本地缓存。工作流成功后访问 [在线首页](https://agischool.github.io/ai-toys/)；本地构建通过不代表公网部署已经完成。
 
 尚未选择开源许可证。公开可见或可下载不等于授予开放许可。
