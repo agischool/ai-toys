@@ -20,12 +20,12 @@
 - `source/web/`：所有页面、交互控制器与纯数值引擎
 - `source/t1_python/`：T1 原版、样章扩展、固定 NumPy 数据与测试
 - `source/series_python/`：十篇完整 Python 原始实现与实测输出
-- `wechat/`：公众号发布内容，含封面与配图源文件、排版 HTML 和构建脚本
+- `wechat/`：两套公众号发布内容，各含 16 个独立发布文件夹
 - `tests/`：数值、状态、站点链接、下载完整性与浏览器检查
 - `scripts/build.py`：无 npm 构建依赖；重建网页与固定元数据 ZIP
 - `VALIDATION.md`：本轮检查记录与明确限制
 
-`wechat/` 下的 zip 发布包、`_原稿备份/` 修订前快照和 `制作记录/fonts/` 的第三方 OFL 字体已从仓库移除，均由脚本或官方渠道重新生成：zip 由 `整理贴图发布材料.py` 和 `整理交付.py` 打包，字体来源与 SHA256 见 `wechat/公众号预热贴图_隔离制作_20261010/制作记录/fonts/来源与许可证.json`。`unittest` 与发布 HTML 不依赖这些文件。
+公众号发布文件的使用方式见 [wechat/README.md](wechat/README.md)。两套系列目录内各保留 16 个编号文件夹，正文、图片、封面与发布文案按篇存放。
 
 ## 本地运行
 
