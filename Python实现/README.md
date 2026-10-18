@@ -4,6 +4,14 @@
 
 [返回三个项目总览](../README.md) · [打开项目网页](index.html) · [完整 Python 系列说明](source/series_python/README.md) · [互动实验目录](docs/chapters.html)
 
+## 实验图预览
+
+以下为随包已有图表，保留原始测量与说明。点击图片可查看原图。
+
+| T1 · 拟合与误差 | T7 · 注意力权重 | T8 · 模型结构 |
+| --- | --- | --- |
+| [![T1 · 拟合与误差](source/series_python/outputs/t01/fit_loss_residual.png)](source/series_python/outputs/t01/fit_loss_residual.png) | [![T7 · 注意力权重](source/series_python/outputs/t07/attention_weights.png)](source/series_python/outputs/t07/attention_weights.png) | [![T8 · 模型结构](source/series_python/outputs/t08/structure.png)](source/series_python/outputs/t08/structure.png) |
+
 ## 内容与目录
 
 T1 线性回归、T2 逻辑回归、T3 多层网络、T4 CNN、T5 残差、T6 RNN、T7 注意力、T8 微型 Transformer、T9 外部记忆、T10 最小描述长度。

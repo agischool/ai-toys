@@ -2,6 +2,12 @@
 
 本文说明如何检查当前源码，以及各实验结论的适用范围。原始 Python 实测数字和跨平台差异保留在 [Python 核验记录](../source/series_python/VERIFICATION.md) 中。
 
+## 从结果回到检查
+
+![T1 的拟合、训练损失和独立测试残差](../source/series_python/outputs/t01/fit_loss_residual.png)
+
+上图是随包 T1 历史实测图，用来说明需要核对的参数、损失和测试输出；它不代表本次测试运行结果。下面分别说明数值、交互和站点检查方法。
+
 ## 基本检查
 
 在 `Python实现/` 项目目录执行：

@@ -12,11 +12,12 @@ PYTHON = ROOT / 'Python实现'
 def main():
     subprocess.run([sys.executable, str(PYTHON / 'scripts/build.py')], check=True)
     pages = build_library.build()
+    subprocess.run(["node", str(ROOT / ".site/render_readmes.cjs")], check=True)
     manifest = []
     for entry in (PYTHON / 'MANIFEST.sha256').read_text(encoding='utf-8').splitlines():
         digest, name = entry.split('  ', 1)
         manifest.append(('Python实现/' + name, digest))
-    files = [*pages, *[p for p in (ROOT / '.site').iterdir() if p.is_file()],
+    files = [*pages, *[p for p in (ROOT / '.site').rglob('*') if p.is_file() and '__pycache__' not in p.parts and p.name != '.DS_Store'],
              PYTHON / 'MANIFEST.sha256', ROOT / 'README.md', ROOT / 'package.json',
              ROOT / '.gitignore', ROOT / '.nojekyll']
     for slug, _, _, _ in build_library.SERIES:

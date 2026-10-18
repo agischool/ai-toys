@@ -10,7 +10,7 @@ WEB = ROOT / 'source' / 'web'
 PYTHON = ROOT / 'source' / 't1_python'
 SERIES = ROOT / 'source' / 'series_python'
 DOCS = ROOT / 'docs'
-PYTHON_SUFFIXES = {'.py', '.md', '.txt', '.json'}
+PYTHON_SUFFIXES = {'.py', '.md', '.txt', '.json', '.png'}
 IGNORED_PARTS = {'__pycache__', '.venv', 'outputs', 'node_modules'}
 
 

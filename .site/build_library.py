@@ -18,6 +18,8 @@ def url(page, target):
 
 
 def link(page, target, label, css=''):
+    if target.name == 'README.md':
+        target = ROOT / '.site/readmes' / target.relative_to(ROOT).with_suffix('.html')
     return f'<a class="{css}" href="{url(page, target)}">{escape(label)}</a>'
 
 
@@ -46,7 +48,9 @@ def write_page(page, title, eyebrow, intro, body, series=None):
     nav = link(page, PYTHON / 'index.html', 'Python 实现')
     nav += ''.join(link(page, ROOT / slug / 'index.html', name) for slug, name, _, _ in SERIES)
     readme = page.parent / 'README.md'
-    footer = link(page, readme if readme.exists() else page.parent / '发布文案.md', '查看 Markdown 原稿', 'text-link')
+    footer = link(page, readme, '阅读项目说明', 'text-link') if readme.exists() else link(page, page.parent / '发布文案.md', '查看 Markdown 原稿', 'text-link')
+    if readme.exists():
+        body = '<div class="actions">' + link(page, readme, '项目介绍与使用说明', 'button secondary') + '</div>' + body
     page.write_text(f'''<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{escape(title)} · 看得见的 AI</title><meta name="description" content="{escape(intro, quote=True)}">

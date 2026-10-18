@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>测试与科学边界 · 项目说明</title><link rel="stylesheet" href="../../../library.css"></head>
+<body><header><div class="header-inner"><a class="brand" href="../../../../index.html">◉ 看得见的 AI</a><nav aria-label="项目导航"><a href="../../../../Python%E5%AE%9E%E7%8E%B0/index.html">Python 实现</a><a href="../../../../%E5%B0%91%E5%B9%B4AI%E8%A7%82%E5%AF%9F%E5%AE%A4/index.html">少年 AI 观察室</a><a href="../../../../%E9%9D%92%E5%B0%91%E5%B9%B4AI%E7%A7%91%E6%99%AE%E8%BF%9E%E8%BD%BD/index.html">青少年 AI 科普连载</a></nav></div></header>
+<main class="readme"><div class="actions"><a class="button secondary" href="../../../../index.html">返回三个项目</a><a class="text-link" href="../../../../Python%E5%AE%9E%E7%8E%B0/tests/README.md">查看 Markdown 源文件</a></div><article><h1 id="测试与科学边界">测试与科学边界</h1>
+<p>本文说明如何检查当前源码，以及各实验结论的适用范围。原始 Python 实测数字和跨平台差异保留在 <a href="../../../../Python%E5%AE%9E%E7%8E%B0/source/series_python/VERIFICATION.md">Python 核验记录</a> 中。</p>
+<h2 id="从结果回到检查">从结果回到检查</h2>
+<p><img src="../../../../Python%E5%AE%9E%E7%8E%B0/source/series_python/outputs/t01/fit_loss_residual.png" alt="T1 的拟合、训练损失和独立测试残差"></p>
+<p>上图是随包 T1 历史实测图，用来说明需要核对的参数、损失和测试输出；它不代表本次测试运行结果。下面分别说明数值、交互和站点检查方法。</p>
+<h2 id="基本检查">基本检查</h2>
+<p>在 <code>Python实现/</code> 项目目录执行：</p>
+<pre><code class="language-sh">npm run build
+npm test
+</code></pre>
+<p>这些检查无需安装 npm 依赖：</p>
+<div class="readme-table"><table>
+<thead>
+<tr>
+<th>检查</th>
+<th>覆盖范围</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>numerical.mjs</code></td>
+<td>T1 的 270 组 NumPy / JavaScript 参数与损失对照</td>
+</tr>
+<tr>
+<td><code>dom-behavior.mjs</code></td>
+<td>T1 暂停、继续、单步、重置、取消、零学习率和发散处理</td>
+</tr>
+<tr>
+<td><code>chapters.mjs</code> 及其调用的章节测试</td>
+<td>T2–T10 数值、梯度差分、状态转换、非法输入、注意力遮罩、记忆读写、编码往返等</td>
+</tr>
+<tr>
+<td><code>native-select.mjs</code>，由章节测试使用</td>
+<td>模拟原生单选框的精确字符串匹配，防止默认值与选项不匹配</td>
+</tr>
+<tr>
+<td><code>site-integrity.py</code></td>
+<td>11 页的链接、锚点、资源、表单标签、唯一 ID、源码与产物一致性，以及两个 ZIP 的 CRC 和内容字节一致性</td>
+</tr>
+</tbody>
+</table></div>
+<p>校验项目清单（macOS / Linux）：</p>
+<pre><code class="language-sh">shasum -a 256 -c MANIFEST.sha256
+</code></pre>
+<p>清单由构建脚本生成，覆盖 <code>source/</code>、<code>tests/</code>、<code>scripts/</code>、<code>docs/</code> 和本项目根目录的说明、配置，不包含项目入口页、其他两个项目、本地环境和缓存。生成清单仅记录当前字节，不能替代数值测试或内容审核。</p>
+<h2 id="完整-python-与独立科学检查">完整 Python 与独立科学检查</h2>
+<p>以下命令均在 <code>Python实现/</code> 目录执行。</p>
+<p>按<a href="../README.html#%E8%BF%90%E8%A1%8C-python">项目说明</a>创建环境并安装固定依赖，再执行：</p>
+<pre><code class="language-sh">(cd source/series_python &amp;&amp; OPENBLAS_NUM_THREADS=1 OMP_NUM_THREADS=1 python3 -m unittest discover -s tests -v)
+python3 tests/science-review.py
+</code></pre>
+<p>独立科学检查需要 Node.js、NumPy 和 Matplotlib，包含：</p>
+<ul>
+<li>T3：非线性和线性两种模式，共 34 个标量梯度的中央差分检查。</li>
+<li>T5：20 组普通与残差路径的链式灵敏度检查。</li>
+<li>T6：12 组长延时灵敏度检查。</li>
+<li>T8：因果前缀隔离，禁止关注的未来位置权重为零。</li>
+<li>T10：103 个 Unicode 字符串、1,709 个候选编码与 Python 逐字节对照及无损往返，包含中文、emoji、换行、NUL 和 BOM。</li>
+</ul>
+<p>需要重新训练时，使用独立输出目录：</p>
+<pre><code class="language-sh">python3 source/series_python/run_all.py --seed 42 --output outputs_local
+</code></pre>
+<p>不要覆盖 <code>source/series_python/outputs/</code>。数值差异应记录运行环境后单独比较，不能用新结果悄悄替换文章中的历史测量。</p>
+<h2 id="浏览器检查">浏览器检查</h2>
+<p><code>npm test</code> 的 DOM 检查使用模拟环境，真实浏览器检查由 <code>browser-smoke.cjs</code> 执行。先启动 <code>npm run serve</code>，再在另一个终端运行：</p>
+<pre><code class="language-sh">npm run test:browser
+</code></pre>
+<p>运行环境需能解析 <code>playwright</code> 包并安装 Chromium。脚本默认使用 <code>/usr/bin/chromium</code>；其他位置通过 <code>CHROMIUM_PATH</code> 指定。例如 macOS 已安装 Google Chrome 时：</p>
+<pre><code class="language-sh">CHROMIUM_PATH=&quot;/Applications/Google Chrome.app/Contents/MacOS/Google Chrome&quot; npm run test:browser
+</code></pre>
+<p><code>SITE_URL</code> 可指定服务地址（默认 <code>http://127.0.0.1:4173/</code>），<code>QA_DIR</code> 可指定报告和截图目录（默认 <code>/tmp/ai-toys-browser-qa</code>）。脚本检查 1280px 和 390px 视窗、页面错误、请求失败、外部请求、横向溢出及控件操作。</p>
+<p>本地检查不代表公网部署、真实手机或公众号粘贴后的排版验收。浏览器检查需报告本次实际结果；旧报告中的环境阻塞或通过记录不能代替本次运行。</p>
+<h2 id="机制与结论的边界">机制与结论的边界</h2>
+<div class="readme-table"><table>
+<thead>
+<tr>
+<th>章节</th>
+<th>需要保留的解释边界</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>T1 线性回归</td>
+<td>合成数据上的拟合不能保证外推准确</td>
+</tr>
+<tr>
+<td>T2 逻辑回归</td>
+<td>阈值改变判定，不改变训练参数；浏览器与 Python 的随机数据不同</td>
+</tr>
+<tr>
+<td>T3 多层网络</td>
+<td>浏览器为 2→4→1、17 参数模型；四点 XOR 训练结果不代表泛化成绩</td>
+</tr>
+<tr>
+<td>T4 CNN</td>
+<td>使用不翻核的 valid 互相关；浏览器手设单滤波器与 Python 训练的六滤波器 CNN 不同</td>
+</tr>
+<tr>
+<td>T5 残差</td>
+<td>输出灵敏度与损失梯度范数不同；接近恒等映射的任务及三个种子的对照不能推广为普遍优势</td>
+</tr>
+<tr>
+<td>T6 RNN</td>
+<td>浏览器固定标量递推与 Python 训练的 16 单元 RNN 不同；延迟回忆、下一字符、验证集和独立测试分别解释</td>
+</tr>
+<tr>
+<td>T7 注意力</td>
+<td>展示缩放点积、softmax、遮罩与值混合；热图不是因果解释或理解程度评分</td>
+</tr>
+<tr>
+<td>T8 Transformer</td>
+<td>浏览器为固定、未训练的 D4/FF6 单头 pre-LN 解码器；Python 的 D16/FF32 复制训练需区分教师强制准确率、自由生成和分布外样例，不能等同于 ChatGPT</td>
+</tr>
+<tr>
+<td>T9 外部记忆</td>
+<td>余弦寻址、读取、擦除和写入由固定控制器执行，未训练 NTM，也不是 RAG</td>
+</tr>
+<tr>
+<td>T10 最小描述长度</td>
+<td>按实际 MDL1 字节计费，在字面量和周期不超过 16 的有限启发式候选中选择；不宣称最优压缩或求出 Kolmogorov 复杂度</td>
+</tr>
+</tbody>
+</table></div>
+<p>T10 还需保留 Unicode 码点与字节的区别、代理码点限制、资源上限和缺少校验和的说明。测试通过只验证覆盖范围内的行为，不证明任意输入、硬件或依赖版本均无错误。</p>
+</article></main>
+<footer><span>看得见的 AI · 图文说明</span><a class="text-link" href="../../../../Python%E5%AE%9E%E7%8E%B0/tests/README.md">Markdown 源文件</a></footer></body></html>

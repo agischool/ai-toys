@@ -4,6 +4,14 @@
 
 适合会读基础 Python、希望把公式与代码接起来的读者。前几篇会解释损失和梯度；后几篇需要矩阵乘法与数组形状的基础。所有核心算法都用 NumPy 显式实现，没有 PyTorch、TensorFlow 或自动求导；运行示例不下载模型，也不调用外部 API。
 
+## 实验图预览
+
+以下为随包已有图表，保留原始测量与说明。点击图片可查看原图。
+
+| T1 · 拟合与误差 | T7 · 注意力权重 | T8 · 模型结构 |
+| --- | --- | --- |
+| [![T1 · 拟合与误差](outputs/t01/fit_loss_residual.png)](outputs/t01/fit_loss_residual.png) | [![T7 · 注意力权重](outputs/t07/attention_weights.png)](outputs/t07/attention_weights.png) | [![T8 · 模型结构](outputs/t08/structure.png)](outputs/t08/structure.png) |
+
 ## 从这里开始
 
 随包已经包含图表与测量记录，可以直接阅读下面的文章。需要运行时，在本目录打开终端，使用 Python 3.11–3.13 创建环境：
