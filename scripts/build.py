@@ -57,7 +57,7 @@ def main():
             rel = path.relative_to(ROOT)
             if path.is_file() and not IGNORED_PARTS.difference({'outputs'}).intersection(rel.parts) and path.suffix != '.pyc':
                 manifest.append((rel.as_posix(), hashlib.sha256(path.read_bytes()).hexdigest()))
-    for name in ('.gitignore', 'README.md', 'VALIDATION.md', 'SCIENCE_REVIEW.md', 'package.json'):
+    for name in ('.gitignore', 'README.md', 'package.json'):
         if (ROOT / name).exists():
             manifest.append((name, hashlib.sha256((ROOT / name).read_bytes()).hexdigest()))
     (ROOT / 'MANIFEST.sha256').write_text(''.join(f'{digest}  {name}\n' for name, digest in sorted(manifest)), encoding='utf-8')
