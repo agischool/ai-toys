@@ -1,6 +1,0 @@
-统一机器人向导通过内置 image_gen 生成，保留透明背景；未使用CLI回退。
-用途：青少年AI科普连载图解的象征性阅读向导，不代表AI有意识或感受。
-其余配图的文字、数字、箭头、矩阵、流程和主题物件由本项目的SVG源文件确定性绘制。
-原始生成文件：science-guide.png
-提示词：
-Create ONE reusable editorial illustration asset for a Chinese AI science series aimed at middle-school and high-school readers (ages roughly 12–18). Subject: a small friendly robot science-guide, full body, an off-white rounded rectangular head with two teal circular eyes, a small coral antenna, a teal body, coral backpack, yellow-orange shoes, holding a large orange pencil in one hand and pointing with the other as if helping readers inspect a diagram. Lively curious pose facing slightly left. Sophisticated playful 2D editorial cartoon, bold dark navy ink outlines, flat coral/teal/ochre color blocks, subtle hand-drawn texture and light cel shading; friendly but not babyish, no glossy 3D rendering. This is a symbolic cartoon guide, not a realistic AI machine. True transparent background, clean cutout, entire character and pencil visible with generous padding. No words, letters, numbers, logos, watermarks, speech bubbles, panels, or extra characters. Square composition suitable as a mascot in educational diagrams.

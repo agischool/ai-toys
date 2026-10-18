@@ -1,6 +1,0 @@
-Use case: scientific-educational. ONE finished premium Chinese editorial cover for a WeChat youth AI series, ages 12–17. Portrait 3:4, 1440×1920 preferred. Consistent series art direction: warm ivory paper #FFF8E8, deep navy #142C42 bold modern Chinese sans-serif, cobalt #2466E8, coral #F37365, sunny yellow #FFCD44. Sophisticated screenprint / tactile paper-cut illustration with subtle paper grain, vivid but restrained. No black background, no people, no robots, no fake logos. Top small line 少年 AI 观察室, two huge readable headline lines in upper third; a SINGLE conceptual main illustration lower middle; supporting subtitle legible below headline; generous margins. No extra text beyond explicitly permitted copy and allowed object labels. All extra notebooks/papers are blank or abstract strokes with no pseudo text. Bottom footer legible, not tiny. Avoid overcrowding, no overlapping text. High polish, coherent youth science magazine aesthetic.
-Exact title, two lines: 每次接一片，
-怎么写成一段话？
-Exact subtitle: 新接上的文字，又成了下一步的线索。
-Main illustration: Big tactile type tiles 我 读书 。 forming one route; an alternate coral tile 画画 branches beside 读书. Curved blue loop arrow returns new token tiles to the start. Open book and paintbrush as small supporting props.
-Exact footer: 玩具生成器示意. No additional slogans or paragraph text.

@@ -1,6 +1,0 @@
-Use case: scientific-educational. ONE finished premium Chinese editorial cover for a WeChat youth AI series, ages 12–17. Portrait 3:4, 1440×1920 preferred. Consistent series art direction: warm ivory paper #FFF8E8, deep navy #142C42 bold modern Chinese sans-serif, cobalt #2466E8, coral #F37365, sunny yellow #FFCD44. Sophisticated screenprint / tactile paper-cut illustration with subtle paper grain, vivid but restrained. No black background, no people, no robots, no fake logos. Top small line 少年 AI 观察室, two huge readable headline lines in upper third; a SINGLE conceptual main illustration lower middle; supporting subtitle legible below headline; generous margins. No extra text beyond explicitly permitted copy and allowed object labels. All extra notebooks/papers are blank or abstract strokes with no pseudo text. Bottom footer legible, not tiny. Avoid overcrowding, no overlapping text. High polish, coherent youth science magazine aesthetic.
-Exact title, two lines: 八个字母，
-能写得更短吗？
-Exact subtitle: 规则要计费，例外也要计费。
-Main illustration: A strip clearly spelling ABABABAB, beside a compact ticket R4AB and a coral correction ticket 8C. Paper scissors and folding accordion paper show repetition compressed. Keep these strings exact, no other letter strings.
-Exact footer: 自定义编码示意. No additional slogans or paragraph text.

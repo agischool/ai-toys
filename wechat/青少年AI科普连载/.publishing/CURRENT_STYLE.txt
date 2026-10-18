@@ -1,5 +1,0 @@
-最新正文：2026-10-09图文精修版，以各篇公众号_排版用.md为准。不要运行历史edit_articles.py或polish_articles.py覆盖后续人工修改；它们只记录对应备份的编辑过程。
-2026-10-09 当前图解样式：build_youth_illustrations.cjs + build_youth_covers.cjs。
-旧build_figures.cjs保留上一版，不用于当前版本。
-同步文档：build_documents.py；校验：validate_content.py、check_previews.cjs；Word渲染：render_all.py。
-更换配图后刷新配图源文件、配图总览和2026-10-09发布包。

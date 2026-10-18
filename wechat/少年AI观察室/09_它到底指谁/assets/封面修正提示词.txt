@@ -1,1 +1,0 @@
-Keep the image and all other text exactly unchanged. Correct the subtitle ONLY from 只换两个字，线索就变了。 to EXACTLY 只换一个字，线索就变了。. It is 大 vs 小, a ONE-character change. No other changes.

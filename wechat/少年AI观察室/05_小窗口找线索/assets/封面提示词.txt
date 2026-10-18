@@ -1,6 +1,0 @@
-Use case: scientific-educational. ONE finished premium Chinese editorial cover for a WeChat youth AI series, ages 12–17. Portrait 3:4, 1440×1920 preferred. Consistent series art direction: warm ivory paper #FFF8E8, deep navy #142C42 bold modern Chinese sans-serif, cobalt #2466E8, coral #F37365, sunny yellow #FFCD44. Sophisticated screenprint / tactile paper-cut illustration with subtle paper grain, vivid but restrained. No black background, no people, no robots, no fake logos. Top small line 少年 AI 观察室, two huge readable headline lines in upper third; a SINGLE conceptual main illustration lower middle; supporting subtitle legible below headline; generous margins. No extra text beyond explicitly permitted copy and allowed object labels. All extra notebooks/papers are blank or abstract strokes with no pseudo text. Bottom footer legible, not tiny. Avoid overcrowding, no overlapping text. High polish, coherent youth science magazine aesthetic.
-Exact title, two lines: 一个小窗口，
-能找到什么？
-Exact subtitle: 同一个模板，挪过去再算一次。
-Main illustration: A transparent blue 3 by 3 square window sliding across a larger black-and-white pixel grid on a cream paper, vibrant yellow motion arrows, magnifier examining pixel columns. Only graphic grids, no score text or invented labels.
-Exact footer: 手工模板示意. No additional slogans or paragraph text.

@@ -1,6 +1,0 @@
-可编辑配图源文件
-
-01-1.svg等为正文图，01-cover-wide.svg为横版封面，01-cover-square.svg为方形封面。
-这些SVG保留文字、矩阵、箭头、色块与流程；可在支持SVG的编辑器中修改。
-请保持assets文件夹与SVG的相对位置。assets/science-guide.png为透明背景的AI生成机器人素材。
-正文图的导出PNG保存在各篇文章文件夹中，SVG宽720像素，导出时使用2倍分辨率。
