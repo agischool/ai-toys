@@ -4,6 +4,7 @@ import hashlib
 import json
 import shutil
 import zipfile
+import build_library
 
 ROOT = Path(__file__).resolve().parents[1]
 WEB = ROOT / 'source' / 'web'
@@ -51,7 +52,9 @@ def main():
             info.compress_type = zipfile.ZIP_DEFLATED
             info.external_attr = 0o100644 << 16
             archive.writestr(info, path.read_bytes(), compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
-    manifest = []
+    library_pages = build_library.build()
+    manifest = [(path.relative_to(ROOT).as_posix(), hashlib.sha256(path.read_bytes()).hexdigest())
+                for path in library_pages]
     for folder in (ROOT / 'source', ROOT / 'tests', ROOT / 'scripts', DOCS):
         for path in sorted(folder.rglob('*')):
             rel = path.relative_to(ROOT)

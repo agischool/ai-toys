@@ -2,6 +2,8 @@
 
 这里存放两套公众号发布材料，以及配套的十个互动实验和 NumPy 实现。
 
+直接打开根目录的 [index.html](index.html)，即可按「首页 → 公众号 → 系列 → 每期」浏览。每期页面支持复制文案、预览和保存图片，并连接原有长文章排版。
+
 ## 从哪里开始
 
 | 想做什么 | 入口 |
@@ -24,13 +26,29 @@
 | [source/t1_python/](source/t1_python/) | T1 独立样章、数值夹具和测试 |
 | [source/series_python/](source/series_python/README.md) | 十个完整 Python 实现、文章、测试和历史实测输出 |
 | [docs/](docs/) | 生成的静态站点及两个 Python 下载包，用于 GitHub Pages |
-| [scripts/build.py](scripts/build.py) | 生成网站、下载包和根目录校验清单 |
+| [scripts/build.py](scripts/build.py) | 生成实验站、内容导航、下载包和根目录校验清单 |
+| [scripts/build_library.py](scripts/build_library.py) | 从发布文案生成 36 个内容入口页 |
+| [source/library/](source/library/) | 内容入口页共用的样式和复制、查找交互 |
 | [tests/](tests/README.md) | 数值、交互状态、链接、下载完整性与浏览器检查 |
 | [MANIFEST.sha256](MANIFEST.sha256) | 网站、Python 源码、测试、构建脚本和根目录说明的文件校验值 |
 
 `docs/` 是发布产物，仍需保留并随源码提交。`source/series_python/outputs/` 是文章引用的历史实测数据，不作缓存清理。临时环境、缓存和本地重跑输出由 `.gitignore` 排除。
 
-## 本地运行网站
+## 浏览内容网页
+
+双击根目录 `index.html`，即可打开内容导航和公众号各期页面，无需安装依赖。浏览器若限制自动复制，页面会选中文本，按 `⌘C` 或 `Ctrl+C` 即可复制。
+
+要同时运行互动实验，在根目录启动：
+
+```sh
+npm run serve:library
+```
+
+打开 <http://127.0.0.1:4174/>。静态服务器会自动展示各目录的 `index.html`；互动实验需要 HTTP 环境。此入口是本地内容站，现有 GitHub Pages 仍发布 `docs/` 下的实验站。
+
+网页从 Markdown 和现有图片生成。修改文案或素材后运行 `npm run build` 更新页面；长文章排版仍使用各期原有的 `公众号_排版.html`。
+
+## 本地运行实验网站
 
 需要 Python 3.11+ 和 Node.js 18+。以下命令在仓库根目录执行，无需 `npm install`：
 
@@ -40,7 +58,7 @@ npm test
 npm run serve
 ```
 
-打开 <http://127.0.0.1:4173/chapters.html>。网站使用 ES modules，需通过 HTTP 打开。修改 `source/web/` 后重新构建，提交源码和 `docs/` 产物。构建会同时更新下载包和 `MANIFEST.sha256`；文档或测试修改完成后也应重新构建。
+打开 <http://127.0.0.1:4173/chapters.html>。网站使用 ES modules，需通过 HTTP 打开。修改 `source/web/` 后重新构建，提交源码和 `docs/` 产物。构建会同时更新内容入口页、下载包和 `MANIFEST.sha256`；文档或测试修改完成后也应重新构建。
 
 网页在浏览器本地计算，无外部运行时依赖。浏览器中的缩小模型、固定参数和算子演示不能等同于完整 Python 训练结果，各章节的区别见[测试说明](tests/README.md#机制与结论的边界)。
 
