@@ -4,10 +4,11 @@ __pycache__/
 node_modules/
 .DS_Store
 
-# Local reruns of run_all.py write here; source/series_python/outputs/ stays tracked.
+# Local reruns; each Python project's bundled outputs remain tracked.
 /outputs/
 /outputs_local/
 /outputs_seed*/
 
-# Locally assembled WeChat publishing archives.
-/wechat/**/*.zip
+# Locally assembled publication archives.
+/少年AI观察室/**/*.zip
+/青少年AI科普连载/**/*.zip

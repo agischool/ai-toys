@@ -1,0 +1,12 @@
+{
+  "name": "ai-toys-python",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "python3 scripts/build.py",
+    "test": "node tests/numerical.mjs && node tests/dom-behavior.mjs && node tests/chapters.mjs && python3 tests/site-integrity.py",
+    "serve": "python3 -m http.server 4173 --bind 127.0.0.1 --directory docs",
+    "test:browser": "node tests/browser-smoke.cjs"
+  }
+}

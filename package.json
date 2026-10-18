@@ -4,10 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "python3 scripts/build.py",
-    "test": "node tests/numerical.mjs && node tests/dom-behavior.mjs && node tests/chapters.mjs && python3 tests/site-integrity.py",
-    "serve": "python3 -m http.server 4173 --bind 127.0.0.1 --directory docs",
-    "serve:library": "python3 -m http.server 4174 --bind 127.0.0.1 --directory .",
-    "test:browser": "node tests/browser-smoke.cjs"
+    "build": "python3 .site/build.py",
+    "test": "npm --prefix Python实现 test",
+    "serve": "python3 -m http.server 4174 --bind 127.0.0.1 --directory .",
+    "serve:library": "npm run serve",
+    "serve:experiments": "npm --prefix Python实现 run serve",
+    "test:browser": "npm --prefix Python实现 run test:browser"
   }
 }
