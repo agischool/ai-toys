@@ -42,7 +42,7 @@ python3 source/series_python/run_all.py --seed 42 --output outputs_local
 
 上面是 macOS / Linux 命令。Windows PowerShell 使用 `.venv\Scripts\Activate.ps1` 激活环境，并按 PowerShell 语法设置环境变量。
 
-重跑结果写入本项目的 `outputs_local/`。保留 `source/series_python/outputs/` 中文章引用的实测数据；历史环境、测量结果与已知跨平台差异见 [Python 核验记录](source/series_python/VERIFICATION.md)。
+重跑结果写入本项目的 `outputs_local/`。保留 `source/series_python/outputs/` 中文章引用的实测数据；随包实测环境、核验结果与已知跨平台差异见 [Python 核验记录](source/series_python/VERIFICATION.md)。
 
 ## 运行互动实验
 

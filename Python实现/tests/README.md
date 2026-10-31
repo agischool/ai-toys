@@ -1,6 +1,6 @@
 # 测试与科学边界
 
-本文说明如何检查当前源码，以及各实验结论的适用范围。原始 Python 实测数字和跨平台差异保留在 [Python 核验记录](../source/series_python/VERIFICATION.md) 中。
+本文说明如何检查当前源码，以及各实验结论的适用范围。随包 Python 实测数字和跨平台差异保留在 [Python 核验记录](../source/series_python/VERIFICATION.md) 中。
 
 ## 从结果回到检查
 
