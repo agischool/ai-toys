@@ -99,8 +99,8 @@ h3 { font-size: 17px; line-height: 1.55; margin-bottom: 12px }
 
 /* ---- 卡片 ---- */
 
-.grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 26px }
-.grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+.grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 26px }
+.grid.three { grid-template-columns: repeat(3, minmax(0, 1fr)) }
 
 .card {
   min-width: 0; border: 1px solid var(--line); border-radius: var(--radius);
@@ -239,10 +239,9 @@ h3 { font-size: 17px; line-height: 1.55; margin-bottom: 12px }
 /* ---- 响应式 ---- */
 
 @media (max-width: 850px) {
-  .grid { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+  .grid { grid-template-columns: repeat(3, minmax(0, 1fr)) }
   .copy-grid { grid-template-columns: 1fr }
   .hero { padding-top: 48px }
-  .grid.two { grid-template-columns: 1fr }
 }
 @media (max-width: 560px) {
   .header-inner, main, footer { padding-left: 20px; padding-right: 20px }

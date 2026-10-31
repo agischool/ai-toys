@@ -89,7 +89,7 @@ def build():
     cards = f'''<article class="card experiment"><a href="{url(page, PYTHON / 'index.html')}"><div class="experiment-art" aria-hidden="true">输入 <span>→</span> 计算 <span>→</span> 输出</div><div class="card-body"><p class="meta">10 个机制，代码与互动实验</p><h2>Python 实现</h2><p>沿着 NumPy 代码检查计算，用互动实验观察参数如何改变结果。</p><span class="go">进入项目 →</span></div></a></article>'''
     cards += ''.join(series_card(page, folder, name, desc, status, posts)
                      for folder, name, desc, _, status, posts in catalog)
-    body = f'<div class="section-head"><h2>三个项目，三种入口</h2><span class="meta">代码实验 / 五图观察 / 长文科普</span></div><div class="grid">{cards}</div>'
+    body = f'<div class="section-head"><h2>三个项目，三种入口</h2><span class="meta">代码实验 / 五图观察 / 长文科普</span></div><div class="grid three">{cards}</div>'
     write_page(page, '看得见的 AI', '', '从代码、图解与文章三个方向理解 AI。选择一个项目，开始实验、阅读或准备发布。', body, kind='home', readme_button=True)
     generated = [page]
     page = PYTHON / 'index.html'
