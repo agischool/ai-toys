@@ -20,7 +20,7 @@ def main():
     files = [*pages, *[p for p in (ROOT / '.site').rglob('*') if p.is_file() and '__pycache__' not in p.parts and p.name != '.DS_Store'],
              PYTHON / 'MANIFEST.sha256', ROOT / 'README.md', ROOT / 'package.json',
              ROOT / '.gitignore', ROOT / '.nojekyll']
-    for slug, _, _, _ in build_library.SERIES:
+    for slug, *_ in build_library.SERIES:
         files.append(ROOT / slug / 'README.md')
     for path in files:
         manifest.append((path.relative_to(ROOT).as_posix(), hashlib.sha256(path.read_bytes()).hexdigest()))

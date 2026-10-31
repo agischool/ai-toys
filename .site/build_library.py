@@ -7,10 +7,15 @@ import re
 
 ROOT = Path(__file__).resolve().parents[1]
 PYTHON = ROOT / 'Python实现'
+# (目录名, 显示名, 系列简介, 发布文案字段, 状态)
 SERIES = (
-    ('少年AI观察室', '少年 AI 观察室', '用 5 张图，沿着一条计算路线观察 AI。', '正文'),
-    ('青少年AI科普连载', '青少年 AI 科普连载', '从认猫开始，逐篇读懂 AI 的计算、训练与边界。', '摘要'),
+    ('少年AI观察室', '少年 AI 观察室', '用 5 张图，沿着一条计算路线观察 AI。', '正文', '已完结'),
+    ('青少年AI科普连载', '青少年 AI 科普连载', '从认猫开始，逐篇读懂 AI 的计算、训练与边界。', '摘要', '连载中'),
 )
+# 品牌标：「看得见」的眼睛，手绘 SVG，跟随文字颜色。
+BRAND_MARK = ('<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" focusable="false">'
+              '<circle cx="10" cy="10" r="8.25" fill="none" stroke="currentColor" stroke-width="1.5"/>'
+              '<circle cx="10" cy="10" r="3.4" fill="currentColor"/></svg>')
 
 
 def url(page, target):
@@ -42,27 +47,29 @@ def read_posts(folder):
     return posts
 
 
-def write_page(page, title, eyebrow, intro, body, series=None):
+def write_page(page, title, meta, intro, body, kind='page', readme_button=False):
     css = url(page, ROOT / '.site/library.css')
     js = url(page, ROOT / '.site/library.js')
     nav = link(page, PYTHON / 'index.html', 'Python 实现')
-    nav += ''.join(link(page, ROOT / slug / 'index.html', name) for slug, name, _, _ in SERIES)
+    nav += ''.join(link(page, ROOT / slug / 'index.html', name) for slug, name, *_ in SERIES)
     readme = page.parent / 'README.md'
     footer = link(page, readme, '阅读项目说明', 'text-link') if readme.exists() else link(page, page.parent / '发布文案.md', '查看 Markdown 原稿', 'text-link')
-    if readme.exists():
-        body = '<div class="actions">' + link(page, readme, '项目介绍与使用说明', 'button secondary') + '</div>' + body
+    meta_html = f'<p class="hero-meta">{meta}</p>' if meta else ''
+    actions = '<div class="actions">' + link(page, readme, '项目介绍与使用说明', 'button secondary') + '</div>' if readme_button and readme.exists() else ''
+    brand = f'<a class="brand" href="{url(page, ROOT / "index.html")}">{BRAND_MARK}看得见的 AI</a>'
     page.write_text(f'''<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f6f5ef">
 <title>{escape(title)} · 看得见的 AI</title><meta name="description" content="{escape(intro, quote=True)}">
 <link rel="stylesheet" href="{css}"><script src="{js}" defer></script></head>
-<body><header><div class="header-inner">{link(page, ROOT / 'index.html', '◉  看得见的 AI', 'brand')}<nav aria-label="主导航">{nav}</nav></div></header>
-<main><section class="hero"><p class="eyebrow">{escape(eyebrow)}</p><h1>{escape(title)}</h1><p class="intro">{escape(intro)}</p></section>
-{body}</main><footer><span>看得见的 AI · 阅读与发布材料</span>{footer}</footer></body></html>
+<body data-page="{kind}"><header><div class="header-inner">{brand}<nav aria-label="主导航">{nav}</nav></div></header>
+<main><section class="hero"><h1>{escape(title)}</h1>{meta_html}<p class="intro">{escape(intro)}</p></section>
+{actions}{body}</main><footer><span>看得见的 AI</span>{footer}</footer></body></html>
 ''', encoding='utf-8')
 
 
-def series_card(page, folder, name, description, posts):
-    return f'''<article class="card"><a href="{url(page, folder / 'index.html')}"><img src="{url(page, posts[0]['cover'])}" alt="{escape(name)}首期封面" loading="lazy"><div class="card-body"><p class="meta">16 期 · {'五图观察' if '观察' in name else '长文阅读'}</p><h2>{escape(name)}</h2><p>{escape(description)}</p><span class="go">进入系列 →</span></div></a></article>'''
+def series_card(page, folder, name, description, status, posts):
+    return f'''<article class="card"><a href="{url(page, folder / 'index.html')}"><img src="{url(page, posts[0]['cover'])}" alt="{escape(name)}首期封面" loading="lazy"><div class="card-body"><p class="meta">{escape(status)}</p><h2>{escape(name)}</h2><p>{escape(description)}</p><span class="go">进入系列 →</span></div></a></article>'''
 
 
 def copy_panel(label, value, index):
@@ -76,13 +83,14 @@ def figure(page, path, title):
 
 
 def build():
-    catalog = [(ROOT / slug, name, description, field, read_posts(ROOT / slug))
-               for slug, name, description, field in SERIES]
+    catalog = [(ROOT / slug, name, description, field, status, read_posts(ROOT / slug))
+               for slug, name, description, field, status in SERIES]
     page = ROOT / 'index.html'
-    cards = f'''<article class="card experiment"><a href="{url(page, PYTHON / 'index.html')}"><div class="experiment-art" aria-hidden="true">输入 <span>→</span> 计算 <span>→</span> 输出</div><div class="card-body"><p class="meta">10 个机制 · 代码与互动实验</p><h2>Python 实现</h2><p>沿着 NumPy 代码检查计算，用互动实验观察参数如何改变结果。</p><span class="go">进入项目 →</span></div></a></article>'''
-    cards += ''.join(series_card(page, folder, name, desc, posts) for folder, name, desc, _, posts in catalog)
+    cards = f'''<article class="card experiment"><a href="{url(page, PYTHON / 'index.html')}"><div class="experiment-art" aria-hidden="true">输入 <span>→</span> 计算 <span>→</span> 输出</div><div class="card-body"><p class="meta">10 个机制，代码与互动实验</p><h2>Python 实现</h2><p>沿着 NumPy 代码检查计算，用互动实验观察参数如何改变结果。</p><span class="go">进入项目 →</span></div></a></article>'''
+    cards += ''.join(series_card(page, folder, name, desc, status, posts)
+                     for folder, name, desc, _, status, posts in catalog)
     body = f'<div class="section-head"><h2>三个项目，三种入口</h2><span class="meta">代码实验 / 五图观察 / 长文科普</span></div><div class="grid">{cards}</div>'
-    write_page(page, '看得见的 AI', '项目首页', '从代码、图解与文章三个方向理解 AI。选择一个项目，开始实验、阅读或准备发布。', body)
+    write_page(page, '看得见的 AI', '', '从代码、图解与文章三个方向理解 AI。选择一个项目，开始实验、阅读或准备发布。', body, kind='home', readme_button=True)
     generated = [page]
     page = PYTHON / 'index.html'
     body = '<div class="actions">' + link(page, PYTHON / 'docs/chapters.html', '打开互动实验', 'button') + link(page, PYTHON / 'source/series_python/README.md', '阅读完整实现说明', 'button secondary') + link(page, PYTHON / 'docs/ai-toys-python.zip', '下载 Python 实现', 'button secondary') + '</div>'
@@ -91,16 +99,16 @@ def build():
         filename = 'index.html' if n == 1 else f't{n}.html'
         body += f'''<article class="card"><a href="{url(page, PYTHON / 'docs' / filename)}"><div class="card-body"><p class="meta">T{n:02d}</p><h2>{title}</h2><span class="go">打开实验 →</span></div></a></article>'''
     body += '</div><aside class="note"><h2>代码与浏览器实验</h2><p>完整 Python 实现包含训练、测试与历史实测输出。浏览器提供各章说明范围内的机制演示；缩小模型、固定参数和算子演示不能等同于完整训练结果。</p><p>互动实验需要通过 HTTP 打开。项目 README 提供本地运行方法。</p></aside>'
-    write_page(page, 'Python 实现', '独立项目 / 十个 AI 机制', '手写 NumPy 实现，配套中文说明、测试、实测输出与浏览器互动实验。', body)
+    write_page(page, 'Python 实现', '独立项目', '手写 NumPy 实现，配套中文说明、测试、实测输出与浏览器互动实验。', body, kind='project')
     generated.append(page)
-    for folder, name, description, field, posts in catalog:
+    for folder, name, description, field, status, posts in catalog:
         page = folder / 'index.html'
         cards = []
         for post in posts:
             entry = escape(post['number'] + ' ' + post['title'], quote=True)
-            cards.append(f'''<article class="card" data-entry="{entry}"><a href="{url(page, post['directory'] / 'index.html')}"><img src="{url(page, post['cover'])}" alt="第 {post['number']} 期封面" loading="lazy"><div class="card-body"><p class="meta">第 {post['number']} 期</p><h2>{escape(post['title'])}</h2><span class="go">阅读与发布 →</span></div></a></article>''')
-        body = '<div class="toolbar"><div class="search"><label for="search">查找一期</label><input type="search" id="search" data-search placeholder="输入标题关键词或期号" autocomplete="off"></div><span class="meta" id="result-count" role="status">16 / 16 期</span></div><div class="grid">' + ''.join(cards) + '</div><p class="empty" id="empty-state" hidden>没有找到匹配内容，请换个关键词。</p>'
-        write_page(page, name, '系列目录 / 16 期', description, body)
+            cards.append(f'''<article class="card slim" data-entry="{entry}"><a href="{url(page, post['directory'] / 'index.html')}"><img src="{url(page, post['cover'])}" alt="第 {post['number']} 期封面：{escape(post['title'], quote=True)}" loading="lazy"><div class="card-body"><h2 class="visually-hidden">{escape(post['title'])}</h2><p class="meta">第 {post['number']} 期</p><span class="go" aria-hidden="true">→</span></div></a></article>''')
+        body = f'<div class="toolbar"><div class="search"><label for="search">查找一期</label><input type="search" id="search" data-search placeholder="输入标题关键词或期号" autocomplete="off"></div><span class="meta" id="result-count" role="status">{len(posts)} / {len(posts)} 期</span></div><div class="grid">' + ''.join(cards) + '</div><p class="empty" id="empty-state" hidden>没有找到匹配内容，请换个关键词。</p>'
+        write_page(page, name, f'共 {len(posts)} 期', description, body, kind='catalog')
         generated.append(page)
         for i, post in enumerate(posts):
             directory = post['directory']
@@ -114,7 +122,7 @@ def build():
                 pictures = sorted((directory / '发布图片').glob('*.png'))
             else:
                 pictures = [p for p in sorted(directory.glob('*.png')) if not p.name.startswith('00_')]
-            body += f'<div class="section-head"><h2>正文配图</h2><span class="meta">{len(pictures)} 张 · 点击图片查看原图</span></div><div class="gallery">'
+            body += f'<div class="section-head"><h2>正文配图</h2><span class="meta">{len(pictures)} 张，点击图片查看原图</span></div><div class="gallery">'
             body += ''.join(figure(page, p, f'正文图 {n:02d}') for n, p in enumerate(pictures, 1)) + '</div>'
             square = sorted(directory.glob('*1x1.png'))
             if len(square) != 1:
@@ -125,8 +133,9 @@ def build():
             body += link(page, posts[i - 1]['directory'] / 'index.html', '← 上一期：' + posts[i - 1]['title']) if i else '<span></span>'
             body += link(page, posts[i + 1]['directory'] / 'index.html', '下一期：' + posts[i + 1]['title'] + ' →') if i < len(posts) - 1 else link(page, folder / 'index.html', '返回系列目录 →')
             body += '</nav>'
-            intro = '复制标题与描述，按顺序发布 5 张正文图。' if field == '正文' else '打开原有排版阅读全文，复制标题、摘要与排版正文。'
-            write_page(page, post['title'], f'{name} / 第 {post["number"]} 期', intro, body, folder)
+            intro = '复制标题与描述，按顺序发布 5 张正文图。' if field == '正文' else '打开排版页阅读全文，复制标题、摘要与排版正文。'
+            episode_meta = link(page, folder / 'index.html', name) + f'<span>第 {post["number"]} 期</span>'
+            write_page(page, post['title'], episode_meta, intro, body, kind='episode')
             generated.append(page)
     return generated
 
