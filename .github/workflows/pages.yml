@@ -10,7 +10,9 @@ permissions:
 
 concurrency:
   group: github-pages
-  cancel-in-progress: false
+  # 部署本身幂等，但 main 上的每个提交都应完整跑完构建与校验，
+  # 因此只在非默认分支取消进行中的运行。
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   build:
