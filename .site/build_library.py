@@ -47,7 +47,7 @@ def read_posts(folder):
     return posts
 
 
-def write_page(page, title, meta, intro, body, kind='page', readme_button=False):
+def write_page(page, title, meta, intro, body, kind='page', readme_button=False, reading_link=''):
     css = url(page, ROOT / '.site/library.css')
     js = url(page, ROOT / '.site/library.js')
     nav = link(page, PYTHON / 'index.html', 'Python 实现')
@@ -55,7 +55,12 @@ def write_page(page, title, meta, intro, body, kind='page', readme_button=False)
     readme = page.parent / 'README.md'
     footer = link(page, readme, '阅读项目说明', 'text-link') if readme.exists() else link(page, page.parent / '发布文案.md', '查看 Markdown 原稿', 'text-link')
     meta_html = f'<p class="hero-meta">{meta}</p>' if meta else ''
-    actions = '<div class="actions">' + link(page, readme, '项目介绍与使用说明', 'button secondary') + '</div>' if readme_button and readme.exists() else ''
+    buttons = ''
+    if reading_link:
+        buttons += link(page, reading_link, '开始阅读 →', 'button')
+    if readme_button and readme.exists():
+        buttons += link(page, readme, '项目介绍与使用说明', 'button secondary')
+    actions = f'<div class="actions">{buttons}</div>' if buttons else ''
     brand = f'<a class="brand" href="{url(page, ROOT / "index.html")}">{BRAND_MARK}看得见的 AI</a>'
     page.write_text(f'''<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -90,7 +95,10 @@ def build():
     cards += ''.join(series_card(page, folder, name, desc, status, posts)
                      for folder, name, desc, _, status, posts in catalog)
     body = f'<div class="section-head"><h2>三个项目，三种入口</h2><span class="meta">代码实验 / 五图观察 / 长文科普</span></div><div class="grid three">{cards}</div>'
-    write_page(page, '看得见的 AI', '', '从代码、图解与文章三个方向理解 AI。选择一个项目，开始实验、阅读或准备发布。', body, kind='home', readme_button=True)
+    # 读者视角的最短路径：首页直达连载第一期的排版页（不经过系列目录与期目录）。
+    serial = next((folder, posts) for folder, _, _, field, _, posts in catalog if field == '摘要')
+    first_read = serial[0] / serial[1][0]['directory'].name / '公众号_排版.html'
+    write_page(page, '看得见的 AI', '', '从代码、图解与文章三个方向理解 AI。选择一个项目，开始实验、阅读或准备发布。', body, kind='home', readme_button=True, reading_link=first_read)
     generated = [page]
     page = PYTHON / 'index.html'
     body = '<div class="actions">' + link(page, PYTHON / 'docs/chapters.html', '打开互动实验', 'button') + link(page, PYTHON / 'source/series_python/README.md', '阅读完整实现说明', 'button secondary') + link(page, PYTHON / 'docs/ai-toys-python.zip', '下载 Python 实现', 'button secondary') + '</div>'
