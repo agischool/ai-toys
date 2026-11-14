@@ -12,3 +12,20 @@ node_modules/
 # Locally assembled publication archives.
 /少年AI观察室/**/*.zip
 /青少年AI科普连载/**/*.zip
+
+# Account-specific publishing files, generated imports and scheduler checks.
+/公众号导入文件/*
+!/公众号导入文件/convert.py
+/scripts/schedule-checks/
+/青少年AI科普连载/公众号发布排期.md
+
+# Local production notes and superseded working drafts.
+/制作记录_*.md
+/打磨记录_*.md
+/风格统一记录_*.md
+/连载打磨交付记录.md
+/风格统一交付记录.md
+/连载打磨需求看板.md
+/青少年AI科普连载/*/制作记录.md
+/选题研究/2026-11-12_外部仓库公众号改编/样稿_工具调用/
+/选题研究/2026-11-12_外部仓库公众号改编/21-*
