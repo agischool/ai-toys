@@ -21,7 +21,7 @@
 <tr>
 <td><strong>10 个 AI 机制</strong>：NumPy 实现、中文说明、测试、历史实测输出与互动实验。适合运行代码、修改参数和检查计算。</td>
 <td><strong>16 期五图内容</strong>：标题、描述、5 张正文图及封面。适合逐图阅读与公众号图片贴图发布。</td>
-<td><strong>16 篇长文章</strong>：排版 HTML、Markdown 正文、标题、摘要、配图与封面。适合连续阅读与公众号长文发布。</td>
+<td><strong>5 套短系列，每套 4—6 篇</strong>：排版 HTML、Markdown 正文、标题、摘要、配图与封面。可任选一套阅读与发布。</td>
 </tr>
 <tr>
 <td><a href="Python%E5%AE%9E%E7%8E%B0/README.html">项目说明</a> · <a href="../../Python%E5%AE%9E%E7%8E%B0/index.html">网页入口</a></td>
@@ -31,12 +31,12 @@
 </tbody>
 </table></div>
 <p>点击预览图进入对应项目说明。Python 预览为随包历史实测图，两套公众号预览为各自首期封面。</p>
-<p>Python 项目使用 T1–T10 编号；两套公众号系列分别使用 01–16 编号。它们是三个内容项目，各自保留完整材料与使用说明。</p>
+<p>Python 项目使用 T1–T10 编号；观察室使用 01–16 编号，长文的旧编号 01–24 用作总索引。它们是三个内容项目，各自保留完整材料与使用说明。长文分为五套独立的公众号短系列，每套 4—6 篇，从第 1 篇开始。选读入口见<a href="../../%E9%9D%92%E5%B0%91%E5%B9%B4AI%E7%A7%91%E6%99%AE%E8%BF%9E%E8%BD%BD/index.html">短系列目录</a>。</p>
 <h2 id="目录结构">目录结构</h2>
 <pre><code class="language-text">.
 ├── Python实现/           # 代码、互动实验、测试与实测输出
 ├── 少年AI观察室/         # 16 期五图观察
-├── 青少年AI科普连载/     # 16 篇长文科普
+├── 青少年AI科普连载/     # 5 套公众号短系列
 ├── README.md            # 三个项目的介绍与入口
 ├── index.html           # 三个项目的网页首页
 ├── .site/               # 共用网页样式、复制功能与生成脚本
@@ -55,7 +55,7 @@
 <pre><code class="language-sh">npm run build
 npm test
 </code></pre>
-<p>构建会更新三个项目的网页入口、Python 互动实验站、下载包和校验清单。公众号入口页从每期 <code>发布文案.md</code> 和现有图片生成；长文的 <code>正文.md</code> 与 <code>公众号_排版.html</code> 是独立文件，改稿后须同步排版正文。</p>
+<p>构建会更新三个项目的网页入口、Python 互动实验站、下载包和校验清单。公众号入口页从每期 <code>发布文案.md</code> 和现有图片生成；长文的 <code>公众号_排版.html</code> 从 <code>正文.md</code> 生成，保留内联样式并嵌入本期图片。改稿后运行 <code>npm run build</code> 同步正文与排版，避免手动维护两份正文。</p>
 <p>各级 README 的图片和链接可在 GitHub 中直接查看；本地网页中的「项目说明」使用生成的图文阅读页，Markdown 保留为源文件。修改 README 后运行 <code>npm run build</code> 更新阅读页。</p>
 <p>共用网页工具集中在 <code>.site/</code>；Python 项目也可以进入自己的目录独立构建和测试。历史实测输出保留在 <code>Python实现/source/series_python/outputs/</code>，本地重跑应另存。</p>
 <h2 id="github-网页与许可">GitHub 网页与许可</h2>

@@ -9,7 +9,9 @@ const OUTPUT = path.join(__dirname, 'readmes');
 const sources = [
   'README.md', 'Python实现/README.md', '少年AI观察室/README.md',
   '青少年AI科普连载/README.md', 'Python实现/tests/README.md',
-  'Python实现/source/t1_python/README.md', 'Python实现/source/series_python/README.md'
+  'Python实现/source/t1_python/README.md', 'Python实现/source/series_python/README.md',
+  'Python实现/source/campus_agent_lab/README.md',
+  'Python实现/source/continuation_mechanisms/README.md'
 ];
 const targets = new Map(sources.map(rel => [path.join(ROOT, rel), path.join(OUTPUT, rel.replace(/\.md$/, '.html'))]));
 const escape = value => String(value).replace(/[&<>"']/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));

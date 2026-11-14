@@ -28,8 +28,14 @@
         card.hidden = !card.dataset.entry.toLocaleLowerCase().includes(query);
         if (!card.hidden) visible++;
       });
-      count.textContent = `${visible} / ${cards.length} 期`;
+      document.querySelectorAll('[data-unit]').forEach(unit => {
+        unit.hidden = ![...unit.querySelectorAll('[data-entry]')].some(card => !card.hidden);
+      });
+      count.textContent = `${visible} / ${cards.length} ${search.dataset.countUnit || '期'}`;
       empty.hidden = visible !== 0;
     });
+    document.querySelectorAll('.unit-nav a').forEach(link => link.addEventListener('click', () => {
+      if (search.value) { search.value = ''; search.dispatchEvent(new Event('input')); }
+    }));
   }
 })();

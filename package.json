@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "build": "python3 .site/build.py",
-    "test": "npm --prefix Python实现 test",
+    "test": "npm --prefix Python实现 test && python3 .site/check_articles.py && python3 -m unittest discover -s Python实现/source/campus_agent_lab -v",
+    "test:continuation": "uv run --python 3.13 --with numpy==2.5.4 --with matplotlib==3.11.2 python -m unittest discover -s Python实现/source/continuation_mechanisms/tests -v",
     "serve": "python3 -m http.server 4174 --bind 127.0.0.1 --directory .",
     "serve:library": "npm run serve",
     "serve:experiments": "npm --prefix Python实现 run serve",

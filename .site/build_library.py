@@ -1,16 +1,18 @@
 """Generate file://-friendly publication pages from the existing Markdown and PNGs."""
 from html import escape
 from pathlib import Path
-from urllib.parse import quote
+from urllib.parse import quote, unquote
 import os
 import re
+import json
 
 ROOT = Path(__file__).resolve().parents[1]
 PYTHON = ROOT / 'Python实现'
+SERIAL_UNITS = json.loads((ROOT / '.site/serial_units.json').read_text())
 # (目录名, 显示名, 系列简介, 发布文案字段, 状态)
 SERIES = (
     ('少年AI观察室', '少年 AI 观察室', '用 5 张图，沿着一条计算路线观察 AI。', '正文', '已完结'),
-    ('青少年AI科普连载', '青少年 AI 科普连载', '从认猫开始，逐篇读懂 AI 的计算、训练与边界。', '摘要', '连载中'),
+    ('青少年AI科普连载', '青少年 AI 科普连载', '五套可以独立阅读的短系列，每套 4—6 篇。选择一个感兴趣的问题开始。', '摘要', '连载中'),
 )
 # 品牌标：「看得见」的眼睛，手绘 SVG，跟随文字颜色。
 BRAND_MARK = ('<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" focusable="false">'
@@ -42,8 +44,11 @@ def read_posts(folder):
             raise ValueError(f'Expected one wide cover: {directory}')
         posts.append({'directory': directory, 'number': directory.name[:2],
                       'title': fields['标题'], 'fields': fields, 'cover': covers[0]})
-    if len(posts) != 16:
-        raise ValueError(f'Expected 16 posts: {folder}, got {len(posts)}')
+    if folder.name == '少年AI观察室' and len(posts) != 16:
+        raise ValueError(f'Expected 16 observation posts: {folder}, got {len(posts)}')
+    numbers = [int(post['number']) for post in posts]
+    if not numbers or numbers != list(range(1, len(posts) + 1)):
+        raise ValueError(f'Post numbers must be contiguous from 01: {folder}')
     return posts
 
 
@@ -112,24 +117,54 @@ def build():
     for folder, name, description, field, status, posts in catalog:
         page = folder / 'index.html'
         cards = []
-        for post in posts:
-            entry = escape(post['number'] + ' ' + post['title'], quote=True)
-            cards.append(f'''<article class="card slim" data-entry="{entry}"><a href="{url(page, post['directory'] / 'index.html')}"><img src="{url(page, post['cover'])}" alt="第 {post['number']} 期封面：{escape(post['title'], quote=True)}" loading="lazy"><div class="card-body"><h2 class="visually-hidden">{escape(post['title'])}</h2><p class="meta">第 {post['number']} 期</p><span class="go" aria-hidden="true">→</span></div></a></article>''')
-        body = f'<div class="toolbar"><div class="search"><label for="search">查找一期</label><input type="search" id="search" data-search placeholder="输入标题关键词或期号" autocomplete="off"></div><span class="meta" id="result-count" role="status">{len(posts)} / {len(posts)} 期</span></div><div class="grid">' + ''.join(cards) + '</div><p class="empty" id="empty-state" hidden>没有找到匹配内容，请换个关键词。</p>'
-        write_page(page, name, f'共 {len(posts)} 期', description, body, kind='catalog')
+        if field != '摘要':
+            for post in posts:
+                entry = escape(post['number'] + ' ' + post['title'], quote=True)
+                cards.append(f'''<article class="card slim" data-entry="{entry}"><a href="{url(page, post['directory'] / 'index.html')}"><img src="{url(page, post['cover'])}" alt="第 {post['number']} 期封面：{escape(post['title'], quote=True)}" loading="lazy"><div class="card-body"><h2 class="visually-hidden">{escape(post['title'])}</h2><p class="meta">第 {post['number']} 期</p><span class="go" aria-hidden="true">→</span></div></a></article>''')
+        serial = field == '摘要'
+        count = len(SERIAL_UNITS) if serial else len(posts)
+        noun = '套' if serial else '期'
+        search_label = '查找短系列' if serial else '查找一期'
+        toolbar = f'<div class="toolbar"><div class="search"><label for="search">{search_label}</label><input type="search" id="search" data-search data-count-unit="{noun}" placeholder="输入标题关键词或期号" autocomplete="off"></div><span class="meta" id="result-count" role="status">{count} / {count} {noun}</span></div>'
+        if field == '摘要':
+            entries = []
+            for unit in SERIAL_UNITS:
+                series_page = folder / (unit['id'] + '.html')
+                series_posts = posts[unit['from'] - 1:unit['to']]
+                count = len(series_posts)
+                series_body = '<ol>'
+                for article in series_posts:
+                    item = link(series_page, article['directory'] / 'index.html', article['title'])
+                    series_body += f'<li><p>{item} <small>（总索引 {article["number"]}）</small></p></li>'
+                series_body += '</ol>'
+                write_page(series_page, unit['name'], f'独立系列 · 共 {count} 篇', unit['description'], series_body,
+                           reading_link=series_posts[0]['directory'] / '公众号_排版.html')
+                generated.append(series_page)
+                keywords = ' '.join(p['number'] + ' ' + p['title'] for p in series_posts)
+                entries.append(f'<article class="card" id="{unit["id"]}" data-entry="{escape(unit["name"] + " " + keywords, quote=True)}"><a href="{url(page, series_page)}"><img src="{url(page, series_posts[0]["cover"])}" alt="" loading="lazy"><div class="card-body"><p class="meta">{count} 篇</p><h2>{escape(unit["name"])}</h2><p>{escape(unit["description"])}</p></div></a></article>')
+            body = toolbar + '<div class="grid">' + ''.join(entries) + '</div>'
+        else:
+            body = toolbar + '<div class="grid">' + ''.join(cards) + '</div>'
+        body += '<p class="empty" id="empty-state" hidden>没有找到匹配内容，请换个关键词。</p>'
+        write_page(page, name, f'{len(SERIAL_UNITS)} 套短系列' if field == '摘要' else f'共 {len(posts)} 期', description, body, kind='catalog')
         generated.append(page)
         for i, post in enumerate(posts):
             directory = post['directory']
             page = directory / 'index.html'
             body = ''
             if field == '摘要':
+                unit = next(unit for unit in SERIAL_UNITS if unit['from'] <= int(post['number']) <= unit['to'])
+                series_page = folder / (unit['id'] + '.html')
+                local_number = i + 2 - unit['from']
+                body += '<p class="unit-description">' + link(page, series_page, '本系列目录 · ' + unit['name']) + '</p>'
                 body += '<div class="actions">' + link(page, directory / '公众号_排版.html', '阅读 / 复制排版正文', 'button') + link(page, directory / '正文.md', '查看正文 Markdown', 'button secondary') + '</div><p class="hint">打开排版页后点击「选中正文」，再复制到公众号正文编辑区。</p>'
             body += '<div class="section-head"><h2>发布文案</h2><span class="meta">点击按钮复制纯文本</span></div><div class="copy-grid">'
             body += copy_panel('标题', post['title'], 0) + copy_panel(field, post['fields'][field], 1) + '</div>'
             if field == '正文':
                 pictures = sorted((directory / '发布图片').glob('*.png'))
             else:
-                pictures = [p for p in sorted(directory.glob('*.png')) if not p.name.startswith('00_')]
+                source = (directory / '正文.md').read_text(encoding='utf-8')
+                pictures = [directory / unquote(src) for src in re.findall(r'^!\[[^\]]*\]\(([^)]+)\)', source, re.M)]
             body += f'<div class="section-head"><h2>正文配图</h2><span class="meta">{len(pictures)} 张，点击图片查看原图</span></div><div class="gallery">'
             body += ''.join(figure(page, p, f'正文图 {n:02d}') for n, p in enumerate(pictures, 1)) + '</div>'
             square = sorted(directory.glob('*1x1.png'))
@@ -138,11 +173,13 @@ def build():
             body += '<div class="section-head"><h2>封面</h2><span class="meta">横版主封面 / 方形分享封面</span></div><div class="covers">'
             body += figure(page, post['cover'], '横版主封面') + figure(page, square[0], '方形分享封面') + '</div>'
             body += '<aside class="note"><p>发布前核对本期文案和配图，按实际制作方式填写平台 AI 标识，并发送手机预览。</p></aside><nav class="pager" aria-label="期数导航">'
-            body += link(page, posts[i - 1]['directory'] / 'index.html', '← 上一期：' + posts[i - 1]['title']) if i else '<span></span>'
-            body += link(page, posts[i + 1]['directory'] / 'index.html', '下一期：' + posts[i + 1]['title'] + ' →') if i < len(posts) - 1 else link(page, folder / 'index.html', '返回系列目录 →')
+            body += link(page, posts[i - 1]['directory'] / 'index.html', '← 上一期：' + posts[i - 1]['title']) if i and (field != '摘要' or i + 1 > unit['from']) else '<span></span>'
+            body += link(page, posts[i + 1]['directory'] / 'index.html', '下一期：' + posts[i + 1]['title'] + ' →') if i < len(posts) - 1 and (field != '摘要' or i + 1 < unit['to']) else link(page, series_page if field == '摘要' else folder / 'index.html', '返回系列目录 →')
             body += '</nav>'
             intro = '复制标题与描述，按顺序发布 5 张正文图。' if field == '正文' else '打开排版页阅读全文，复制标题、摘要与排版正文。'
             episode_meta = link(page, folder / 'index.html', name) + f'<span>第 {post["number"]} 期</span>'
+            if field == '摘要':
+                episode_meta = link(page, series_page, unit['name']) + f'<span>第 {local_number} 篇 / 共 {unit["to"] - unit["from"] + 1} 篇 · 总索引 {post["number"]}</span>'
             write_page(page, post['title'], episode_meta, intro, body, kind='episode')
             generated.append(page)
     return generated

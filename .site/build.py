@@ -10,6 +10,7 @@ PYTHON = ROOT / 'Python实现'
 
 
 def main():
+    subprocess.run(["node", str(ROOT / ".site/render_articles.cjs")], check=True)
     subprocess.run([sys.executable, str(PYTHON / 'scripts/build.py')], check=True)
     pages = build_library.build()
     subprocess.run(["node", str(ROOT / ".site/render_readmes.cjs")], check=True)

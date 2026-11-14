@@ -9,7 +9,7 @@ from urllib.parse import unquote, urlsplit
 ROOT = Path(__file__).resolve().parents[1]
 PROJECTS = {'Python实现', '少年AI观察室', '青少年AI科普连载'}
 ROOT_FILES = {'index.html', 'README.md', '.nojekyll'}
-RUNTIME_FILES = {'.site/library.css', '.site/library.js'}
+RUNTIME_FILES = {'.site/library.css', '.site/library.js', '.site/assets/serial-robot.png'}
 
 
 class Page(HTMLParser):
@@ -65,7 +65,9 @@ def main():
     if destination.is_relative_to(ROOT):
         parser.error('Use a new temporary directory outside this checkout')
     destination.mkdir(parents=True, exist_ok=False)
-    tracked = subprocess.check_output(['git', 'ls-files', '-z'], cwd=ROOT).decode('utf-8').split('\0')
+    tracked = subprocess.check_output(
+        ['git', 'ls-files', '--cached', '--others', '--exclude-standard', '-z'],
+        cwd=ROOT).decode('utf-8').split('\0')
     count = 0
     for name in filter(None, tracked):
         rel = Path(name)
