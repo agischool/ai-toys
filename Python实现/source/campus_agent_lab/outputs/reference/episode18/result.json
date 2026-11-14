@@ -1,0 +1,277 @@
+{
+  "episode": 18,
+  "notice": "构造资料与规则程序的本地执行；没有调用真实模型，不代表模型能力测评。",
+  "cases": [
+    {
+      "case": "success",
+      "status": "suggested",
+      "task": {
+        "period": "本学期",
+        "day": "周二",
+        "start": 15,
+        "end": 16,
+        "equipment": "投影仪",
+        "ramp": true
+      },
+      "suggestion": {
+        "venue_id": "V1",
+        "name": "科学活动室",
+        "hours_source": "S1",
+        "details_source": "E1"
+      },
+      "action_scope": "仅建议；没有预约工具，也不执行预约",
+      "trace": [
+        {
+          "request_id": "Q1",
+          "tool": "search_venues",
+          "args": {
+            "period": "本学期",
+            "day": "周二",
+            "start": 15,
+            "end": 16
+          },
+          "executed": true,
+          "status": "ok",
+          "result": [
+            {
+              "venue_id": "V1",
+              "name": "科学活动室",
+              "period": "本学期",
+              "day": "周二",
+              "start": 15,
+              "end": 17,
+              "hours_source": "S1"
+            },
+            {
+              "venue_id": "V2",
+              "name": "阅览活动室",
+              "period": "本学期",
+              "day": "周二",
+              "start": 15,
+              "end": 17,
+              "hours_source": "S2"
+            }
+          ]
+        },
+        {
+          "request_id": "Q2",
+          "tool": "read_details",
+          "args": {
+            "venue_id": "V1"
+          },
+          "executed": true,
+          "status": "ok",
+          "result": {
+            "equipment": [
+              "投影仪"
+            ],
+            "ramp": true,
+            "source": "E1",
+            "conflict": false
+          }
+        }
+      ],
+      "candidate_checks": [
+        {
+          "venue_id": "V1",
+          "eligible": true,
+          "equipment_satisfied": true,
+          "ramp_satisfied": true
+        }
+      ],
+      "tool_calls": 2,
+      "max_steps": 4
+    },
+    {
+      "case": "missing_equipment",
+      "status": "insufficient_evidence",
+      "task": {
+        "period": "本学期",
+        "day": "周二",
+        "start": 15,
+        "end": 16,
+        "equipment": "投影仪",
+        "ramp": true
+      },
+      "suggestion": null,
+      "action_scope": "仅建议；没有预约工具，也不执行预约",
+      "trace": [
+        {
+          "request_id": "Q1",
+          "tool": "search_venues",
+          "args": {
+            "period": "本学期",
+            "day": "周二",
+            "start": 15,
+            "end": 16
+          },
+          "executed": true,
+          "status": "ok",
+          "result": [
+            {
+              "venue_id": "V1",
+              "name": "科学活动室",
+              "period": "本学期",
+              "day": "周二",
+              "start": 15,
+              "end": 17,
+              "hours_source": "S1"
+            },
+            {
+              "venue_id": "V2",
+              "name": "阅览活动室",
+              "period": "本学期",
+              "day": "周二",
+              "start": 15,
+              "end": 17,
+              "hours_source": "S2"
+            }
+          ]
+        },
+        {
+          "request_id": "Q2",
+          "tool": "read_details",
+          "args": {
+            "venue_id": "V1"
+          },
+          "executed": true,
+          "status": "ok",
+          "result": {
+            "equipment": null,
+            "ramp": true,
+            "source": "E1",
+            "conflict": false
+          }
+        }
+      ],
+      "candidate_checks": [],
+      "tool_calls": 2,
+      "max_steps": 4
+    },
+    {
+      "case": "repeated_call",
+      "status": "blocked_repeat",
+      "task": {
+        "period": "本学期",
+        "day": "周二",
+        "start": 15,
+        "end": 16,
+        "equipment": "投影仪",
+        "ramp": true
+      },
+      "suggestion": null,
+      "action_scope": "仅建议；没有预约工具，也不执行预约",
+      "trace": [
+        {
+          "request_id": "Q1",
+          "tool": "search_venues",
+          "args": {
+            "period": "本学期",
+            "day": "周二",
+            "start": 15,
+            "end": 16
+          },
+          "executed": true,
+          "status": "ok",
+          "result": [
+            {
+              "venue_id": "V1",
+              "name": "科学活动室",
+              "period": "本学期",
+              "day": "周二",
+              "start": 15,
+              "end": 17,
+              "hours_source": "S1"
+            },
+            {
+              "venue_id": "V2",
+              "name": "阅览活动室",
+              "period": "本学期",
+              "day": "周二",
+              "start": 15,
+              "end": 17,
+              "hours_source": "S2"
+            }
+          ]
+        },
+        {
+          "request_id": "Q2",
+          "tool": "search_venues",
+          "args": {
+            "period": "本学期",
+            "day": "周二",
+            "start": 15,
+            "end": 16
+          },
+          "status": "blocked_repeat",
+          "executed": false,
+          "result": "相同请求已执行，停止重复查询"
+        }
+      ],
+      "candidate_checks": [],
+      "tool_calls": 1,
+      "max_steps": 4
+    },
+    {
+      "case": "step_limit",
+      "status": "blocked_step_limit",
+      "task": {
+        "period": "本学期",
+        "day": "周二",
+        "start": 15,
+        "end": 16,
+        "equipment": "投影仪",
+        "ramp": true
+      },
+      "suggestion": null,
+      "action_scope": "仅建议；没有预约工具，也不执行预约",
+      "trace": [
+        {
+          "request_id": "Q1",
+          "tool": "search_venues",
+          "args": {
+            "period": "本学期",
+            "day": "周二",
+            "start": 15,
+            "end": 16
+          },
+          "executed": true,
+          "status": "ok",
+          "result": [
+            {
+              "venue_id": "V1",
+              "name": "科学活动室",
+              "period": "本学期",
+              "day": "周二",
+              "start": 15,
+              "end": 17,
+              "hours_source": "S1"
+            },
+            {
+              "venue_id": "V2",
+              "name": "阅览活动室",
+              "period": "本学期",
+              "day": "周二",
+              "start": 15,
+              "end": 17,
+              "hours_source": "S2"
+            }
+          ]
+        },
+        {
+          "request_id": "Q2",
+          "tool": "read_details",
+          "args": {
+            "venue_id": "V1"
+          },
+          "status": "blocked_step_limit",
+          "executed": false,
+          "result": "已达到本例工具执行步数限制"
+        }
+      ],
+      "candidate_checks": [],
+      "tool_calls": 1,
+      "max_steps": 1
+    }
+  ]
+}

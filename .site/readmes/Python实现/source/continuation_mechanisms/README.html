@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>训练、缓存与稀疏路由机制实验 · 项目说明</title><link rel="stylesheet" href="../../../../library.css"></head>
+<body><header><div class="header-inner"><a class="brand" href="../../../../../index.html">◉ 看得见的 AI</a><nav aria-label="项目导航"><a href="../../../../../Python%E5%AE%9E%E7%8E%B0/index.html">Python 实现</a><a href="../../../../../%E5%B0%91%E5%B9%B4AI%E8%A7%82%E5%AF%9F%E5%AE%A4/index.html">少年 AI 观察室</a><a href="../../../../../%E9%9D%92%E5%B0%91%E5%B9%B4AI%E7%A7%91%E6%99%AE%E8%BF%9E%E8%BD%BD/index.html">青少年 AI 科普连载</a></nav></div></header>
+<main class="readme"><div class="actions"><a class="button secondary" href="../../../../../index.html">返回三个项目</a><a class="text-link" href="../../../../../Python%E5%AE%9E%E7%8E%B0/source/continuation_mechanisms/README.md">查看 Markdown 源文件</a></div><article><h1 id="训练缓存与稀疏路由机制实验">训练、缓存与稀疏路由机制实验</h1>
+<p>为长文第 21—23 期提供三个小型数值实验：答案区间损失和一次参数更新、因果模型的 K/V 增量缓存、四个专家中选择两个并合并输出。全部使用构造输入，没有模型服务或付费 API 调用。</p>
+<h2 id="运行">运行</h2>
+<p>需要 Python 3.11+ 及本仓库现有 Python 实验依赖 NumPy、Matplotlib。Matplotlib 由 T08 共用模块导入，本实验不生成图；不需要 PyTorch、GPU 或下载模型。下面从仓库根目录运行，uv 可建立临时环境：</p>
+<pre><code class="language-sh">uv run --python 3.13 --with numpy==2.5.4 --with matplotlib==3.11.2 python Python实现/source/continuation_mechanisms/run_all.py --output /tmp/continuation-mechanisms-my-run
+</code></pre>
+<p>输出目录必须尚不存在；目录存在时立即退出，不覆盖历史结果。失败运行保留新建目录，下次换一个目录名。成功后在 <code>result.json</code> 查看输入、计算结果、环境和引用核心文件哈希。</p>
+<pre><code class="language-sh">uv run --python 3.13 --with numpy==2.5.4 --with matplotlib==3.11.2 python -m unittest discover -s Python实现/source/continuation_mechanisms/tests -v
+</code></pre>
+<h2 id="结果能说明什么">结果能说明什么</h2>
+<div class="readme-table"><table>
+<thead>
+<tr>
+<th>字段</th>
+<th>计算</th>
+<th>边界</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sft_loss_mask</code></td>
+<td><code>&lt;abcd|abcd&gt;</code> 中只对答案及结束符计损失，实际执行一次梯度下降，记录参数变化</td>
+<td>单条复制任务的训练机制；不是自然语言指令模型微调，也没有能力提升测评；输入仍能经注意力影响答案</td>
+</tr>
+<tr>
+<td><code>kv_cache</code></td>
+<td>同一 T08 模型、固定输入，对照每个前缀与逐位置缓存的 logits；用错误位置偏移作负对照</td>
+<td>两个随机模型及可用的随包历史权重；没有计时或加速主张。投影计数对 K、V 分别统计，缓存字节只计数组逻辑负载</td>
+</tr>
+<tr>
+<td><code>moe</code></td>
+<td>给出全部路由分数、概率、专家矩阵、选中输出与重新归一权重，得到 <code>[2.4, 4.8]</code></td>
+<td>未训练路由器或专家；参数计数只覆盖专家矩阵，不能据此推断完整模型速度或显存</td>
+</tr>
+</tbody>
+</table></div>
+<p>缓存模型读取 <a href="../../../../../Python%E5%AE%9E%E7%8E%B0/source/series_python/toys/t08_transformer.py">T08</a> 并复用 <a href="../../../../../Python%E5%AE%9E%E7%8E%B0/source/series_python/toys/t07_attention.py">T07 注意力</a> 的真实数值实现；不改动核心代码或历史权重。随包历史权重缺失时，仍检查两个固定种子的随机模型，结果会记录实际模型数。</p>
+<h2 id="材料">材料</h2>
+<ul>
+<li><a href="../../../../../Python%E5%AE%9E%E7%8E%B0/source/continuation_mechanisms/outputs/reference/result.json">参考结果</a>：一次本地运行，保存完整计算字段。</li>
+<li><a href="../../../../../Python%E5%AE%9E%E7%8E%B0/source/continuation_mechanisms/SOURCES.md">来源与设计边界</a>。</li>
+<li><a href="../../../../../Python%E5%AE%9E%E7%8E%B0/source/continuation_mechanisms/mechanisms.py">机制实现</a>、<a href="../../../../../Python%E5%AE%9E%E7%8E%B0/source/continuation_mechanisms/run_all.py">运行入口</a>、<a href="../../../../../Python%E5%AE%9E%E7%8E%B0/source/continuation_mechanisms/tests/test_mechanisms.py">检查</a>。</li>
+</ul>
+<p>这些结果验证实现的数值性质，不等于独立数据上的泛化评估。正式原理图可按结果绘制，不把玩具计算写成完整产品训练或性能复现。</p>
+</article></main>
+<footer><span>看得见的 AI · 图文说明</span><a class="text-link" href="../../../../../Python%E5%AE%9E%E7%8E%B0/source/continuation_mechanisms/README.md">Markdown 源文件</a></footer></body></html>

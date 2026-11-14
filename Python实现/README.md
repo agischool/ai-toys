@@ -19,6 +19,8 @@ T1 线性回归、T2 逻辑回归、T3 多层网络、T4 CNN、T5 残差、T6 RN
 | 路径 | 用途 |
 | --- | --- |
 | [source/series_python/](source/series_python/README.md) | 十个完整实现、文章、测试和历史实测输出 |
+| [source/campus_agent_lab/](source/campus_agent_lab/README.md) | 连载 17—20 期共用的标准库校园助手规则演示、测试及执行记录；无模型调用 |
+| [source/continuation_mechanisms/](source/continuation_mechanisms/README.md) | 连载 21—23 期的回答区间损失、K/V 缓存与专家路由数值实验；不使用模型服务或 GPU |
 | [source/t1_python/](source/t1_python/README.md) | T1 独立样章、数值夹具和测试 |
 | [source/web/](source/web/) | 浏览器页面、交互控制器与数值引擎 |
 | [docs/](docs/chapters.html) | 生成的互动实验站及两个 Python 下载包 |

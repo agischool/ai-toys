@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>校园助手规则模拟实验（第 17—20 期） · 项目说明</title><link rel="stylesheet" href="../../../../library.css"></head>
+<body><header><div class="header-inner"><a class="brand" href="../../../../../index.html">◉ 看得见的 AI</a><nav aria-label="项目导航"><a href="../../../../../Python%E5%AE%9E%E7%8E%B0/index.html">Python 实现</a><a href="../../../../../%E5%B0%91%E5%B9%B4AI%E8%A7%82%E5%AF%9F%E5%AE%A4/index.html">少年 AI 观察室</a><a href="../../../../../%E9%9D%92%E5%B0%91%E5%B9%B4AI%E7%A7%91%E6%99%AE%E8%BF%9E%E8%BD%BD/index.html">青少年 AI 科普连载</a></nav></div></header>
+<main class="readme"><div class="actions"><a class="button secondary" href="../../../../../index.html">返回三个项目</a><a class="text-link" href="../../../../../Python%E5%AE%9E%E7%8E%B0/source/campus_agent_lab/README.md">查看 Markdown 源文件</a></div><article><h1 id="校园助手规则模拟实验第-1720-期">校园助手规则模拟实验（第 17—20 期）</h1>
+<p>用固定校园资料逐步展示工具调用、多步流程、输入组织和结果验收。所有学校、公告、场地、需求与故障都是原创构造材料。程序只用 Python 标准库，<strong>没有调用真实模型</strong>，不访问网络、不执行终端工具，也不执行预约。</p>
+<p>运行结果可证明这些规则分支怎样执行，不能证明语言模型能选择相同步骤，也不是 CS329Z 作业的实现或模型测评复现。</p>
+<h2 id="运行与保存">运行与保存</h2>
+<p>需要 Python 3.11+，无须安装依赖。在仓库根目录运行：</p>
+<pre><code class="language-sh">python3 Python实现/source/campus_agent_lab/lab.py --episode 17
+python3 Python实现/source/campus_agent_lab/lab.py --episode 18
+python3 Python实现/source/campus_agent_lab/lab.py --episode 19
+python3 Python实现/source/campus_agent_lab/lab.py --episode 20
+</code></pre>
+<p>默认在本目录 <code>outputs/runs/</code> 中创建带 UTC 时间的独立目录，同时打印结果。自行指定目录时：</p>
+<pre><code class="language-sh">python3 Python实现/source/campus_agent_lab/lab.py --episode 17 --output /tmp/campus-17-new-run
+</code></pre>
+<p>指定目录必须尚不存在；即使是空目录，程序也拒绝写入。每次生成 <code>result.json</code>，不覆盖历史输出。<code>outputs/reference/</code> 保存本版本可复核的四份固定结果；生成结果不含时间戳，因此正文相同。不要将重跑目标指向已有参考目录。</p>
+<h2 id="共享资料">共享资料</h2>
+<p>资料源文件是 <a href="../../../../../Python%E5%AE%9E%E7%8E%B0/source/campus_agent_lab/fixtures.py">fixtures.py</a>。</p>
+<div class="readme-table"><table>
+<thead>
+<tr>
+<th>资料</th>
+<th>内容</th>
+<th>范围</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>D1</td>
+<td>图书馆工作日 12:00—18:00 开放，周末闭馆</td>
+<td>本学期常规安排，不说明临时检修或明年安排</td>
+</tr>
+<tr>
+<td>V1 科学活动室</td>
+<td>周二 15:00—17:00；有投影仪、有坡道</td>
+<td>本学期；时间来源 S1，详情来源 E1</td>
+</tr>
+<tr>
+<td>V2 阅览活动室</td>
+<td>周二 15:00—17:00；有投影仪、无坡道</td>
+<td>本学期；时间来源 S2，详情来源 E2</td>
+</tr>
+<tr>
+<td>场地任务</td>
+<td>本学期周二 15:00—16:00，需要投影仪且必须有坡道</td>
+<td>只给场地建议，不预约</td>
+</tr>
+</tbody>
+</table></div>
+<p>第 18、20 期部分案例会明确修改资料来制造缺失、冲突、过期等情形，输出逐例附上实际环境和需求。<code>None</code> 表示未知资料，不能等同于空设备表 <code>[]</code> 或明确无坡道 <code>False</code>。</p>
+<h2 id="每期观察什么">每期观察什么</h2>
+<h3 id="17请求不等于执行成功">17：请求不等于执行成功</h3>
+<p>请求使用 <code>request_id</code>、<code>tool</code>、<code>args</code>。返回保留这些字段，并加入 <code>executed</code>、<code>status</code>、<code>result</code>。</p>
+<div class="readme-table"><table>
+<thead>
+<tr>
+<th>案例</th>
+<th>编号</th>
+<th>状态</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>成功</td>
+<td>Q1</td>
+<td><code>ok</code></td>
+<td>D1 公告</td>
+</tr>
+<tr>
+<td>明年无匹配</td>
+<td>Q2</td>
+<td><code>ok</code></td>
+<td>空列表；查询完成，没有匹配材料</td>
+</tr>
+<tr>
+<td>缺少设施参数</td>
+<td>Q3</td>
+<td><code>invalid_args</code></td>
+<td><code>executed=false</code>，没有查询</td>
+</tr>
+<tr>
+<td>故意注入读取故障</td>
+<td>Q4</td>
+<td><code>tool_error</code></td>
+<td><code>executed=true</code>，尝试执行但未完成</td>
+</tr>
+</tbody>
+</table></div>
+<p>公告工具名为 <code>search_announcements</code>，参数为 <code>facility</code> 和 <code>period</code>。未注册名称会返回 <code>unknown_tool</code>。这里的回答文本由固定规则选择，不是模型生成；查询参数、公告与回答的对应关系可以人工核对。</p>
+<p><a href="../../../../../Python%E5%AE%9E%E7%8E%B0/source/campus_agent_lab/outputs/reference/episode17/result.json">查看第 17 期固定结果</a>。</p>
+<h3 id="18下一步由固定规则决定">18：下一步由固定规则决定</h3>
+<p><code>search_venues(period, day, start, end)</code> 查时段覆盖任务的候选；<code>read_details(venue_id)</code> 查设备和坡道。先查时间、再读详情、再比较条件，这个顺序写在代码里。</p>
+<div class="readme-table"><table>
+<thead>
+<tr>
+<th>案例</th>
+<th>退出状态</th>
+<th>实际工具执行次数</th>
+<th>建议</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>资料完整</td>
+<td><code>suggested</code></td>
+<td>2</td>
+<td>V1 科学活动室</td>
+</tr>
+<tr>
+<td>V1 设备表未知</td>
+<td><code>insufficient_evidence</code></td>
+<td>2</td>
+<td>无；停止补证据</td>
+</tr>
+<tr>
+<td>重复相同查询</td>
+<td><code>blocked_repeat</code></td>
+<td>1</td>
+<td>无；重复请求被拦</td>
+</tr>
+<tr>
+<td>只准执行一步</td>
+<td><code>blocked_step_limit</code></td>
+<td>1</td>
+<td>无；详情未查，不宣称完成</td>
+</tr>
+</tbody>
+</table></div>
+<p>重复请求与超限请求也进入 <code>trace</code>，但 <code>executed=false</code>，不算实际工具执行。默认最多 4 次工具执行是教学设置，不是行业标准。缺资料时本例采取保守停止策略，不代表只能采用这一种策略。</p>
+<p><a href="../../../../../Python%E5%AE%9E%E7%8E%B0/source/campus_agent_lab/outputs/reference/episode18/result.json">查看第 18 期固定结果</a>。</p>
+<h3 id="19只检查硬性条件是否还在输入里">19：只检查硬性条件是否还在输入里</h3>
+<p>六张原始卡片依次是：C1 坡道要求、C2 时段、C3 投影仪要求、C4 V1 资料、C5 V2 资料、C6 只建议不预约。程序比较全文六卡、末三卡、人工好摘要、人工漏坡道摘要、按条件字段检索后附场地结果五种组织方式。</p>
+<p>末三卡虽然还有「V1 有坡道」这一事实，却没有「必须有坡道」这一用户要求。程序检查固定教学文本中的关键短语，列出 <code>requirements_present</code>；它不能评价任意改写的语义正确性。两份摘要都由人编写，不是模型输出。字符数不是 token 数，条件保留下来也不等于模型能用对。</p>
+<p><a href="../../../../../Python%E5%AE%9E%E7%8E%B0/source/campus_agent_lab/outputs/reference/episode19/result.json">查看第 19 期固定结果</a>。</p>
+<h3 id="20建议要逐项验收">20：建议要逐项验收</h3>
+<p><code>verify_run</code> 重新对照任务、资料和成功执行记录，分别检查时期、星期、完整时段、设备、坡道、资料冲突、时间证据、详情证据及行为范围。建议分支不会只读 <code>status</code> 或案例期望标签来判成功。停止分支另外检查预设案例对应的停止原因，不能把「没有建议」都算合理停止。</p>
+<p>输出包含 6 个开发案例和另编的 6 个保留对照案例，逐例显示实际环境、任务、轨迹、调用次数、各项检查和结果：</p>
+<div class="readme-table"><table>
+<thead>
+<tr>
+<th>结果</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>task_success</code></td>
+<td>建议满足全部条件并有本次工具记录支持</td>
+</tr>
+<tr>
+<td><code>appropriate_stop</code></td>
+<td>该构造情形下说明原因并停止，没有完成原场地任务</td>
+</tr>
+<tr>
+<td><code>incorrect_completion</code></td>
+<td>给了建议，却没通过条件或证据检查</td>
+</tr>
+<tr>
+<td><code>incorrect_result</code></td>
+<td>不该停止却停止，或停止原因与该案例不符</td>
+</tr>
+</tbody>
+</table></div>
+<p>本版开发组与保留组各为 1 例任务成功、5 例恰当停止。<strong>这不是任务成功率 100%</strong>：每组只有 1 个任务给出合格建议，其余没有完成场地选择。</p>
+<p>此外，<code>fault_demo</code> 单独构造「忽略坡道要求」的错误策略：它查得 V2 无坡道，却仍建议 V2。验收的 <code>ramp=false</code> 会把它判为错误完成，其他时间与设备检查仍可通过。这是故意注入的教学错误，不是实际模型失误记录。</p>
+<p>这 12 个例子目前都是公开材料，已经共同进入代码回归。名称「保留」表示它们在教学结构中的角色，不能证明开发时未看过；本实验不宣称盲测、独立模型评估或现实系统可靠性。修改规则后继续使用同一组题，属于回归检查；要做独立评估须另备未用于开发的新题。</p>
+<p><a href="../../../../../Python%E5%AE%9E%E7%8E%B0/source/campus_agent_lab/outputs/reference/episode20/result.json">查看第 20 期固定结果与完整清单</a>。</p>
+<h2 id="代码检查">代码检查</h2>
+<pre><code class="language-sh">python3 -m unittest discover -s Python实现/source/campus_agent_lab -v
+</code></pre>
+<p>测试覆盖参数无效时不执行、空结果与读取故障的区别、重复和步数退出、未知与明确不满足的区别、条件与证据验收、坡道错误拦截、输入保留检查、固定结果复现，以及历史文件不覆盖。测试结果只说明这版规则程序的这些性质通过检查。</p>
+<p>资料出处与借鉴边界见 <a href="../../../../../Python%E5%AE%9E%E7%8E%B0/source/campus_agent_lab/SOURCES.md">SOURCES.md</a>。</p>
+</article></main>
+<footer><span>看得见的 AI · 图文说明</span><a class="text-link" href="../../../../../Python%E5%AE%9E%E7%8E%B0/source/campus_agent_lab/README.md">Markdown 源文件</a></footer></body></html>

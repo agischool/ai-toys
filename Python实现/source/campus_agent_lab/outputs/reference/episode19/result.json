@@ -1,0 +1,192 @@
+{
+  "episode": 19,
+  "notice": "构造资料与规则程序的本地执行；没有调用真实模型，不代表模型能力测评。",
+  "original_cards": [
+    {
+      "id": "C1",
+      "kind": "requirement",
+      "text": "场地必须有坡道"
+    },
+    {
+      "id": "C2",
+      "kind": "requirement",
+      "text": "本学期周二15—16"
+    },
+    {
+      "id": "C3",
+      "kind": "requirement",
+      "text": "需要投影仪"
+    },
+    {
+      "id": "C4",
+      "kind": "observation",
+      "text": "V1科学活动室：周二15—17，有投影仪，有坡道"
+    },
+    {
+      "id": "C5",
+      "kind": "observation",
+      "text": "V2阅览活动室：周二15—17，有投影仪，无坡道"
+    },
+    {
+      "id": "C6",
+      "kind": "requirement",
+      "text": "只给建议，不预约"
+    }
+  ],
+  "comparisons": [
+    {
+      "mode": "full",
+      "origin": "原始六卡",
+      "input_cards": [
+        {
+          "id": "C1",
+          "kind": "requirement",
+          "text": "场地必须有坡道"
+        },
+        {
+          "id": "C2",
+          "kind": "requirement",
+          "text": "本学期周二15—16"
+        },
+        {
+          "id": "C3",
+          "kind": "requirement",
+          "text": "需要投影仪"
+        },
+        {
+          "id": "C4",
+          "kind": "observation",
+          "text": "V1科学活动室：周二15—17，有投影仪，有坡道"
+        },
+        {
+          "id": "C5",
+          "kind": "observation",
+          "text": "V2阅览活动室：周二15—17，有投影仪，无坡道"
+        },
+        {
+          "id": "C6",
+          "kind": "requirement",
+          "text": "只给建议，不预约"
+        }
+      ],
+      "input_text": "场地必须有坡道\n本学期周二15—16\n需要投影仪\nV1科学活动室：周二15—17，有投影仪，有坡道\nV2阅览活动室：周二15—17，有投影仪，无坡道\n只给建议，不预约",
+      "characters": 83,
+      "requirements_present": {
+        "ramp_required": true,
+        "time_and_period": true,
+        "projector_required": true,
+        "no_booking": true
+      }
+    },
+    {
+      "mode": "last_three",
+      "origin": "固定截断规则，只留最后三张卡",
+      "input_cards": [
+        {
+          "id": "C4",
+          "kind": "observation",
+          "text": "V1科学活动室：周二15—17，有投影仪，有坡道"
+        },
+        {
+          "id": "C5",
+          "kind": "observation",
+          "text": "V2阅览活动室：周二15—17，有投影仪，无坡道"
+        },
+        {
+          "id": "C6",
+          "kind": "requirement",
+          "text": "只给建议，不预约"
+        }
+      ],
+      "input_text": "V1科学活动室：周二15—17，有投影仪，有坡道\nV2阅览活动室：周二15—17，有投影仪，无坡道\n只给建议，不预约",
+      "characters": 58,
+      "requirements_present": {
+        "ramp_required": false,
+        "time_and_period": false,
+        "projector_required": false,
+        "no_booking": true
+      }
+    },
+    {
+      "mode": "manual_summary_good",
+      "origin": "人工编写的完整对照摘要",
+      "input_cards": [
+        {
+          "id": "H1",
+          "text": "场地必须有坡道；本学期周二15—16；需要投影仪；只给建议，不预约。V1有投影仪和坡道，V2无坡道。"
+        }
+      ],
+      "input_text": "场地必须有坡道；本学期周二15—16；需要投影仪；只给建议，不预约。V1有投影仪和坡道，V2无坡道。",
+      "characters": 50,
+      "requirements_present": {
+        "ramp_required": true,
+        "time_and_period": true,
+        "projector_required": true,
+        "no_booking": true
+      }
+    },
+    {
+      "mode": "manual_summary_missing_ramp",
+      "origin": "人工刻意漏掉坡道要求的对照摘要",
+      "input_cards": [
+        {
+          "id": "H2",
+          "text": "本学期周二15—16；需要投影仪；只给建议，不预约。V1、V2都有投影仪。"
+        }
+      ],
+      "input_text": "本学期周二15—16；需要投影仪；只给建议，不预约。V1、V2都有投影仪。",
+      "characters": 37,
+      "requirements_present": {
+        "ramp_required": false,
+        "time_and_period": true,
+        "projector_required": true,
+        "no_booking": true
+      }
+    },
+    {
+      "mode": "retrieve_requirements",
+      "origin": "按kind字段检索条件记录，再附场地结果",
+      "input_cards": [
+        {
+          "id": "C1",
+          "kind": "requirement",
+          "text": "场地必须有坡道"
+        },
+        {
+          "id": "C2",
+          "kind": "requirement",
+          "text": "本学期周二15—16"
+        },
+        {
+          "id": "C3",
+          "kind": "requirement",
+          "text": "需要投影仪"
+        },
+        {
+          "id": "C6",
+          "kind": "requirement",
+          "text": "只给建议，不预约"
+        },
+        {
+          "id": "C4",
+          "kind": "observation",
+          "text": "V1科学活动室：周二15—17，有投影仪，有坡道"
+        },
+        {
+          "id": "C5",
+          "kind": "observation",
+          "text": "V2阅览活动室：周二15—17，有投影仪，无坡道"
+        }
+      ],
+      "input_text": "场地必须有坡道\n本学期周二15—16\n需要投影仪\n只给建议，不预约\nV1科学活动室：周二15—17，有投影仪，有坡道\nV2阅览活动室：周二15—17，有投影仪，无坡道",
+      "characters": 83,
+      "requirements_present": {
+        "ramp_required": true,
+        "time_and_period": true,
+        "projector_required": true,
+        "no_booking": true
+      }
+    }
+  ],
+  "check_scope": "固定教学文本的关键短语保留检查；字符不是token，保留不等于模型会正确使用。"
+}

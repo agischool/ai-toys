@@ -1,0 +1,74 @@
+{
+  "episode": 17,
+  "notice": "构造资料与规则程序的本地执行；没有调用真实模型，不代表模型能力测评。",
+  "cases": [
+    {
+      "case": "success",
+      "event": {
+        "request_id": "Q1",
+        "tool": "search_announcements",
+        "args": {
+          "facility": "图书馆",
+          "period": "本学期"
+        },
+        "executed": true,
+        "status": "ok",
+        "result": [
+          {
+            "doc_id": "D1",
+            "facility": "图书馆",
+            "period": "本学期",
+            "title": "本学期图书馆开放安排",
+            "publisher": "图书馆",
+            "text": "图书馆工作日12:00—18:00开放，周末闭馆。"
+          }
+        ]
+      },
+      "answer": "按D1的本学期常规安排，周二15点开放；不保证临时检修状态。"
+    },
+    {
+      "case": "no_match",
+      "event": {
+        "request_id": "Q2",
+        "tool": "search_announcements",
+        "args": {
+          "facility": "图书馆",
+          "period": "明年"
+        },
+        "executed": true,
+        "status": "ok",
+        "result": []
+      },
+      "answer": "已完成查找，但现有资料没有明年的安排。"
+    },
+    {
+      "case": "invalid_args",
+      "event": {
+        "request_id": "Q3",
+        "tool": "search_announcements",
+        "args": {
+          "period": "本学期"
+        },
+        "executed": false,
+        "status": "invalid_args",
+        "result": "参数名称或类型不符合约定"
+      },
+      "answer": "请求参数无效，未执行查询。"
+    },
+    {
+      "case": "tool_error",
+      "event": {
+        "request_id": "Q4",
+        "tool": "search_announcements",
+        "args": {
+          "facility": "图书馆",
+          "period": "本学期"
+        },
+        "executed": true,
+        "status": "tool_error",
+        "result": "演示故障：公告资料读取失败"
+      },
+      "answer": "查询未完成，不能据此确认有没有公告。"
+    }
+  ]
+}

@@ -1,0 +1,133 @@
+{
+  "notice": "原创构造机制实验；没有付费API或模型服务调用，不是通用能力评估。",
+  "sft_loss_mask": {
+    "selected_target_positions": [
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "masked_logit_gradient_max": 0.0,
+    "one_step_loss_before": 2.0167406472189926,
+    "one_step_loss_after": 2.010323355708571,
+    "parameter_delta_l2": 0.008011493343270303,
+    "boundary": "单条构造复制样本、一次真实参数更新；没有独立能力测评。输入位置仍可经注意力影响答案梯度。"
+  },
+  "kv_cache": {
+    "models_checked": 3,
+    "prefixes_per_model": 12,
+    "float64_max_logit_error": 7.105427357601002e-15,
+    "wrong_position_negative_control_error": 20.32918307056546,
+    "full_prefix_kv_token_projections": 78,
+    "incremental_kv_token_projections": 12,
+    "cache_components": {
+      "K": {
+        "tokens": 12,
+        "width": 16
+      },
+      "V": {
+        "tokens": 12,
+        "width": 16
+      },
+      "bytes_per_scalar": 8
+    },
+    "final_kv_cache_bytes_per_model": 3072,
+    "boundary": "单层因果模型固定输入、逐位置数值对照；未测墙钟加速，不是产品KV缓存实现。"
+  },
+  "moe": {
+    "selected_expert_ids_zero_based": [
+      1,
+      2
+    ],
+    "router_logits": [
+      0.0,
+      1.0986122886681098,
+      0.6931471805599453,
+      -2.0
+    ],
+    "router_probabilities": [
+      0.1629902774396485,
+      0.48897083231894556,
+      0.325980554879297,
+      0.022058335362108907
+    ],
+    "renormalized_weights": [
+      0.6000000000000001,
+      0.4
+    ],
+    "selected_expert_outputs": [
+      [
+        2.0,
+        4.0
+      ],
+      [
+        3.0,
+        6.0
+      ]
+    ],
+    "all_expert_matrices": [
+      [
+        [
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0
+        ]
+      ],
+      [
+        [
+          2.0,
+          0.0
+        ],
+        [
+          0.0,
+          2.0
+        ]
+      ],
+      [
+        [
+          3.0,
+          0.0
+        ],
+        [
+          0.0,
+          3.0
+        ]
+      ],
+      [
+        [
+          4.0,
+          0.0
+        ],
+        [
+          0.0,
+          4.0
+        ]
+      ]
+    ],
+    "input": [
+      1.0,
+      2.0
+    ],
+    "output": [
+      2.4000000000000004,
+      4.800000000000001
+    ],
+    "expert_parameters_stored": 16,
+    "expert_parameters_used_for_this_token": 8,
+    "boundary": "固定路由分数和未训练线性专家；统计只含专家矩阵，不含路由器、共享层及真实推理资源。"
+  },
+  "environment": {
+    "python": "3.13.18",
+    "numpy": "2.5.4",
+    "dtype": "float64"
+  },
+  "source_sha256": {
+    "Python实现/source/series_python/toys/t08_transformer.py": "333778105c5be4c09437c33685990b1d13901cb9032a9d92faf0f49940f60a5b",
+    "Python实现/source/series_python/toys/t07_attention.py": "75458109c7d6607ddbb98fc9370b673d8051f3ea0b20c29e51f0a16f323dbfa6",
+    "Python实现/source/series_python/toys/common.py": "52962ea38a49a0b6ca00f148630b495d918c6df70fdd00169bf4474e4b5f734e"
+  }
+}
