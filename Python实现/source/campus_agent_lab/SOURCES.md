@@ -4,7 +4,7 @@
 
 ## 教学与技术参考
 
-- 本仓库《后续内容策划》第 17—20 期制作卡：校园工具请求、步骤限制、坡道条件、结果验收与证据分层。资料、函数、固定规则、人工摘要、故障注入和 12 个案例均为本项目原创教学设计。
+- 本项目第 17—20 期的教学设计：校园工具请求、步骤限制、坡道条件、结果验收与证据分层。资料、函数、固定规则、人工摘要、故障注入和 12 个案例均为本项目原创教学设计。
 - [CS329Z Assignment 1 的 adapters.py](https://github.com/cs329z/assignment1-harness/blob/95f4cb7bfe28a27a7cf5bcb1eccb1aaaf1385eb3/cs329z_hw1/adapters.py)：参考工具注册、参数校验、错误返回与 Agent 循环的职责区分。本实验不是这份作业答案，不沿用其邮件资料、完整协议或评测阈值。
 - [CS329Z Assignment 2 README](https://github.com/cs329z/assignment2-evals/blob/3a649d8da0dc6cb0422e6ce7ce7068c3b98be1db/README.md) 与 [作业讲义](https://github.com/cs329z/assignment2-evals/blob/3a649d8da0dc6cb0422e6ce7ce7068c3b98be1db/cs329z_assignment2_evaluation.pdf)：参考任务要求、执行环境、结果验证的分工。本地规则检查没有运行 Harbor、Docker 或 mini-SWE-agent，也不是课程模型评测的复现。
 

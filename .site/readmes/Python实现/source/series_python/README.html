@@ -33,7 +33,7 @@ python -m unittest discover -s tests -v
 python run_all.py --output outputs_local
 </code></pre>
 <p>最后一条命令将本机结果另存到 <code>outputs_local/</code>，不会覆盖文章引用的随包图表。只运行部分示例可用 <code>python run_all.py --only t01 t02 t03 --output outputs_local</code>；换种子可用 <code>python run_all.py --seed 7 --output outputs_seed7</code>。各篇列出的单独运行命令默认写入 <code>outputs/tXX/</code>，会替换该篇已有产物；<code>python run_all.py</code> 则会覆盖全部默认输出及运行报告。</p>
-<p>随包图表对应的实测环境为 Python 3.12.14、NumPy 2.3.5、Matplotlib 3.10.8，CPU、float64；建议使用 Python 3.11–3.13。实测环境、核验范围与已知跨平台差异见 <code>VERIFICATION.md</code>。依赖只需 NumPy 和 Matplotlib，测试使用标准库 unittest。安装依赖通常需要联网，安装完成后运行示例不需要网络。出现 <code>No module named ...</code> 时，先确认已激活虚拟环境，并在同一个 Python 环境安装 <code>requirements.txt</code>。</p>
+<p>随包图表对应的实测环境为 Python 3.12.14、NumPy 2.3.5、Matplotlib 3.10.8，CPU、float64；建议使用 Python 3.11–3.13。实测环境、核验范围与已知跨平台差异见 <code>constraints.md</code>。依赖只需 NumPy 和 Matplotlib，测试使用标准库 unittest。安装依赖通常需要联网，安装完成后运行示例不需要网络。出现 <code>No module named ...</code> 时，先确认已激活虚拟环境，并在同一个 Python 环境安装 <code>requirements.txt</code>。</p>
 <p>首次运行会生成中文图。当前环境使用 Noto Sans CJK；其他电脑若没有中文字体，数值结果不受影响，但绘图可能缺字。可以在系统安装常用中文字体后，在 <code>toys/common.py</code> 中指定 Matplotlib 字体。脚本只在临时目录保存字体缓存，不更改系统设置。</p>
 <h2 id="主题与入口">主题与入口</h2>
 <div class="readme-table"><table>
@@ -117,7 +117,7 @@ python run_all.py --output outputs_local
 <li><code>docs/</code>：十篇中文机制说明，带图表相对链接</li>
 <li><code>outputs/tXX/</code>：该篇PNG图、JSON实测结果，适用时包含参数文件</li>
 <li><code>outputs/run_report.json</code>：运行环境、各篇耗时与实测结果汇总</li>
-<li><code>VERIFICATION.md</code>：本次验证范围与结果；<code>SOURCES.md</code>：机制的延伸阅读</li>
+<li><code>constraints.md</code>：实验边界与数值口径；<code>SOURCES.md</code>：机制的延伸阅读</li>
 </ul>
 <h2 id="怎样理解结果">怎样理解结果</h2>
 <p>数据都很小，任务有意简单。100%是某个有限合成测试集上的比例，不是现实能力保证。训练、验证、测试按独立观测或完整序列分开；不能把同一条序列的重叠片段拆成两组来冒充泛化。有限差分检查验证的是局部导数，不能替代全部软件验证。</p>

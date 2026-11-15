@@ -1,6 +1,6 @@
 # Python 实现
 
-十个 AI 机制的手写 NumPy 实现，配套中文说明、测试、历史实测输出和浏览器互动实验。计算与训练在本地进行，不依赖预训练模型或网络 API。
+十个 AI 机制的手写 NumPy 实现，配套中文说明、测试、固定实测输出和浏览器互动实验。计算与训练在本地进行，不依赖预训练模型或网络 API。
 
 [返回三个项目总览](../README.md) · [打开项目网页](index.html) · [完整 Python 系列说明](source/series_python/README.md) · [互动实验目录](docs/chapters.html)
 
@@ -18,7 +18,7 @@ T1 线性回归、T2 逻辑回归、T3 多层网络、T4 CNN、T5 残差、T6 RN
 
 | 路径 | 用途 |
 | --- | --- |
-| [source/series_python/](source/series_python/README.md) | 十个完整实现、文章、测试和历史实测输出 |
+| [source/series_python/](source/series_python/README.md) | 十个完整实现、文章、测试和固定实测输出 |
 | [source/campus_agent_lab/](source/campus_agent_lab/README.md) | 连载 17—20 期共用的标准库校园助手规则演示、测试及执行记录；无模型调用 |
 | [source/continuation_mechanisms/](source/continuation_mechanisms/README.md) | 连载 21—23 期的回答区间损失、K/V 缓存与专家路由数值实验；不使用模型服务或 GPU |
 | [source/t1_python/](source/t1_python/README.md) | T1 独立样章、数值夹具和测试 |
@@ -44,7 +44,7 @@ python3 source/series_python/run_all.py --seed 42 --output outputs_local
 
 上面是 macOS / Linux 命令。Windows PowerShell 使用 `.venv\Scripts\Activate.ps1` 激活环境，并按 PowerShell 语法设置环境变量。
 
-重跑结果写入本项目的 `outputs_local/`。保留 `source/series_python/outputs/` 中文章引用的实测数据；随包实测环境、核验结果与已知跨平台差异见 [Python 核验记录](source/series_python/VERIFICATION.md)。
+重跑结果写入本项目的 `outputs_local/`。保留 `source/series_python/outputs/` 中文章引用的实测数据；随包实测环境、核验结果与已知跨平台差异见 [Python 实验约束](source/series_python/constraints.md)。
 
 ## 运行互动实验
 

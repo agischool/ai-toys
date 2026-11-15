@@ -1,12 +1,12 @@
 # 测试与科学边界
 
-本文说明如何检查当前源码，以及各实验结论的适用范围。随包 Python 实测数字和跨平台差异保留在 [Python 核验记录](../source/series_python/VERIFICATION.md) 中。
+本文说明如何检查当前源码，以及各实验结论的适用范围。随包 Python 实测数字和跨平台差异保留在 [Python 实验约束](../source/series_python/constraints.md) 中。
 
 ## 从结果回到检查
 
 ![T1 的拟合、训练损失和独立测试残差](../source/series_python/outputs/t01/fit_loss_residual.png)
 
-上图是随包 T1 历史实测图，用来说明需要核对的参数、损失和测试输出；它不代表本次测试运行结果。下面分别说明数值、交互和站点检查方法。
+上图是随包 T1 固定实测图，用来说明需要核对的参数、损失和测试输出；它不代表本次测试运行结果。下面分别说明数值、交互和站点检查方法。
 
 ## 基本检查
 
@@ -60,7 +60,7 @@ python3 tests/science-review.py
 python3 source/series_python/run_all.py --seed 42 --output outputs_local
 ```
 
-不要覆盖 `source/series_python/outputs/`。数值差异应记录运行环境后单独比较，不能用新结果悄悄替换文章中的历史测量。
+不要覆盖 `source/series_python/outputs/`。数值差异应记录运行环境后单独比较，不能用新结果悄悄替换文章中的固定测量。
 
 ## 浏览器检查
 

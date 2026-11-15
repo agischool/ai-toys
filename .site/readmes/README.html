@@ -19,7 +19,7 @@
 <td><a href="%E9%9D%92%E5%B0%91%E5%B9%B4AI%E7%A7%91%E6%99%AE%E8%BF%9E%E8%BD%BD/README.html"><img src="../../%E9%9D%92%E5%B0%91%E5%B9%B4AI%E7%A7%91%E6%99%AE%E8%BF%9E%E8%BD%BD/01_AI%E5%88%B0%E5%BA%95%E5%9C%A8%E5%81%9A%E4%BB%80%E4%B9%88%20%E4%BB%8E%E8%AE%A4%E7%8C%AB%E5%BC%80%E5%A7%8B/00_%E5%B0%81%E9%9D%A2%E5%9B%BE_%E6%A8%AA%E7%89%882.35.png" alt="青少年 AI 科普连载首篇封面"></a></td>
 </tr>
 <tr>
-<td><strong>10 个 AI 机制</strong>：NumPy 实现、中文说明、测试、历史实测输出与互动实验。适合运行代码、修改参数和检查计算。</td>
+<td><strong>10 个 AI 机制</strong>：NumPy 实现、中文说明、测试、文章引用的固定实测输出与互动实验。适合运行代码、修改参数和检查计算。</td>
 <td><strong>16 期五图内容</strong>：标题、描述、5 张正文图及封面。适合逐图阅读与公众号图片贴图发布。</td>
 <td><strong>5 套短系列，每套 4—6 篇</strong>：排版 HTML、Markdown 正文、标题、摘要、配图与封面。可任选一套阅读与发布。</td>
 </tr>
@@ -49,7 +49,7 @@
 <p>互动实验需要 HTTP 环境。在仓库根目录运行：</p>
 <pre><code class="language-sh">npm run serve
 </code></pre>
-<p>打开 <a href="http://127.0.0.1:4174/">http://127.0.0.1:4174/</a>。<code>npm run serve:library</code> 是同一命令的兼容入口。Python 环境、独立运行、测试和输出保存方法见 <a href="Python%E5%AE%9E%E7%8E%B0/README.html">Python 项目说明</a>；公众号发布步骤见各系列 README。</p>
+<p>打开 <a href="http://127.0.0.1:4174/">http://127.0.0.1:4174/</a>。Python 环境、独立运行、测试和输出保存方法见 <a href="Python%E5%AE%9E%E7%8E%B0/README.html">Python 项目说明</a>；公众号发布步骤见各系列 README。</p>
 <h2 id="修改与构建">修改与构建</h2>
 <p>根目录统一命令需要 Python 3.11+ 和 Node.js 18+，无需安装 npm 依赖：</p>
 <pre><code class="language-sh">npm run build
@@ -57,7 +57,7 @@ npm test
 </code></pre>
 <p>构建会更新三个项目的网页入口、Python 互动实验站、下载包和校验清单。公众号入口页从每期 <code>发布文案.md</code> 和现有图片生成；长文的 <code>公众号_排版.html</code> 从 <code>正文.md</code> 生成，保留内联样式并嵌入本期图片。改稿后运行 <code>npm run build</code> 同步正文与排版，避免手动维护两份正文。</p>
 <p>各级 README 的图片和链接可在 GitHub 中直接查看；本地网页中的「项目说明」使用生成的图文阅读页，Markdown 保留为源文件。修改 README 后运行 <code>npm run build</code> 更新阅读页。</p>
-<p>共用网页工具集中在 <code>.site/</code>；Python 项目也可以进入自己的目录独立构建和测试。历史实测输出保留在 <code>Python实现/source/series_python/outputs/</code>，本地重跑应另存。</p>
+<p>共用网页工具集中在 <code>.site/</code>；Python 项目也可以进入自己的目录独立构建和测试。文章引用的固定实测输出保留在 <code>Python实现/source/series_python/outputs/</code>，本地重跑应另存。</p>
 <h2 id="github-网页与许可">GitHub 网页与许可</h2>
 <p>GitHub 仓库中的 README 提供三个项目的文件入口；HTML 网页由 GitHub Pages 展示。仓库 Settings → Pages 的发布源使用 <strong>GitHub Actions</strong>。推送到 <code>main</code> 后，<a href="https://github.com/agischool/ai-toys/blob/main/.github/workflows/pages.yml">发布工作流</a> 会重新构建、运行测试、检查站内链接，再发布以根目录 <code>index.html</code> 为首页的完整站点；也可在 Actions 中手动运行 <code>Publish website</code>。互动实验位于 <code>Python实现/docs/</code>。</p>
 <p>发布包包含 <code>.site/</code> 中的样式、复制脚本和 README 阅读页，不包含 Git 元数据和本地缓存。工作流成功后访问 <a href="https://agischool.github.io/ai-toys/">在线首页</a>；本地构建通过不代表公网部署已经完成。</p>
