@@ -166,7 +166,7 @@ h3 { font-size: 17px; line-height: 1.55; margin-bottom: 12px }
   display: block; resize: vertical; width: 100%; border: 0; border-top: 1px solid var(--line-soft);
   background: transparent; padding: 16px 0 0; color: var(--ink); font-size: 15px; line-height: 1.9; min-height: 120px;
 }
-.copy-panel textarea:focus { outline: none }
+.copy-panel textarea:focus { outline: 3px solid var(--focus); outline-offset: 3px }
 .copy-panel .hint { min-height: 22px; margin: 12px 0 0 }
 
 /* ---- 单期页：图片 ---- */
@@ -203,8 +203,8 @@ h3 { font-size: 17px; line-height: 1.55; margin-bottom: 12px }
 
 .experiment { background: #e6ede4 }
 .experiment-art {
-  aspect-ratio: 2.35/1; display: flex; align-items: center; justify-content: center; gap: 18px;
-  border-bottom: 1px solid var(--line-soft); font-family: var(--serif); font-size: 34px; color: var(--accent);
+  aspect-ratio: 2.35/1; display: flex; align-items: center; justify-content: center; gap: clamp(8px,1.2vw,18px);
+  border-bottom: 1px solid var(--line-soft); font-family: var(--serif); font-size: clamp(20px,2.5vw,34px); color: var(--accent); white-space: nowrap;
 }
 .experiment-art span { font-size: 19px; color: var(--muted); font-family: inherit }
 
@@ -249,7 +249,7 @@ h3 { font-size: 17px; line-height: 1.55; margin-bottom: 12px }
   nav { gap: 18px; font-size: 13px }
   .hero { padding: 36px 0 26px }
   .intro { font-size: 15px }
-  .grid, .gallery, .covers { grid-template-columns: 1fr }
+  .grid, .grid.three, .gallery, .covers { grid-template-columns: 1fr }
   .toolbar { align-items: stretch; flex-direction: column; gap: 10px }
   .search { max-width: none }
   .card-body, .copy-panel { padding: 18px 16px }
