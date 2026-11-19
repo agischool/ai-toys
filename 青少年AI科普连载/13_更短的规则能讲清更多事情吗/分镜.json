@@ -1,0 +1,295 @@
+{
+  "complete": true,
+  "beats": [
+    {
+      "take": 1,
+      "scene": "cover",
+      "step": 0,
+      "cam": "all",
+      "quiet": true,
+      "from": "把八个字母写成四个，和 AI 有什么关系？"
+    },
+    {
+      "take": 2,
+      "scene": "open",
+      "step": 0,
+      "cam": "desk",
+      "from": "要把ABABABAB准确告诉另一个人，可以逐个写"
+    },
+    {
+      "take": 3,
+      "scene": "open",
+      "step": 1,
+      "cam": "desk",
+      "from": "不过，描述规则本身也要用文字。"
+    },
+    {
+      "take": 1,
+      "scene": "open",
+      "step": 2,
+      "cam": "desk",
+      "from": "标题里的「四个」，指下文约定编码中的四个字符，并"
+    },
+    {
+      "take": 3,
+      "scene": "open",
+      "step": 3,
+      "cam": "desk",
+      "from": "上一期比较了答题成绩、时间与成本。"
+    },
+    {
+      "take": 2,
+      "scene": "open",
+      "step": 4,
+      "cam": "desk",
+      "from": "阅读提示：先跟着算9、4、6这三笔小账，再看它怎"
+    },
+    {
+      "take": 1,
+      "scene": "modes",
+      "step": 0,
+      "cam": "desk",
+      "from": "先约定每个字符怎样计费"
+    },
+    {
+      "take": 2,
+      "scene": "modes",
+      "step": 1,
+      "cam": "desk",
+      "from": "先约定同一种计费办法，免得拿中文句子和英文字母直"
+    },
+    {
+      "take": 2,
+      "scene": "modes",
+      "step": 2,
+      "cam": "desk",
+      "from": "第一种写法叫直接模式：先写L，再照抄原串。"
+    },
+    {
+      "take": 3,
+      "scene": "modes",
+      "step": 3,
+      "cam": "desk",
+      "from": "第二种叫重复模式：先写R，再写一位重复次数，最后"
+    },
+    {
+      "take": 2,
+      "scene": "modes",
+      "step": 4,
+      "cam": "desk",
+      "from": "L和R就像读法提示：看到它，接收者才知道后面应该"
+    },
+    {
+      "take": 1,
+      "scene": "modes",
+      "step": 5,
+      "cam": "desk",
+      "from": "两种写法必须在同一套读法下比较，本文的单位也不是"
+    },
+    {
+      "take": 1,
+      "scene": "modes",
+      "step": 6,
+      "cam": "desk",
+      "from": "图1  在约定的读法下，照抄需要9单位，重复规则"
+    },
+    {
+      "take": 2,
+      "scene": "modes",
+      "step": 7,
+      "cam": "desk",
+      "from": "顺着图1倒着读，R4AB能展开成ABABABAB"
+    },
+    {
+      "take": 1,
+      "scene": "exceptions",
+      "step": 0,
+      "cam": "desk",
+      "from": "多一个例外 要多写两个字符"
+    },
+    {
+      "take": 2,
+      "scene": "exceptions",
+      "step": 1,
+      "cam": "desk",
+      "from": "把末位改成C，得到ABABABAC。"
+    },
+    {
+      "take": 2,
+      "scene": "exceptions",
+      "step": 2,
+      "cam": "desk",
+      "from": "我们给重复模式加一条规则：后面可以接“位置一位＋"
+    },
+    {
+      "take": 1,
+      "scene": "exceptions",
+      "step": 3,
+      "cam": "desk",
+      "from": "R4AB8C就表示：先展开AB四次，再把第8位换"
+    },
+    {
+      "take": 2,
+      "scene": "exceptions",
+      "step": 4,
+      "cam": "desk",
+      "from": "原来的四单位，加上8和C，共六单位。"
+    },
+    {
+      "take": 2,
+      "scene": "exceptions",
+      "step": 5,
+      "cam": "desk",
+      "from": "如果要记录三个替换，就得花4＋2×3＝10单位，"
+    },
+    {
+      "take": 2,
+      "scene": "exceptions",
+      "step": 6,
+      "cam": "desk",
+      "from": "在这个算例里，例外少时，重复规则更省；例外多了，"
+    },
+    {
+      "take": 1,
+      "scene": "mdl",
+      "step": 0,
+      "cam": "desk",
+      "from": "这和选择 AI 模型有什么关系"
+    },
+    {
+      "take": 2,
+      "scene": "mdl",
+      "step": 1,
+      "cam": "desk",
+      "from": "这与最小描述长度（简称 MDL）的模型选择思路有"
+    },
+    {
+      "take": 3,
+      "scene": "mdl",
+      "step": 2,
+      "cam": "desk",
+      "from": "在这里，重复规则像一个小模型，替换记录补上它没能"
+    },
+    {
+      "take": 1,
+      "scene": "mdl",
+      "step": 3,
+      "cam": "desk",
+      "from": "神经网络研究也考虑过类似问题：除了预测误差，还会"
+    },
+    {
+      "take": 2,
+      "scene": "mdl",
+      "step": 4,
+      "cam": "desk",
+      "from": "不过，这不是简单数参数，也不是说所有 AI 都按"
+    },
+    {
+      "take": 3,
+      "scene": "mdl",
+      "step": 5,
+      "cam": "desk",
+      "from": "还得防止把成本藏到别处。"
+    },
+    {
+      "take": 1,
+      "scene": "mdl",
+      "step": 6,
+      "cam": "desk",
+      "from": "因此，短规则的价值，在于用可重复的规律节省记录，"
+    },
+    {
+      "take": 2,
+      "scene": "mdl",
+      "step": 7,
+      "cam": "desk",
+      "from": "它并不保证未来：AB交替出现四次，下一位也可能因"
+    },
+    {
+      "take": 1,
+      "scene": "challenge",
+      "step": 0,
+      "cam": "desk",
+      "from": "先解码，再算一遍"
+    },
+    {
+      "take": 2,
+      "scene": "challenge",
+      "step": 1,
+      "cam": "desk",
+      "from": "按同一套读法，R3AB6C 表示什么？"
+    },
+    {
+      "take": 0,
+      "scene": "exercise",
+      "step": 0,
+      "cam": "desk",
+      "quiet": true
+    },
+    {
+      "take": 1,
+      "scene": "exercise",
+      "step": 1,
+      "cam": "desk",
+      "reveal": true,
+      "from": "先把 AB 重复三次，得到 ABABAB，再把第"
+    },
+    {
+      "take": 1,
+      "scene": "challenge",
+      "step": 2,
+      "cam": "desk",
+      "from": "R3AB6C 共 6 个编码字符；直接记录 LA"
+    },
+    {
+      "take": 1,
+      "scene": "challenge",
+      "step": 3,
+      "cam": "desk",
+      "from": "能恢复出同一个原串，才能比较谁更省；不能只看到 "
+    },
+    {
+      "take": 1,
+      "scene": "limits",
+      "step": 0,
+      "cam": "desk",
+      "from": "选读 短规则不代表所有事情都更省"
+    },
+    {
+      "take": 2,
+      "scene": "limits",
+      "step": 1,
+      "cam": "desk",
+      "from": "本文把重复次数限制为一位。"
+    },
+    {
+      "take": 2,
+      "scene": "limits",
+      "step": 2,
+      "cam": "desk",
+      "from": "描述短，也不代表运行快。"
+    },
+    {
+      "take": 1,
+      "scene": "limits",
+      "step": 3,
+      "cam": "desk",
+      "from": "描述长度、运行时间，以及复杂系统研究中的结构复杂"
+    },
+    {
+      "take": 2,
+      "scene": "limits",
+      "step": 4,
+      "cam": "desk",
+      "from": "最后，在有限的候选写法中找到较短的一种，不等于找"
+    },
+    {
+      "take": 0,
+      "scene": "refs",
+      "step": 0,
+      "cam": "desk",
+      "refs": true,
+      "quiet": true
+    }
+  ]
+}

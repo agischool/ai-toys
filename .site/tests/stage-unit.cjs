@@ -529,6 +529,53 @@ test('换选吗产生另一上下文，接回片段不修改原数组',()=>{
   assert.deepEqual(before,['今天','下雨']);
   for(const args of [[[],'了'],[before,''],[[1],'了']]) assert.throws(()=>decoder.append(...args),/文字/);
 });
+const coding=require('../stage/coding.cjs');
+test('直接记录、重复规则和单例外均按字符计费并恢复完整原串',()=>{
+  assert.deepEqual(['LABABABAB','R4AB','R4AB8C'].map(c=>[coding.decode(c),coding.inspect(c).length]),[['ABABABAB',9],['ABABABAB',4],['ABABABAC',6]]);
+  assert.equal(coding.literal('ABABABAC'),'LABABABAC');
+  assert.equal(coding.repeated(4,'AB',[{position:8,letter:'C'}]),'R4AB8C');
+});
+test('漏掉例外会恢复错误原串，三例外需10单位而直接模式为9',()=>{
+  assert.notEqual(coding.decode('R4AB'),'ABABABAC');
+  const c=coding.inspect('R4AB2C3B5C');
+  assert.equal(c.decoded,'ACBBCBAB');assert.equal(c.length,10);
+  assert.equal(coding.literal(c.decoded).length,9);
+  assert.equal(coding.compare(c.decoded).minLength,9);
+});
+test('自查R3AB6C展开为ABABAC，总长6且只省1单位',()=>{
+  const r=coding.inspect('R3AB6C');
+  assert.equal(r.decoded,'ABABAC');assert.equal(r.length,6);
+  assert.equal(r.ruleLength,4);assert.equal(r.remainderLength,2);
+  assert.equal(coding.literal(r.decoded).length-r.length,1);
+});
+test('有限候选保留全部并列最短写法，不把候选最短称为所有程序最短',()=>{
+  const r=coding.compare('AB');
+  assert.deepEqual(r.best,['LAB']);assert.equal(r.candidates.length,10);
+  assert.deepEqual(coding.compare('ABABABAC').best,['R4AB8C']);
+  const tie=coding.compare('AAAABABA');
+  assert.equal(tie.minLength,8);
+  assert.deepEqual(tie.best,['R4AA5B7B','R4BA1A3A']);
+  assert.equal(coding.compare('ABC').candidates.length,1);
+});
+test('所有长度0至8的ABC原串在每个候选中均往返一致，长度两部分之和正确',()=>{
+  let total=0;
+  function visit(source) {
+    const r=coding.compare(source);
+    r.candidates.forEach(c=>{assert.equal(coding.decode(c.code),source);assert.equal(c.length,c.ruleLength+c.remainderLength);total++;});
+    if(source.length<8) for(const c of 'ABC')visit(source+c);
+  }
+  visit('');assert.equal(total,76261);
+});
+test('非法模式、次数、块、例外位置与重复修改均被拒绝',()=>{
+  for(const code of [null,123,'','X','R0AB','R5AB','R4A','R4AB8C8A','R3AB7C','R4AB8','R4AB0C','LAD','LABCAB C','LABABABABA','LAB'+String.fromCharCode(10),'R4AB'+String.fromCharCode(10)]) assert.throws(()=>coding.decode(code));
+  for(const args of [[0,'AB'],[1.5,'AB'],[4,'ABC'],[4,'AB',[{position:0,letter:'C'}]],[4,'AB',[{position:8,letter:'CC'}]],[4,'AB',Array(1)]]) assert.throws(()=>coding.repeated(...args));
+});
+test('例外记录和比较结果不修改调用方数据，也不在调用间共享结果',()=>{
+  const changes=[{position:8,letter:'C'}];coding.repeated(4,'AB',changes);
+  assert.deepEqual(changes,[{position:8,letter:'C'}]);
+  const r=coding.compare('ABABABAC');r.candidates[0].decoded='C';r.best[0]='X';
+  assert.deepEqual(coding.compare('ABABABAC').best,['R4AB8C']);
+});
 const selection=require('../stage/selection.cjs');
 test('预算与时限筛选后优先答对数，缩短时限会改变方案',()=>{
   assert.deepEqual(selection.evaluate().feasible,['A','B']);
@@ -609,4 +656,4 @@ test('五格存储拒绝非法地址、形状与内容，不隐式扩容或换�
   for(const memory of [[],[null,null],Array(5),[1,null,null,null,null]]) assert.throws(()=>storage.read(memory,1),/存储/);
   for(const v of ['',null,1]) assert.throws(()=>storage.write(storage.initial,2,v),/内容/);
 });
-console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权、解码、存储与方案筛选算例）`);
+console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权、解码、存储、方案筛选与编码算例）`);
