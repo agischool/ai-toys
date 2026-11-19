@@ -1,0 +1,295 @@
+{
+  "complete": true,
+  "beats": [
+    {
+      "take": 1,
+      "scene": "cover",
+      "step": 0,
+      "cam": "all",
+      "quiet": true,
+      "from": "查一次还不够，AI 助手怎样接着做？"
+    },
+    {
+      "take": 2,
+      "scene": "open",
+      "step": 0,
+      "cam": "desk",
+      "from": "「科学社团想在本学期周二 15 点到 16 点活"
+    },
+    {
+      "take": 3,
+      "scene": "open",
+      "step": 1,
+      "cam": "desk",
+      "from": "上一期，一次工具调用可以取回公告。"
+    },
+    {
+      "take": 2,
+      "scene": "open",
+      "step": 2,
+      "cam": "desk",
+      "from": "还是那所虚构学校。"
+    },
+    {
+      "take": 1,
+      "scene": "candidates",
+      "step": 0,
+      "cam": "desk",
+      "from": "查到候选，还没满足所有条件"
+    },
+    {
+      "take": 2,
+      "scene": "candidates",
+      "step": 1,
+      "cam": "desk",
+      "from": "先把任务中的条件列清楚：本学期、周二 15—16"
+    },
+    {
+      "take": 3,
+      "scene": "candidates",
+      "step": 2,
+      "cam": "desk",
+      "from": "第一步，用「查场地」工具查时期、星期和起止时间。"
+    },
+    {
+      "take": 1,
+      "scene": "candidates",
+      "step": 3,
+      "cam": "desk",
+      "from": "15—16 点落在 15—17 点之内，因此两个"
+    },
+    {
+      "take": 2,
+      "scene": "candidates",
+      "step": 4,
+      "cam": "desk",
+      "from": "可是这份返回只回答开放时间，没有设备与坡道信息。"
+    },
+    {
+      "take": 2,
+      "scene": "candidates",
+      "step": 5,
+      "cam": "desk",
+      "from": "这时可以在记录中写下「时间已确认；设备和坡道待查"
+    },
+    {
+      "take": 1,
+      "scene": "chain",
+      "step": 0,
+      "cam": "desk",
+      "from": "工具返回，变成下一步的材料"
+    },
+    {
+      "take": 2,
+      "scene": "chain",
+      "step": 1,
+      "cam": "desk",
+      "from": "本例预先规定：按候选顺序查详情，遇到满足全部条件"
+    },
+    {
+      "take": 2,
+      "scene": "chain",
+      "step": 2,
+      "cam": "desk",
+      "from": "返回 E1：科学活动室有投影仪，坡道记录为「有」"
+    },
+    {
+      "take": 3,
+      "scene": "chain",
+      "step": 3,
+      "cam": "desk",
+      "from": "程序给出建议：「可考虑科学活动室。"
+    },
+    {
+      "take": 2,
+      "scene": "chain",
+      "step": 4,
+      "cam": "desk",
+      "from": "图 1  成功路线共执行两次工具调用。"
+    },
+    {
+      "take": 2,
+      "scene": "chain",
+      "step": 5,
+      "cam": "desk",
+      "from": "顺着这两步看，第一次返回的场地编号成了第二次查询"
+    },
+    {
+      "take": 1,
+      "scene": "chooser",
+      "step": 0,
+      "cam": "desk",
+      "from": "下一步，可以由谁决定"
+    },
+    {
+      "take": 2,
+      "scene": "chooser",
+      "step": 1,
+      "cam": "desk",
+      "from": "在这次演示中，顺序由人先写好：先查时间，再查详情"
+    },
+    {
+      "take": 3,
+      "scene": "chooser",
+      "step": 2,
+      "cam": "desk",
+      "from": "也可以把任务要求、已有结果和可用工具交给语言模型"
+    },
+    {
+      "take": 2,
+      "scene": "chooser",
+      "step": 3,
+      "cam": "desk",
+      "from": "研究中的 ReAct 就采用了相关思路：模型写出"
+    },
+    {
+      "take": 1,
+      "scene": "exits",
+      "step": 0,
+      "cam": "desk",
+      "from": "没查成，要走向不同出口"
+    },
+    {
+      "take": 3,
+      "scene": "exits",
+      "step": 1,
+      "cam": "desk",
+      "from": "先换一份不完整的详情表：科学活动室的坡道写着「有"
+    },
+    {
+      "take": 3,
+      "scene": "exits",
+      "step": 2,
+      "cam": "desk",
+      "from": "本例遇到这类缺口就先停下。"
+    },
+    {
+      "take": 1,
+      "scene": "exits",
+      "step": 3,
+      "cam": "desk",
+      "from": "若想再查另一个候选，可以另定继续查找的规则，给这"
+    },
+    {
+      "take": 2,
+      "scene": "exits",
+      "step": 4,
+      "cam": "desk",
+      "from": "如果工具报错，缺少的是本次成功读取的结果。"
+    },
+    {
+      "take": 3,
+      "scene": "exits",
+      "step": 5,
+      "cam": "desk",
+      "from": "再看一种原地打转：第一次查完候选，下一步又查完全"
+    },
+    {
+      "take": 3,
+      "scene": "exits",
+      "step": 6,
+      "cam": "desk",
+      "from": "最后，假如这次只准查一次，会怎样？"
+    },
+    {
+      "take": 1,
+      "scene": "exits",
+      "step": 7,
+      "cam": "desk",
+      "from": "这个上限是我们特意设置的，目的是看清「到上限退出"
+    },
+    {
+      "take": 2,
+      "scene": "exits",
+      "step": 8,
+      "cam": "desk",
+      "from": "图 2  停下来有不同原因。"
+    },
+    {
+      "take": 1,
+      "scene": "challenge",
+      "step": 0,
+      "cam": "desk",
+      "from": "少一份表，接下来怎么办"
+    },
+    {
+      "take": 3,
+      "scene": "challenge",
+      "step": 1,
+      "cam": "desk",
+      "from": "试着审阅这条记录：已经收到 S1、S2，随后查询"
+    },
+    {
+      "take": 0,
+      "scene": "exercise",
+      "step": 0,
+      "cam": "desk",
+      "quiet": true
+    },
+    {
+      "take": 2,
+      "scene": "exercise",
+      "step": 1,
+      "cam": "desk",
+      "reveal": true,
+      "from": "错误就在缺失的设备信息被当成了肯定证据。"
+    },
+    {
+      "take": 2,
+      "scene": "challenge",
+      "step": 2,
+      "cam": "desk",
+      "from": "若另有可查的详情来源，可以在预算内继续查；若任务"
+    },
+    {
+      "take": 3,
+      "scene": "challenge",
+      "step": 3,
+      "cam": "desk",
+      "from": "把几条路线并排看，调用多少次并不能单独决定好坏。"
+    },
+    {
+      "take": 1,
+      "scene": "challenge",
+      "step": 4,
+      "cam": "desk",
+      "from": "下一期，我们再看一个问题：调用记录越来越长，最早"
+    },
+    {
+      "take": 1,
+      "scene": "lab",
+      "step": 0,
+      "cam": "desk",
+      "from": "想沿着程序再走一遍"
+    },
+    {
+      "take": 1,
+      "scene": "lab",
+      "step": 1,
+      "cam": "desk",
+      "from": "选读：本地实验说明 与 本系列第 2 篇输出 保"
+    },
+    {
+      "take": 1,
+      "scene": "lab",
+      "step": 2,
+      "cam": "desk",
+      "from": "成功和缺资料各实际执行两次工具调用，重复请求和一"
+    },
+    {
+      "take": 0,
+      "scene": "lab",
+      "step": 3,
+      "cam": "desk",
+      "quiet": true
+    },
+    {
+      "take": 0,
+      "scene": "refs",
+      "step": 0,
+      "cam": "desk",
+      "quiet": true,
+      "refs": true
+    }
+  ]
+}

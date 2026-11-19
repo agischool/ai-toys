@@ -859,4 +859,71 @@ test('无效记录与互相矛盾的执行状态会报错，不补全事实',()=
   const good=records.cases[0].event;
   for(const e of [null,{}, {...good,request_id:''},{...good,args:[]},{...good,executed:1},{...good,executed:false},{...good,result:null},{...good,result:Array(1)},{...good,result:[{doc_id:'D1'}]}, {...records.cases[2].event,executed:true},{...records.cases[3].event,executed:false},{...records.cases[3].event,result:[]},{...good,status:'other'}])assert.throws(()=>records.summarize(e),/记录|状态/);
 });
-console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权、解码、存储、方案筛选、编码、关系、证据核对、校园流程与工具记录算例）`);
+const venueRecords=require('../stage/venue-records.cjs');
+test('场地四条已保存路线保留状态、请求数和实际执行数',()=>{
+  assert.deepEqual(venueRecords.cases.map(venueRecords.summarize),[
+    {name:'success',status:'suggested',requests:2,calls:2,blocked:[]},
+    {name:'missing_equipment',status:'insufficient_evidence',requests:2,calls:2,blocked:[]},
+    {name:'repeated_call',status:'blocked_repeat',requests:2,calls:1,blocked:['Q2']},
+    {name:'step_limit',status:'blocked_step_limit',requests:2,calls:1,blocked:['Q2']}]);
+  const source=JSON.parse(fs.readFileSync(path.join(__dirname,'../../Python实现/source/campus_agent_lab/outputs/reference/episode18/result.json'),'utf8'));
+  assert.deepEqual(venueRecords.cases,source.cases);
+});
+test('第二次用第一次返回的V1查详情，建议同时连着S1与E1',()=>{
+  const r=venueRecords.cases[0],v=r.trace[0].result[0];
+  assert.equal(r.trace[1].args.venue_id,v.venue_id);
+  assert.equal(r.suggestion.hours_source,v.hours_source);
+  assert.equal(r.suggestion.details_source,r.trace[1].result.source);
+  assert.deepEqual(venueRecords.evidence(r,'V1'),{period:true,time:true,equipment:true,ramp:true,hoursSource:'S1',detailsSource:'E1'});
+  assert.deepEqual(venueRecords.evidence(r,'V1',1),{period:true,time:true,equipment:null,ramp:null,hoursSource:'S1',detailsSource:null});
+  assert.equal(venueRecords.evidence(r,'V1',0).time,null);
+  assert.throws(()=>venueRecords.evidence(r,'V1',3),/范围/);
+  assert.equal(r.action_scope,'仅建议；没有预约工具，也不执行预约');
+  assert.ok(venueRecords.cases.every(c=>c.trace.every(e=>['search_venues','read_details'].includes(e.tool))));
+});
+test('设备未知与没有设备分开，未查V2不能判为全部不合格',()=>{
+  const r=venueRecords.cases[1];
+  assert.deepEqual(venueRecords.evidence(r,'V1'),{period:true,time:true,equipment:null,ramp:true,hoursSource:'S1',detailsSource:'E1'});
+  assert.deepEqual(venueRecords.evidence(r,'V2'),{period:true,time:true,equipment:null,ramp:null,hoursSource:'S2',detailsSource:null});
+  const no=JSON.parse(JSON.stringify(r));no.trace[1].result.equipment=[];
+  assert.equal(venueRecords.evidence(no,'V1').equipment,false);
+  no.trace[1].result.conflict=true;
+  assert.equal(venueRecords.evidence(no,'V1').ramp,null);
+});
+test('重复与上限被拦都只执行一次，设备与坡道仍未知',()=>{
+  for(const r of venueRecords.cases.slice(2)){
+    assert.equal(r.trace[1].executed,false);
+    assert.equal(venueRecords.summarize(r).calls,1);
+    assert.equal(venueRecords.evidence(r,'V1').equipment,null);
+    assert.equal(venueRecords.evidence(r,'V1').ramp,null);
+    assert.equal(r.suggestion,null);
+  }
+  assert.deepEqual(venueRecords.cases[2].trace[0].args,venueRecords.cases[2].trace[1].args);
+});
+test('时期、时间、设备与坡道逐项比较，不互相代替',()=>{
+  const original=venueRecords.cases[0];
+  for(const [key,value,field] of [['period','明年','period'],['day','周三','time'],['start',14,'time'],['end',18,'time'],['equipment','音响','equipment']]){
+    const r=JSON.parse(JSON.stringify(original));r.task[key]=value;
+    assert.equal(venueRecords.evidence(r,'V1')[field],false);
+  }
+  const r=JSON.parse(JSON.stringify(original));r.task.end=17;
+  assert.equal(venueRecords.evidence(r,'V1').time,true);
+  r.trace[1].result.ramp=false;
+  assert.equal(venueRecords.evidence(r,'V1').ramp,false);
+  assert.equal(venueRecords.evidence(r,'V1').equipment,true);
+});
+test('场地记录深层冻结，摘要与条件核对不修改记录',()=>{
+  assert.ok(Object.isFrozen(venueRecords.cases[0].trace[0].result[0]));
+  assert.ok(Object.isFrozen(venueRecords.cases[0].task));
+  const r=JSON.parse(JSON.stringify(venueRecords.cases[0])),before=JSON.stringify(r);
+  const summary=venueRecords.summarize(r);summary.calls=99;
+  const e=venueRecords.evidence(r,'V1');e.time=false;
+  assert.equal(JSON.stringify(r),before);
+  assert.equal(venueRecords.evidence(r,'V1').time,true);
+});
+test('不一致的执行数、状态和无效条件标注报错，不补造证据',()=>{
+  const r=venueRecords.cases[0];
+  for(const v of [null,{}, {...r,tool_calls:1},{...r,max_steps:1},{...r,status:'unknown'},{...r,status:'blocked_repeat'},{...r,suggestion:null},{...r,trace:[{...r.trace[0],executed:false}]}])assert.throws(()=>venueRecords.summarize(v),/记录|状态|次数/);
+  for(const changes of [{start:true},{end:25},{start:16,end:15},{ramp:'有'}])assert.throws(()=>venueRecords.evidence({...r,task:{...r.task,...changes}},'V1'),/标注/);
+});
+console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权、解码、存储、方案筛选、编码、关系、证据核对、校园流程、工具记录与多步场地路线算例）`);
