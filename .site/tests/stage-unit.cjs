@@ -286,6 +286,44 @@ test('同样九个像素，单通道为 9 个值，RGB 为 27 个值', () => {
   assert.equal(pixels.channelCount(3,3,1), 9);
   assert.equal(pixels.channelCount(3,3,3), 27);
 });
+const windows = require('../stage/window.cjs');
+test('同一竖线模板对竖线、黑点、横线、全黑分别响应 3、1、1、3', () => {
+  assert.deepEqual([windows.vertical, windows.dot, windows.horizontal, windows.black].map(v => windows.response(v).score), [3,1,1,3]);
+  assert.deepEqual(windows.response(windows.dot).products, windows.dot);
+});
+test('权重减半改变尺度，负权重手工模板能区分竖线和全黑', () => {
+  assert.equal(windows.response(windows.vertical, windows.half).score, 1.5);
+  assert.equal(windows.response(windows.dot, windows.half).score, .5);
+  assert.equal(windows.response(windows.vertical, windows.contrast).score, 3);
+  assert.equal(windows.response(windows.black, windows.contrast).score, -3);
+});
+test('步长 1 不补边恰好三窗，特征图高分随竖线移动', () => {
+  const original = windows.slide(windows.lineImage(1), 5);
+  const moved = windows.slide(windows.lineImage(2), 5);
+  assert.deepEqual(original.map(w => w.left), [0,1,2]);
+  assert.deepEqual(original.map(w => w.score), [3,0,0]);
+  assert.deepEqual(moved.map(w => w.score), [0,3,0]);
+  assert.deepEqual(original[0].patch, windows.vertical);
+});
+test('改变步长可能漏过高分，边缘的完整竖线也不保证高响应', () => {
+  assert.deepEqual(windows.slide(windows.lineImage(1),5,windows.vertical,2).map(w => w.score), [3,0]);
+  assert.deepEqual(windows.slide(windows.lineImage(2),5,windows.vertical,2).map(w => w.score), [0,0]);
+  assert.deepEqual(windows.slide(windows.lineImage(0),5).map(w => w.score), [0,0,0]);
+});
+test('互相关不翻转模板，所有位置共用原权重且不改原图', () => {
+  const image = Array.from({length:15}, (_,i) => i+1), before = [...image];
+  const weights = [1,0,0,0,0,0,0,0,0], saved = [...weights];
+  assert.deepEqual(windows.slide(image,5,weights).map(w => w.score), [1,2,3]);
+  assert.deepEqual(image, before);
+  assert.deepEqual(weights, saved);
+  assert.ok(Object.isFrozen(windows.vertical));
+});
+test('滑窗拒绝错误尺寸、非有限数和非法步长', () => {
+  assert.throws(() => windows.response([1,2,3]), /尺寸/);
+  assert.throws(() => windows.response(Array(9).fill(Infinity)), /有限/);
+  for (const stride of [0,1.5,NaN]) assert.throws(() => windows.slide(windows.lineImage(1),5,windows.vertical,stride), /步长/);
+  assert.throws(() => windows.slide([1,2,3],5), /尺寸/);
+});
 const parameter = require('../stage/parameter.cjs');
 test('固定输入与目标时，b 从 0 到 3 的预测、逐题误差和总损失正确', () => {
   const expected = [
@@ -316,4 +354,4 @@ test('手动试数支持有限小数，拒绝无效参数和目标', () => {
   for (const b of [NaN, Infinity, '2']) assert.throws(() => parameter.trial(b), /有限数/);
   for (const answers of [[3,4], [3,4,NaN]]) assert.throws(() => parameter.trial(2,answers), /目标/);
 });
-console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素与参数算例）`);
+console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数与滑窗算例）`);

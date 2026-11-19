@@ -1,0 +1,379 @@
+{
+  "complete": true,
+  "beats": [
+    {
+      "from": "一个小窗口，怎样找出图里的线索？",
+      "take": 1,
+      "scene": "cover",
+      "step": 0,
+      "cam": "all",
+      "quiet": true
+    },
+    {
+      "from": "一条竖线从图片左边挪到右边，我们通常",
+      "take": 2,
+      "scene": "open",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "怎样让它无论出现在左边还是右边，都能",
+      "take": 1,
+      "scene": "open",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "卷积神经网络，简称 CNN，用到的一",
+      "take": 2,
+      "scene": "open",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "先让一个小窗口算几次分，它们就容易理",
+      "take": 1,
+      "scene": "open",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "先让九个格子算一次分",
+      "take": 1,
+      "scene": "score",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "约定黑格记1、白格记0。",
+      "take": 1,
+      "scene": "score",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "再做一张3×3的模板：中间一列全是1",
+      "take": 1,
+      "scene": "score",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "模板里的这些数叫权重，决定各个位置怎",
+      "take": 1,
+      "scene": "score",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "把模板盖在同样大小的图块上，对应位置",
+      "take": 1,
+      "scene": "score",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "若图块正好是一条居中的竖线，模板中间",
+      "take": 2,
+      "scene": "score",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "换成只有中心一个黑点的图块，中间三个",
+      "take": 1,
+      "scene": "score",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "再换成一条居中的横线，与模板重合的也",
+      "take": 1,
+      "scene": "score",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "图1  中间一列为1的模板，分别与四",
+      "take": 2,
+      "scene": "score",
+      "step": 8,
+      "cam": "desk"
+    },
+    {
+      "from": "先别把3分当成“认出了竖线”。",
+      "take": 1,
+      "scene": "score",
+      "step": 9,
+      "cam": "desk"
+    },
+    {
+      "from": "看看图1的全黑图块：中间一列也全是1",
+      "take": 1,
+      "scene": "score",
+      "step": 10,
+      "cam": "desk"
+    },
+    {
+      "from": "这个模板能检查中间是否竖着排满黑格，",
+      "take": 1,
+      "scene": "score",
+      "step": 11,
+      "cam": "desk"
+    },
+    {
+      "from": "卷积层也用到这种“先乘再加”的计算。",
+      "take": 1,
+      "scene": "score",
+      "step": 12,
+      "cam": "desk"
+    },
+    {
+      "from": "严格按数学名称，深度学习中常用的是不",
+      "take": 2,
+      "scene": "score",
+      "step": 13,
+      "cam": "desk"
+    },
+    {
+      "from": "把同一个模板挪过去",
+      "take": 1,
+      "scene": "scan",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "现在把画面加宽，变成3行5列。",
+      "take": 2,
+      "scene": "scan",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "模板先盖住第1至3列。",
+      "take": 2,
+      "scene": "scan",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "向右移一格，盖第2至4列；此时竖线落",
+      "take": 1,
+      "scene": "scan",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "再右移一格，盖第3至5列，窗口内全白",
+      "take": 1,
+      "scene": "scan",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "把三次结果按窗口的位置排好，就得到一",
+      "take": 2,
+      "scene": "scan",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "图2  窗口依次覆盖第1至3、2至4",
+      "take": 2,
+      "scene": "scan",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "接着，把竖线从原图第2列移到第3列，",
+      "take": 2,
+      "scene": "scan",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "高分也右移了一格。",
+      "take": 2,
+      "scene": "scan",
+      "step": 8,
+      "cam": "desk"
+    },
+    {
+      "from": "这里每次移动一格，叫步长为1；只让窗",
+      "take": 1,
+      "scene": "scan",
+      "step": 9,
+      "cam": "desk"
+    },
+    {
+      "from": "这些都是计算规则的一部分。",
+      "take": 2,
+      "scene": "scan",
+      "step": 10,
+      "cam": "desk"
+    },
+    {
+      "from": "每到一个新位置，模板里的数都不用另换",
+      "take": 2,
+      "scene": "scan",
+      "step": 11,
+      "cam": "desk"
+    },
+    {
+      "from": "对于这里单通道、3×3的计算，检查的",
+      "take": 1,
+      "scene": "scan",
+      "step": 12,
+      "cam": "desk"
+    },
+    {
+      "from": "模板里的数字从哪里来",
+      "take": 1,
+      "scene": "learn",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "不过，目前的模板是人手工填好的，程序",
+      "take": 2,
+      "scene": "learn",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "真实 CNN 中，这类小模板通常叫滤",
+      "take": 1,
+      "scene": "learn",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "本系列第 4 篇只调一个b，这里要调",
+      "take": 1,
+      "scene": "learn",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "原来是0或1的位置，可以变成其他数，",
+      "take": 1,
+      "scene": "learn",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "这些权重也不只是简单的“算进去”或“",
+      "take": 2,
+      "scene": "learn",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "例如，只把原模板的三个1都改成0.5",
+      "take": 1,
+      "scene": "learn",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "分数大小随着权重变化，不能直接比较不",
+      "take": 1,
+      "scene": "learn",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "真实的卷积层往往不止一个滤波器。",
+      "take": 3,
+      "scene": "learn",
+      "step": 8,
+      "cam": "desk"
+    },
+    {
+      "from": "这些组合并没有一份固定的“先找胡须、",
+      "take": 2,
+      "scene": "learn",
+      "step": 9,
+      "cam": "desk"
+    },
+    {
+      "from": "2012年的AlexNet研究展示了",
+      "take": 1,
+      "scene": "learn",
+      "step": 10,
+      "cam": "desk"
+    },
+    {
+      "from": "小窗口也有看不到的地方",
+      "take": 1,
+      "scene": "bounds",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "图1中“全黑”和“竖线”同得3分，是",
+      "take": 1,
+      "scene": "bounds",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "增加其他滤波器、组合更大范围的信息，",
+      "take": 1,
+      "scene": "bounds",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "也可以手动改一张模板，看看“检查两边",
+      "take": 2,
+      "scene": "exercise",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "居中竖线的两侧是白格0，新分数仍为3",
+      "take": 2,
+      "scene": "exercise",
+      "step": 1,
+      "cam": "desk",
+      "reveal": true
+    },
+    {
+      "from": "移动也有边界。",
+      "take": 2,
+      "scene": "bounds",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "旋转、缩放、噪声更不是简单的平移。",
+      "take": 2,
+      "scene": "bounds",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "回头看整个过程：小窗口在各处重复计算",
+      "take": 1,
+      "scene": "bounds",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "以后再听到“AI 在图里找线索”，就",
+      "take": 1,
+      "scene": "bounds",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "take": 0,
+      "scene": "refs",
+      "step": 0,
+      "cam": "desk",
+      "refs": true,
+      "quiet": true
+    }
+  ]
+}
