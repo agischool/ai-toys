@@ -1,0 +1,859 @@
+<!doctype html>
+<html lang="zh-CN" data-mode="read">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#fffdf6">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='8.25' fill='none' stroke='%23185b46' stroke-width='1.5'/%3E%3Ccircle cx='10' cy='10' r='3.4' fill='%23185b46'/%3E%3C/svg%3E">
+<title>AI 答得像真的，应该怎样检查？ · 互动版 · 看得见的 AI</title>
+<meta name="description" content="有链接，还要逐句找依据。这篇用校园公告区分支持、矛盾和信息不足，解释「可信度 90%」为何不能直接当作正确率，再看总分怎样遮住分组盲点，以及核查的隐私边界。">
+<style data-stage-source="stage.css">/* 互动版样式。
+ * 控件沿用 library.css 的纸色、墨绿、焦点色与 250ms ease-out；
+ * 画面沿用连载图解的 #fffdf6 底与 #203845 描边。不加阴影、发光和渐变。 */
+
+:root {
+  color-scheme: light;
+  --paper: #f6f5ef;
+  --ink: #22352d;
+  --muted: #5c6d63;
+  --line: #d8ded5;
+  --accent: #185b46;
+  --focus: #ba651f;
+  --white: #fffef9;
+  --serif: "Songti SC", "Noto Serif CJK SC", serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+
+  --art-paper: #fffdf6;
+  --art-ink: #203845;
+  --art-muted: #586e79;
+  --art-teal: #168f94;
+  --art-mint: #def3ee;
+  --art-coral: #ee6a58;
+  --art-peach: #ffe7df;
+  --art-yellow: #ffcf62;
+  --art-cream: #fff1d2;
+  --art-blue: #e3efff;
+  /* 文字或白字底用的深色变体：原色青 / 珊瑚与白字、纸色分别只有 3.9 / 3.1 比 1，压深后 5.0 比 1。 */
+  --art-teal-ink: #137a7f;
+  --art-coral-ink: #d42c16;
+
+  --move: 700ms cubic-bezier(.22, 1, .36, 1);
+}
+
+* { box-sizing: border-box }
+html, body { margin: 0; height: 100% }
+body {
+  background: var(--art-paper);
+  color: var(--art-ink);
+  font: 16px/1.75 var(--sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+}
+button { font: inherit; color: inherit }
+a { color: inherit }
+:lang(zh) { text-autospace: normal; text-spacing-trim: trim-start }
+p, li { text-wrap: pretty }
+h1, h2, h3 { text-wrap: balance }
+[hidden] { display: none !important }
+
+a:focus-visible, button:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.skip {
+  position: fixed; left: 12px; top: -64px; z-index: 20;
+  padding: 9px 16px; background: var(--white); border: 1px solid var(--line); border-radius: 9px;
+  font-size: 14px; font-weight: 600; text-decoration: none;
+  transition: top 250ms ease-out;
+}
+.skip:focus { top: 12px }
+
+/* ---------------- 模式 ---------------- */
+
+html[data-mode="stage"], html[data-mode="stage"] body { overflow: hidden }
+html[data-mode="read"] #stage, html[data-mode="read"] #toc { display: none }
+html[data-mode="stage"] #readwrap { display: none }
+html[data-mode="read"] body { background: var(--paper); color: var(--ink) }
+.hit { pointer-events: auto; cursor: pointer }
+.scene:not(.is-active) .hit, .s:not(.on) .hit, .solo .s:not(.focus) .hit { pointer-events: none }
+.hit:focus-visible { outline: 4px solid var(--art-coral-ink); outline-offset: 6px }
+
+/* ---------------- 舞台 ---------------- */
+
+/* 翻页由脚本接管：禁掉浏览器自己的拖动、缩放和橡皮筋，滚轮与滑动才不会同时触发两套行为。 */
+html[data-mode="stage"], html[data-mode="stage"] body { overscroll-behavior: none }
+#stage { position: fixed; inset: 0; background: var(--art-paper); overflow: hidden; touch-action: none }
+#stage button, #stage a, #stage .hit { touch-action: manipulation }
+#stage:not(.ready) * { transition: none !important; animation: none !important }
+
+.scene {
+  position: absolute; inset: 0; width: 100%; height: 100%; display: block;
+  pointer-events: none;
+  opacity: 0; visibility: hidden;
+  transition: opacity 250ms ease-out, visibility 0s linear 250ms;
+}
+.scene.is-active { opacity: 1; visibility: visible; transition-delay: 0s }
+.cam { transition: transform var(--move) }
+
+/* 画面元素：外层 .s 只管出现动画，内层 .pos 只管摆位（横屏用 --l*，竖屏用 --p*）。 */
+.s {
+  opacity: 0; transform: translateY(14px);
+  transition: opacity 250ms ease-out var(--d, 0ms), transform 250ms ease-out var(--d, 0ms);
+}
+.s.on { opacity: 1; transform: none }
+.s.pop { transform: scale(.86); transform-box: fill-box; transform-origin: center }
+.s.pop.on { transform: none }
+.s.fade, .s.fade.on { transform: none }
+.snap .s { transition: none !important }
+.has-focus .s.on:not(.focus) { opacity: .22 }
+.solo .s.on:not(.focus) { opacity: 0 }
+
+.pos { transform: translate(var(--lx, 0), var(--ly, 0)) rotate(var(--lr, 0deg)) scale(var(--ls, 1)) }
+#stage[data-orient="portrait"] .pos { transform: translate(var(--px, 0), var(--py, 0)) rotate(var(--pr, 0deg)) scale(var(--ps, 1)) }
+#stage[data-orient="portrait"] .only-l, #stage[data-orient="landscape"] .only-p { display: none }
+
+/* 可翻转的卡：翻面时正反两层交换。 */
+.flip .front, .flip .back { transition: opacity 250ms ease-out }
+.flip .back { opacity: 0 }
+.flip.is-flipped .front { opacity: 0 }
+.flip.is-flipped .back { opacity: 1 }
+
+.cap.quiet {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+
+/* ---------------- 顶栏 ---------------- */
+
+.hud {
+  position: absolute; z-index: 3; left: 0; right: 0; top: 0;
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+  padding: calc(12px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) 0 calc(14px + env(safe-area-inset-left));
+  pointer-events: none;
+}
+.hud-l, .hud-r { display: flex; gap: 8px; min-width: 0; pointer-events: auto }
+.hud-l { flex: 0 1 auto }
+
+.pill {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 34px; padding: 0 14px;
+  border: 1px solid var(--line); border-radius: 12px;
+  background: rgba(255, 254, 249, .94); color: var(--ink);
+  font: 600 13px/1 var(--sans); text-decoration: none; white-space: nowrap; cursor: pointer;
+  touch-action: manipulation;
+  transition: border-color 250ms ease-out, background 250ms ease-out, color 250ms ease-out;
+}
+.pill:hover { border-color: var(--accent); color: var(--accent) }
+.pill:active { transform: translateY(1px) }
+.pill:disabled { opacity: .4; cursor: default; border-color: var(--line); color: var(--ink) }
+.pill[data-playing="true"] { background: var(--accent); border-color: var(--accent); color: #fff }
+.pill svg { width: 14px; height: 14px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round }
+.pill.icon { width: 34px; padding: 0 }
+
+.sec { cursor: default; min-width: 0 }
+.sec:hover { border-color: var(--line); color: var(--ink) }
+#sec-num { color: var(--art-teal-ink); font-variant-numeric: tabular-nums }
+#sec-num:empty { display: none }
+#sec-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; max-width: min(46vw, 380px) }
+
+/* ---------------- 字幕与底栏 ---------------- */
+
+.cap {
+  position: absolute; z-index: 2; left: 50%; transform: translateX(-50%);
+  bottom: calc(56px + env(safe-area-inset-bottom));
+  width: min(calc(100% - 28px), 900px);
+  padding: 16px 22px;
+  background: var(--art-paper); border: 3px solid var(--art-ink); border-radius: 22px;
+  pointer-events: none;
+}
+.cap p { margin: 0; font-size: clamp(18px, 2.3vw, 24px); line-height: 1.65; font-weight: 600 }
+.cap p[data-kind="caption"] { font-weight: 500 }
+.cap p[data-kind="title"] { font-size: clamp(20px, 2.8vw, 30px); text-align: center }
+.cap p[data-kind="h2"] {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  font-size: clamp(22px, 3vw, 32px); font-weight: 800; line-height: 1.4;
+}
+.cap .no {
+  flex: none; display: inline-grid; place-items: center; min-width: 36px; height: 36px; padding: 0 8px;
+  border-radius: 18px; background: var(--art-coral-ink); color: #fff; font: 800 20px/1 var(--sans);
+}
+.cap .fig { color: var(--art-teal-ink); font-weight: 800 }
+.cap p.in { animation: cap-in 250ms ease-out both }
+@keyframes cap-in { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
+.cite { color: #b15b21; font-weight: 600 }
+
+.foot {
+  position: absolute; z-index: 3; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 0 calc(14px + env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left));
+  pointer-events: none;
+}
+.foot > * { pointer-events: auto }
+#bar { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--art-teal); transform-origin: left; transform: scaleX(0); transition: transform 250ms ease-out; pointer-events: none }
+#hint { margin: 0; font-size: 13px; color: var(--art-muted); pointer-events: none }
+#count { font-size: 12px; color: var(--art-muted); font-variant-numeric: tabular-nums; min-width: 4.6em; text-align: center }
+.steps { display: flex; align-items: center; gap: 8px; margin-left: auto }
+
+/* ---------------- 目录 ---------------- */
+
+#toc {
+  width: min(960px, calc(100% - 28px)); max-height: calc(100% - 28px);
+  padding: 0; border: 3px solid var(--art-ink); border-radius: 24px;
+  background: var(--art-paper); color: var(--art-ink);
+}
+#toc[open] { display: flex; flex-direction: column }
+#toc::backdrop { background: rgba(32, 56, 69, .5) }
+.toc-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--line) }
+.toc-head h2 { margin: 0; font-size: 16px; line-height: 1.5 }
+#toc-list { list-style: none; margin: 0; padding: 20px; overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px }
+.toc-foot { margin: 0; padding: 12px 20px 16px; border-top: 1px solid var(--line); font-size: 13px; line-height: 1.7; color: var(--art-muted) }
+.toc-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+  width: 100%; height: 100%; padding: 14px; text-align: left;
+  background: var(--white); border: 1px solid var(--line); border-radius: 18px; cursor: pointer;
+  transition: border-color 250ms ease-out, transform 250ms ease-out;
+}
+.toc-card:hover { border-color: var(--accent) }
+.toc-card:active { transform: translateY(1px) }
+.toc-thumb { display: block; width: 100%; height: 115px; flex: none }
+.toc-no {
+  display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding: 0 8px;
+  border-radius: 15px; background: var(--art-coral-ink); color: #fff; font: 700 14px/1 var(--sans);
+}
+.toc-name { font-size: 15px; font-weight: 600; line-height: 1.5 }
+
+/* ---------------- 全文 ---------------- */
+
+.read-bar {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 20px; background: var(--paper); border-bottom: 1px solid var(--line);
+}
+#read { max-width: 680px; margin: 0 auto; padding: 8px 20px 96px; font-size: 17px; line-height: 1.9; color: var(--ink) }
+#read:focus { outline: none }
+#read h1 { margin: 32px 0 24px; font: 650 28px/1.4 var(--serif); letter-spacing: -.01em }
+#read h1 .tl { display: inline-block }
+#read h2 { margin: 40px 0 16px; font-size: 20px; line-height: 1.5 }
+#read p { margin: 0 0 18px }
+#read .pic { margin: 24px 0 8px }
+#read img { display: block; max-width: 100%; height: auto; margin: 0 auto; border: 1px solid var(--line); border-radius: 12px; background: #fff }
+#read .figcap { margin: 0 0 24px; font-size: 14px; line-height: 1.7; color: var(--muted) }
+#read .figcap em { font-style: normal }
+.read-note { margin: 24px 0 0; font-size: 14px; line-height: 1.7; color: var(--muted) }
+#read .refs p { font-size: 14px; line-height: 1.75; overflow-wrap: anywhere }
+#read a { color: var(--accent); text-underline-offset: 3px }
+.read-end { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 40px }
+
+/* ---------------- 小屏与矮屏 ---------------- */
+
+@media (max-width: 560px) {
+  .hud { gap: 8px }
+  .lbl { display: none }
+  .cap { padding: 12px 16px; border-radius: 18px }
+  .cap p { font-size: 18px }
+}
+@media (max-width: 420px) {
+  #sec-name { max-width: 34vw }
+  .pill { padding: 0 11px }
+}
+@media (max-height: 560px) {
+  .cap { padding: 8px 16px }
+  .cap p { font-size: 17px; line-height: 1.55 }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene, .cam, .s, .flip .front, .flip .back, .pill, .toc-card, #bar, .skip { transition: none }
+  .cap p.in { animation: none }
+}
+</style>
+<script>(function(){var q=new URLSearchParams(location.search),r=matchMedia('(prefers-reduced-motion: reduce)').matches;if(!(q.has('read')||(r&&!q.has('stage'))))document.documentElement.setAttribute('data-mode','stage')})()</script>
+</head>
+<body>
+<a class="skip" href="?read" data-action="read">跳到全文</a>
+<main id="stage" data-orient="landscape">
+<svg class="scene" data-scene="cover" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s fade bleed" data-at="0" data-n="wash"><g class="pos" style="--lx:1300px;--ly:500px;--ls:1;--lr:0deg;--px:700px;--py:1180px;--ps:1;--pr:0deg"><ellipse cx="0" cy="0" rx="470" ry="520" fill="#def3ee"/></g></g><g class="s rise" data-at="0" data-n="series"><g class="pos" style="--lx:350px;--ly:155px;--ls:1;--lr:0deg;--px:310px;--py:170px;--ps:1;--pr:0deg"><rect x="-240" y="-33" width="480" height="66" rx="33" fill="#137a7f" stroke="#203845" stroke-width="5" stroke-linejoin="round"/><text x="0" y="2" font-size="36" fill="#ffffff" text-anchor="middle" font-weight="800" dominant-baseline="central"><tspan x="0" dy="0">AI 的答案可信吗</tspan></text></g></g><g class="s rise" data-at="0" data-n="nth"><g class="pos" style="--lx:110px;--ly:235px;--ls:1;--lr:0deg;--px:70px;--py:270px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="32" fill="#586e79" text-anchor="start" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">第 4 篇 / 共 5 篇</tspan></text></g></g><g class="s rise only-l" data-at="0" data-n="title"><g class="pos" style="--lx:110px;--ly:400px;--ls:1;--lr:0deg;--px:110px;--py:400px;--ps:1;--pr:0deg"><text x="0" y="-51.3" font-size="76" fill="#203845" text-anchor="start" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">AI 答得像真的，</tspan><tspan x="0" dy="102.6">应该怎样检查？</tspan></text></g></g><g class="s rise only-p" data-at="0" data-n="title"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:70px;--py:470px;--ps:1;--pr:0deg"><text x="0" y="-46.2" font-size="66" fill="#203845" text-anchor="start" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">AI 答得像真的，</tspan><tspan x="0" dy="92.4">应该怎样检查？</tspan></text></g></g><g class="s rise" data-at="0" data-n="rule"><g class="pos" style="--lx:114px;--ly:555px;--ls:1;--lr:0deg;--px:74px;--py:625px;--ps:1;--pr:0deg"><path d="M0 0 L145 0" fill="none" stroke="#ee6a58" stroke-width="10" stroke-linecap="round"/></g></g><g class="s rise" data-at="0" data-n="mechanism"><g class="pos" style="--lx:1240px;--ly:445px;--ls:0.85;--lr:0deg;--px:450px;--py:990px;--ps:1;--pr:0deg"><path d="M93.6 93.6 L210.6 210.6" fill="none" stroke="#203845" stroke-width="16" stroke-linecap="round"/><path d="M93.6 93.6 L210.6 210.6" fill="none" stroke="#ee6a58" stroke-width="8" stroke-linecap="round"/><circle cx="0" cy="0" r="130" fill="rgba(222,243,238,.7)" stroke="#203845" stroke-width="7"/><path d="M-71.5 -13 C-58.5 -65 -19.5 -91 19.5 -88.4" fill="none" stroke="#ffffff" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/></g></g><g class="s rise" data-at="0" data-n="robot"><g class="pos" style="--lx:105px;--ly:625px;--ls:1;--lr:0deg;--px:70px;--py:1160px;--ps:1;--pr:0deg"><image href="../../.site/assets/serial-robot-480.png" x="0" y="0" width="240" height="219.5" preserveAspectRatio="xMidYMid meet"/></g></g><g class="s rise" data-at="0" data-n="question"><g class="pos" style="--lx:1230px;--ly:800px;--ls:1;--lr:0deg;--px:620px;--py:1350px;--ps:0.85;--pr:0deg"><rect x="-220" y="-38" width="440" height="76" rx="38" fill="#137a7f" stroke="#203845" stroke-width="5" stroke-linejoin="round"/><text x="0" y="2" font-size="40" fill="#ffffff" text-anchor="middle" font-weight="800" dominant-baseline="central"><tspan x="0" dy="0">逐句对照 · 允许未知</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="open" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:230px;--ps:1;--pr:0deg"><rect x="-270" y="-165" width="540" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-235 -65 L235 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">助手回答</tspan></text><text x="0" y="13.32" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">周日开放</tspan><tspan x="0" dy="63.36">还附有公告链接</tspan></text></g></g><g class="s pop" data-at="0" data-until="1" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><rect x="-270" y="-165" width="540" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-235 -65 L235 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点开原始公告</tspan></text><text x="0" y="45" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">周日闭馆</tspan></text></g></g><g class="s pop" data-at="0" data-until="1" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="-29.04" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">虚构例子：有来源</tspan><tspan x="0" dy="58.08">还要核对是否支持</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:230px;--ps:1;--pr:0deg"><path d="M79.2 79.2 L178.2 178.2" fill="none" stroke="#203845" stroke-width="16" stroke-linecap="round"/><path d="M79.2 79.2 L178.2 178.2" fill="none" stroke="#ee6a58" stroke-width="8" stroke-linecap="round"/><circle cx="0" cy="0" r="110" fill="rgba(222,243,238,.7)" stroke="#203845" stroke-width="7"/><path d="M-60.50000000000001 -11 C-49.5 -55 -16.5 -77 16.5 -74.80000000000001" fill="none" stroke="#ffffff" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/><text x="0" y="240" font-size="50" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">追到原文</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><rect x="-280" y="-120" width="560" height="240" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">上一期：挪动对象</tspan><tspan x="0" dy="60.72">本期：对照回答与材料</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="trace" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="chapter.art"><g class="pos" style="--lx:600px;--ly:275px;--ls:1;--lr:0deg;--px:400px;--py:370px;--ps:1;--pr:0deg"><path d="M79.2 79.2 L178.2 178.2" fill="none" stroke="#203845" stroke-width="16" stroke-linecap="round"/><path d="M79.2 79.2 L178.2 178.2" fill="none" stroke="#ee6a58" stroke-width="8" stroke-linecap="round"/><circle cx="0" cy="0" r="110" fill="rgba(222,243,238,.7)" stroke="#203845" stroke-width="7"/><path d="M-60.50000000000001 -11 C-49.5 -55 -16.5 -77 16.5 -74.80000000000001" fill="none" stroke="#ffffff" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/></g></g><g class="s pop" data-at="0" data-until="1" data-n="chapter.note" style="--d:140ms"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:880px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="54" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">沿着每一句话 · 找到适用证据</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="item.0"><g class="pos" style="--lx:210px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:130px;--ps:1;--pr:0deg"><rect x="-170" y="-85" width="340" height="170" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本校图书馆</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="item.1"><g class="pos" style="--lx:600px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:450px;--ps:1;--pr:0deg"><rect x="-170" y="-85" width="340" height="170" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本周日</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="item.2"><g class="pos" style="--lx:990px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:770px;--ps:1;--pr:0deg"><rect x="-170" y="-85" width="340" height="170" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">开放</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="-29.04" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">地点 · 时间 · 开放状态</tspan><tspan x="0" dy="58.08">先把要查的主张拆清楚</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:230px;--ps:1;--pr:0deg"><rect x="-270" y="-165" width="540" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-235 -65 L235 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">另一所学校</tspan></text><text x="0" y="45" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">周日开放</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><rect x="-270" y="-165" width="540" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-235 -65 L235 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本校去年公告</tspan></text><text x="0" y="45" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">周日开放</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">学校或适用期不符 · 不能直接套用</tspan></text></g></g><g class="s pop only-l" data-at="3" data-until="4" data-n="verdict.0"><g class="pos" style="--lx:210px;--ly:290px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><rect x="-175" y="-155" width="350" height="310" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-65" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">周日开放</tspan></text><text x="0" y="65" font-size="42" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">得到支持</tspan></text></g></g><g class="s pop only-p" data-at="3" data-until="4" data-n="verdict.0"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:160px;--ps:1;--pr:0deg"><rect x="-345" y="-100" width="690" height="200" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-40" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">周日开放</tspan></text><text x="0" y="45" font-size="48" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">得到支持</tspan></text></g></g><g class="s pop only-l" data-at="3" data-until="4" data-n="verdict.1"><g class="pos" style="--lx:600px;--ly:290px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><rect x="-175" y="-155" width="350" height="310" rx="14" fill="#ffe7df" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-65" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">周日闭馆</tspan></text><text x="0" y="65" font-size="42" fill="#d42c16" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">与材料矛盾</tspan></text></g></g><g class="s pop only-p" data-at="3" data-until="4" data-n="verdict.1"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:470px;--ps:1;--pr:0deg"><rect x="-345" y="-100" width="690" height="200" rx="14" fill="#ffe7df" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-40" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">周日闭馆</tspan></text><text x="0" y="45" font-size="48" fill="#d42c16" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">与材料矛盾</tspan></text></g></g><g class="s pop only-l" data-at="3" data-until="4" data-n="verdict.2"><g class="pos" style="--lx:990px;--ly:290px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><rect x="-175" y="-155" width="350" height="310" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-65" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">只列周一至周五</tspan></text><text x="0" y="65" font-size="42" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">材料未说明</tspan></text></g></g><g class="s pop only-p" data-at="3" data-until="4" data-n="verdict.2"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:780px;--ps:1;--pr:0deg"><rect x="-345" y="-100" width="690" height="200" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-40" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">只列周一至周五</tspan></text><text x="0" y="45" font-size="48" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">材料未说明</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="-29.04" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">学校与适用期已核准</tspan><tspan x="0" dy="58.08">核对主张“周日开放”</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:230px;--ps:1;--pr:0deg"><rect x="-270" y="-165" width="540" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-235 -65 L235 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本校 · 本周公告</tspan></text><text x="0" y="13.32" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">只列周一至周五</tspan><tspan x="0" dy="63.36">没有说明周日</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><rect x="-265" y="-120" width="530" height="240" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">材料未说明</tspan><tspan x="0" dy="60.72">主张：周日开放</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="-29.04" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">未说明，不能当成开放</tspan><tspan x="0" dy="58.08">也不能当成闭馆</tspan></text></g></g><g class="s pop" data-at="5" data-until="6" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:230px;--ps:1;--pr:0deg"><rect x="-270" y="-165" width="540" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-235 -65 L235 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">现有时刻表</tspan></text><text x="0" y="45" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">只列周一至周五</tspan></text></g></g><g class="s pop" data-at="5" data-until="6" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><rect x="-275" y="-125" width="550" height="250" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">资料缺口</tspan><tspan x="0" dy="60.72">没有说明周日安排</tspan></text></g></g><g class="s pop only-l" data-at="6" data-until="7" data-n="verdict.0"><g class="pos" style="--lx:210px;--ly:290px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><rect x="-175" y="-155" width="350" height="310" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-65" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">周日开放</tspan></text><text x="0" y="65" font-size="42" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">得到支持</tspan></text></g></g><g class="s pop only-p" data-at="6" data-until="7" data-n="verdict.0"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:160px;--ps:1;--pr:0deg"><rect x="-345" y="-100" width="690" height="200" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-40" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">周日开放</tspan></text><text x="0" y="45" font-size="48" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">得到支持</tspan></text></g></g><g class="s pop only-l" data-at="6" data-until="7" data-n="verdict.1"><g class="pos" style="--lx:600px;--ly:290px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><rect x="-175" y="-155" width="350" height="310" rx="14" fill="#ffe7df" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-65" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">周日闭馆</tspan></text><text x="0" y="65" font-size="42" fill="#d42c16" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">与材料矛盾</tspan></text></g></g><g class="s pop only-p" data-at="6" data-until="7" data-n="verdict.1"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:470px;--ps:1;--pr:0deg"><rect x="-345" y="-100" width="690" height="200" rx="14" fill="#ffe7df" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-40" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">周日闭馆</tspan></text><text x="0" y="45" font-size="48" fill="#d42c16" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">与材料矛盾</tspan></text></g></g><g class="s pop only-l" data-at="6" data-until="7" data-n="verdict.2"><g class="pos" style="--lx:990px;--ly:290px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><rect x="-175" y="-155" width="350" height="310" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-65" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">只列周一至周五</tspan></text><text x="0" y="65" font-size="42" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">材料未说明</tspan></text></g></g><g class="s pop only-p" data-at="6" data-until="7" data-n="verdict.2"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:780px;--ps:1;--pr:0deg"><rect x="-345" y="-100" width="690" height="200" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-40" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">只列周一至周五</tspan></text><text x="0" y="45" font-size="48" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">材料未说明</tspan></text></g></g><g class="s pop" data-at="6" data-until="7" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="-29.04" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">学校与适用期已核准</tspan><tspan x="0" dy="58.08">核对主张“周日开放”</tspan></text></g></g><g class="s pop" data-at="7" data-until="8" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:230px;--ps:1;--pr:0deg"><rect x="-270" y="-165" width="540" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-235 -65 L235 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">公告只说</tspan></text><text x="0" y="45" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">周日开放</tspan></text></g></g><g class="s pop" data-at="7" data-until="8" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><rect x="-265" y="-120" width="530" height="240" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-31.68" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">开到晚上九点？</tspan><tspan x="0" dy="63.36">无需预约？</tspan></text></g></g><g class="s pop" data-at="7" data-until="8" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">一条引用 · 未必支持整段回答</tspan></text></g></g><g class="s pop" data-at="8" data-until="9" data-n="item.0"><g class="pos" style="--lx:210px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:130px;--ps:1;--pr:0deg"><rect x="-170" y="-85" width="340" height="170" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">回答流畅</tspan></text></g></g><g class="s pop" data-at="8" data-until="9" data-n="item.1"><g class="pos" style="--lx:600px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:450px;--ps:1;--pr:0deg"><rect x="-170" y="-85" width="340" height="170" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">事实正确</tspan></text></g></g><g class="s pop" data-at="8" data-until="9" data-n="item.2"><g class="pos" style="--lx:990px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:770px;--ps:1;--pr:0deg"><rect x="-170" y="-85" width="340" height="170" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">引用有效</tspan></text></g></g><g class="s pop" data-at="8" data-until="9" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">分别检查 · 不能互相作保证</tspan></text></g></g><g class="s pop" data-at="9" data-until="10" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:230px;--ps:1;--pr:0deg"><rect x="-270" y="-165" width="540" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-235 -65 L235 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">核准来源</tspan></text><text x="0" y="13.32" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">谁发布 · 哪天发布</tspan><tspan x="0" dy="63.36">适用期 · 更新通知</tspan></text></g></g><g class="s pop" data-at="9" data-until="10" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><path d="M79.2 79.2 L178.2 178.2" fill="none" stroke="#203845" stroke-width="16" stroke-linecap="round"/><path d="M79.2 79.2 L178.2 178.2" fill="none" stroke="#ee6a58" stroke-width="8" stroke-linecap="round"/><circle cx="0" cy="0" r="110" fill="rgba(222,243,238,.7)" stroke="#203845" stroke-width="7"/><path d="M-60.50000000000001 -11 C-49.5 -55 -16.5 -77 16.5 -74.80000000000001" fill="none" stroke="#ffffff" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/><text x="0" y="240" font-size="48" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">追到原始发布</tspan></text></g></g><g class="s pop" data-at="10" data-until="11" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:230px;--ps:1;--pr:0deg"><rect x="-265" y="-120" width="530" height="240" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-31.68" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">多处转抄</tspan><tspan x="0" dy="63.36">可能同出一份旧文</tspan></text></g></g><g class="s pop" data-at="10" data-until="11" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><rect x="-285" y="-120" width="570" height="240" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-29.04" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">原始材料冲突</tspan><tspan x="0" dy="58.08">指出冲突 · 向发布者确认</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="confidence" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="chapter.art"><g class="pos" style="--lx:600px;--ly:275px;--ls:1;--lr:0deg;--px:400px;--py:370px;--ps:1;--pr:0deg"><circle cx="0" cy="0" r="110" fill="#d42c16" stroke="#203845" stroke-width="5"/><g transform="translate(0 0.72) rotate(0) scale(2.89)"><path d="M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="0" cy="16" r="3.5" fill="#ffffff"/></g></g></g><g class="s pop" data-at="0" data-until="1" data-n="chapter.note" style="--d:140ms"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:880px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="54" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">语气再肯定 · 也要独立核查</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:230px;--ps:1;--pr:0deg"><rect x="-265" y="-120" width="530" height="240" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-31.68" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">再确认一下</tspan><tspan x="0" dy="63.36">可能仍是重复错误</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><rect x="-270" y="-165" width="540" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-235 -65 L235 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">独立对照材料</tspan></text><text x="0" y="13.32" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">核对时间</tspan><tspan x="0" dy="63.36">人物与出处</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:230px;--ps:1;--pr:0deg"><rect x="-265" y="-120" width="530" height="240" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-35.64" font-size="54" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">屏幕上的</tspan><tspan x="0" dy="71.28">“可信度 90%”</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><circle cx="0" cy="0" r="90" fill="#d42c16" stroke="#203845" stroke-width="5"/><g transform="translate(0 0.59) rotate(0) scale(2.37)"><path d="M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="0" cy="16" r="3.5" fill="#ffffff"/></g><text x="0" y="219.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">分数从何而来？</tspan><tspan x="0" dy="60.72">怎样计算与验证？</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="item.0"><g class="pos" style="--lx:210px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:130px;--ps:1;--pr:0deg"><rect x="-170" y="-85" width="340" height="170" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">内部</tspan><tspan x="0" dy="60.72">分数</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="item.1"><g class="pos" style="--lx:600px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:450px;--ps:1;--pr:0deg"><rect x="-170" y="-85" width="340" height="170" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">其他程序</tspan><tspan x="0" dy="60.72">评分</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="item.2"><g class="pos" style="--lx:990px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:770px;--ps:1;--pr:0deg"><rect x="-170" y="-85" width="340" height="170" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">生成的</tspan><tspan x="0" dy="60.72">一句话</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="-29.04" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">没有说明验证方式</tspan><tspan x="0" dy="58.08">不能直接当作本次正确概率</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:230px;--ps:1;--pr:0deg"><rect x="-270" y="-125" width="540" height="250" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-31.68" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">报为约 90% 的</tspan><tspan x="0" dy="63.36">一批分类预测</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><rect x="-275" y="-125" width="550" height="250" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-31.68" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">对照实际正确比例</tspan><tspan x="0" dy="63.36">是否约 90%？</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="-29.04" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">校准：检查一批适当样本</tspan><tspan x="0" dy="58.08">预测把握与正确率的对应</tspan></text></g></g><g class="s pop" data-at="5" data-until="6" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:230px;--ps:1;--pr:0deg"><rect x="-270" y="-165" width="540" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-235 -65 L235 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">所引论文的任务</tspan></text><text x="0" y="13.32" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">图像分类</tspan><tspan x="0" dy="63.36">文档分类等</tspan></text></g></g><g class="s pop" data-at="5" data-until="6" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><rect x="-285" y="-125" width="570" height="250" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-29.04" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">不能直接当作</tspan><tspan x="0" dy="58.08">聊天答案已校准的证据</tspan></text></g></g><g class="s pop" data-at="6" data-until="7" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:230px;--ps:1;--pr:0deg"><rect x="-275" y="-120" width="550" height="240" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-31.68" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">一批样本的对应</tspan><tspan x="0" dy="63.36">不替单个答案免检</tspan></text></g></g><g class="s pop" data-at="6" data-until="7" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><rect x="-275" y="-120" width="550" height="240" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">换了使用环境</tspan><tspan x="0" dy="60.72">对应关系也可能改变</tspan></text></g></g><g class="s pop" data-at="7" data-until="8" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:230px;--ps:1;--pr:0deg"><rect x="-270" y="-165" width="540" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-235 -65 L235 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">只查到的材料</tspan></text><text x="0" y="45" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本学期安排</tspan></text></g></g><g class="s pop" data-at="7" data-until="8" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><rect x="-275" y="-120" width="550" height="240" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">缺少明年安排</tspan><tspan x="0" dy="60.72">不能据此确定明年</tspan></text></g></g><g class="s pop" data-at="7" data-until="8" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">“不知道”也要说清 · 缺的是什么</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="scores" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="chapter.art"><g class="pos" style="--lx:600px;--ly:275px;--ls:1;--lr:0deg;--px:400px;--py:370px;--ps:1;--pr:0deg"><g transform="translate(0 0) rotate(0) scale(0.65)"><circle cx="-225" cy="-225" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-175" cy="-225" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-125" cy="-225" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-75" cy="-225" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-25" cy="-225" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="25" cy="-225" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="75" cy="-225" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="125" cy="-225" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="175" cy="-225" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="225" cy="-225" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-225" cy="-175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-175" cy="-175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-125" cy="-175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-75" cy="-175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-25" cy="-175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="25" cy="-175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="75" cy="-175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="125" cy="-175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="175" cy="-175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="225" cy="-175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-225" cy="-125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-175" cy="-125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-125" cy="-125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-75" cy="-125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-25" cy="-125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="25" cy="-125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="75" cy="-125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="125" cy="-125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="175" cy="-125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="225" cy="-125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-225" cy="-75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-175" cy="-75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-125" cy="-75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-75" cy="-75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-25" cy="-75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="25" cy="-75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="75" cy="-75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="125" cy="-75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="175" cy="-75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="225" cy="-75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-225" cy="-25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-175" cy="-25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-125" cy="-25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-75" cy="-25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-25" cy="-25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="25" cy="-25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="75" cy="-25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="125" cy="-25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="175" cy="-25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="225" cy="-25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-225" cy="25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-175" cy="25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-125" cy="25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-75" cy="25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-25" cy="25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="25" cy="25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="75" cy="25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="125" cy="25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="175" cy="25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="225" cy="25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-225" cy="75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-175" cy="75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-125" cy="75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-75" cy="75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-25" cy="75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="25" cy="75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="75" cy="75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="125" cy="75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="175" cy="75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="225" cy="75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-225" cy="125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-175" cy="125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-125" cy="125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-75" cy="125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-25" cy="125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="25" cy="125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="75" cy="125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="125" cy="125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="175" cy="125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="225" cy="125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-225" cy="175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-175" cy="175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-125" cy="175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-75" cy="175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-25" cy="175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="25" cy="175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="75" cy="175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="125" cy="175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="175" cy="175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="225" cy="175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-225" cy="225" r="16" fill="#ffe7df" stroke="#d42c16" stroke-width="4"/><circle cx="-175" cy="225" r="16" fill="#ffe7df" stroke="#d42c16" stroke-width="4"/><circle cx="-125" cy="225" r="16" fill="#ffe7df" stroke="#d42c16" stroke-width="4"/><circle cx="-75" cy="225" r="16" fill="#ffe7df" stroke="#d42c16" stroke-width="4"/><circle cx="-25" cy="225" r="16" fill="#ffe7df" stroke="#d42c16" stroke-width="4"/><circle cx="25" cy="225" r="16" fill="#ffe7df" stroke="#d42c16" stroke-width="4"/><circle cx="75" cy="225" r="16" fill="#ffe7df" stroke="#d42c16" stroke-width="4"/><circle cx="125" cy="225" r="16" fill="#ffe7df" stroke="#d42c16" stroke-width="4"/><circle cx="175" cy="225" r="16" fill="#ffe7df" stroke="#d42c16" stroke-width="4"/><circle cx="225" cy="225" r="16" fill="#ffe7df" stroke="#d42c16" stroke-width="4"/></g></g></g><g class="s pop" data-at="0" data-until="1" data-n="chapter.note" style="--d:140ms"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:880px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="54" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">一个总分 · 看不见所有盲点</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="examples"><g class="pos" style="--lx:320px;--ly:280px;--ls:0.85;--lr:0deg;--px:400px;--py:320px;--ps:1;--pr:0deg"><circle cx="-225" cy="-225" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-175" cy="-225" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-125" cy="-225" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-75" cy="-225" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-25" cy="-225" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="25" cy="-225" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="75" cy="-225" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="125" cy="-225" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="175" cy="-225" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="225" cy="-225" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-225" cy="-175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-175" cy="-175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-125" cy="-175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-75" cy="-175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-25" cy="-175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="25" cy="-175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="75" cy="-175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="125" cy="-175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="175" cy="-175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="225" cy="-175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-225" cy="-125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-175" cy="-125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-125" cy="-125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-75" cy="-125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-25" cy="-125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="25" cy="-125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="75" cy="-125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="125" cy="-125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="175" cy="-125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="225" cy="-125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-225" cy="-75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-175" cy="-75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-125" cy="-75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-75" cy="-75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-25" cy="-75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="25" cy="-75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="75" cy="-75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="125" cy="-75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="175" cy="-75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="225" cy="-75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-225" cy="-25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-175" cy="-25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-125" cy="-25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-75" cy="-25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-25" cy="-25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="25" cy="-25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="75" cy="-25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="125" cy="-25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="175" cy="-25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="225" cy="-25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-225" cy="25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-175" cy="25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-125" cy="25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-75" cy="25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-25" cy="25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="25" cy="25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="75" cy="25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="125" cy="25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="175" cy="25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="225" cy="25" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-225" cy="75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-175" cy="75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-125" cy="75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-75" cy="75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-25" cy="75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="25" cy="75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="75" cy="75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="125" cy="75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="175" cy="75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="225" cy="75" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-225" cy="125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-175" cy="125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-125" cy="125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-75" cy="125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-25" cy="125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="25" cy="125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="75" cy="125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="125" cy="125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="175" cy="125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="225" cy="125" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-225" cy="175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-175" cy="175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-125" cy="175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-75" cy="175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-25" cy="175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="25" cy="175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="75" cy="175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="125" cy="175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="175" cy="175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="225" cy="175" r="16" fill="#def3ee" stroke="#137a7f" stroke-width="4"/><circle cx="-225" cy="225" r="16" fill="#ffe7df" stroke="#d42c16" stroke-width="4"/><circle cx="-175" cy="225" r="16" fill="#ffe7df" stroke="#d42c16" stroke-width="4"/><circle cx="-125" cy="225" r="16" fill="#ffe7df" stroke="#d42c16" stroke-width="4"/><circle cx="-75" cy="225" r="16" fill="#ffe7df" stroke="#d42c16" stroke-width="4"/><circle cx="-25" cy="225" r="16" fill="#ffe7df" stroke="#d42c16" stroke-width="4"/><circle cx="25" cy="225" r="16" fill="#ffe7df" stroke="#d42c16" stroke-width="4"/><circle cx="75" cy="225" r="16" fill="#ffe7df" stroke="#d42c16" stroke-width="4"/><circle cx="125" cy="225" r="16" fill="#ffe7df" stroke="#d42c16" stroke-width="4"/><circle cx="175" cy="225" r="16" fill="#ffe7df" stroke="#d42c16" stroke-width="4"/><circle cx="225" cy="225" r="16" fill="#ffe7df" stroke="#d42c16" stroke-width="4"/></g></g><g class="s pop" data-at="1" data-until="2" data-n="summary"><g class="pos" style="--lx:910px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:760px;--ps:1;--pr:0deg"><rect x="-260" y="-125" width="520" height="250" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-35.64" font-size="54" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">90 / 100 题答对</tspan><tspan x="0" dy="71.28">总正确率 90%</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">人为设定的 100 题 · 不是产品测评</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:230px;--ps:1;--pr:0deg"><rect x="-270" y="-165" width="540" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-235 -65 L235 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">A 类 · 常规时刻表</tspan></text><text x="0" y="13.32" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">90 / 90 题答对</tspan><tspan x="0" dy="63.36">正确率 100%</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><rect x="-270" y="-165" width="540" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-235 -65 L235 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">B 类 · 临时变更</tspan></text><text x="0" y="13.32" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0 / 10 题答对</tspan><tspan x="0" dy="63.36">正确率 0%</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">总分 90% · 遮不住临时变更组的 0%</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:230px;--ps:1;--pr:0deg"><rect x="-270" y="-165" width="540" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-235 -65 L235 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">A 类 · 常规时刻表</tspan></text><text x="0" y="13.32" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">90 / 90 题答对</tspan><tspan x="0" dy="63.36">正确率 100%</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><rect x="-270" y="-165" width="540" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-235 -65 L235 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">B 类 · 临时变更</tspan></text><text x="0" y="13.32" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0 / 10 题答对</tspan><tspan x="0" dy="63.36">正确率 0%</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">总分 90% · 遮不住临时变更组的 0%</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:230px;--ps:1;--pr:0deg"><rect x="-275" y="-120" width="550" height="240" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">某组只有两三题</tspan><tspan x="0" dy="60.72">百分比可能大起大落</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><rect x="-265" y="-120" width="530" height="240" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-31.68" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">同时记下样本数</tspan><tspan x="0" dy="63.36">检查错误后果</tspan></text></g></g><g class="s pop" data-at="5" data-until="6" data-n="item.0"><g class="pos" style="--lx:210px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:130px;--ps:1;--pr:0deg"><rect x="-170" y="-85" width="340" height="170" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">重要</tspan><tspan x="0" dy="60.72">情形</tspan></text></g></g><g class="s pop" data-at="5" data-until="6" data-n="item.1"><g class="pos" style="--lx:600px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:450px;--ps:1;--pr:0deg"><rect x="-170" y="-85" width="340" height="170" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">样本</tspan><tspan x="0" dy="60.72">数量</tspan></text></g></g><g class="s pop" data-at="5" data-until="6" data-n="item.2"><g class="pos" style="--lx:990px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:770px;--ps:1;--pr:0deg"><rect x="-170" y="-85" width="340" height="170" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">错误</tspan><tspan x="0" dy="60.72">后果</tspan></text></g></g><g class="s pop" data-at="6" data-until="7" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:230px;--ps:1;--pr:0deg"><rect x="-270" y="-120" width="540" height="240" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-31.68" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">某种表达少见</tspan><tspan x="0" dy="63.36">可能更常被误解</tspan></text></g></g><g class="s pop" data-at="6" data-until="7" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><rect x="-270" y="-120" width="540" height="240" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-31.68" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">调查数据与任务</tspan><tspan x="0" dy="63.36">也检查使用方式</tspan></text></g></g><g class="s pop" data-at="6" data-until="7" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">发现差异 · 不能直接归咎于使用者</tspan></text></g></g><g class="s pop" data-at="7" data-until="8" data-n="item.0"><g class="pos" style="--lx:210px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:130px;--ps:1;--pr:0deg"><rect x="-170" y="-85" width="340" height="170" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">批判判断</tspan></text></g></g><g class="s pop" data-at="7" data-until="8" data-n="item.1"><g class="pos" style="--lx:600px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:450px;--ps:1;--pr:0deg"><rect x="-170" y="-85" width="340" height="170" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">人的权利</tspan></text></g></g><g class="s pop" data-at="7" data-until="8" data-n="item.2"><g class="pos" style="--lx:990px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:770px;--ps:1;--pr:0deg"><rect x="-170" y="-85" width="340" height="170" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">人的责任</tspan></text></g></g><g class="s pop" data-at="7" data-until="8" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">UNESCO 2024 年框架 · 背景参考</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="challenge" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="chapter.art"><g class="pos" style="--lx:600px;--ly:275px;--ls:1;--lr:0deg;--px:400px;--py:370px;--ps:1;--pr:0deg"><circle cx="0" cy="0" r="110" fill="#d42c16" stroke="#203845" stroke-width="5"/><g transform="translate(0 0.72) rotate(0) scale(2.89)"><path d="M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="0" cy="16" r="3.5" fill="#ffffff"/></g></g></g><g class="s pop" data-at="0" data-until="1" data-n="chapter.note" style="--d:140ms"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:880px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="54" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">给一段回答 · 逐句找依据</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:230px;--ps:1;--pr:0deg"><rect x="-270" y="-165" width="540" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-235 -65 L235 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本校 · 本周公告</tspan></text><text x="0" y="13.32" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">周日</tspan><tspan x="0" dy="63.36">12:00—18:00 开放</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><rect x="-270" y="-165" width="540" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-235 -65 L235 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">助手的三个说法</tspan></text><text x="0" y="13.32" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">开放 · 九点关门</tspan><tspan x="0" dy="63.36">无需预约</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="-29.04" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">支持、矛盾、未说明</tspan><tspan x="0" dy="58.08">三个说法分别判断</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:200px;--ps:1;--pr:0deg"><rect x="-270" y="-120" width="540" height="240" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-31.68" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">无需预约</tspan><tspan x="0" dy="63.36">材料没有说明</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:550px;--ps:1;--pr:0deg"><circle cx="0" cy="0" r="90" fill="#d42c16" stroke="#203845" stroke-width="5"/><g transform="translate(0 0.59) rotate(0) scale(2.37)"><path d="M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="0" cy="16" r="3.5" fill="#ffffff"/></g><text x="0" y="220.96" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">既不能判定无需预约</tspan><tspan x="0" dy="58.08">也不能断定必须预约</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">核查的结果 · 可以保留未知</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="exercise" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="1" data-until="2" data-n="answer-note"><g class="pos" style="--lx:600px;--ly:50px;--ls:1;--lr:0deg;--px:400px;--py:22px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击卡片可翻回题目</tspan></text></g></g><g class="s rise only-l" data-at="0" data-until="2" data-n="quiz.claim0"><g class="pos" style="--lx:210px;--ly:350px;--ls:1;--lr:0deg;--px:210px;--py:350px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="claim0" role="button" tabindex="-1" aria-pressed="false" aria-label="周日开放，公告支持吗？，点击翻面" data-front-label="周日开放，公告支持吗？，点击翻面" data-back-label="得到支持，点击翻回"><g class="front" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-40" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">周日开放</tspan></text><text x="0" y="165" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击核对</tspan></text></g><g class="back" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-40" font-size="42" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">得到支持</tspan></text><text x="0" y="110" font-size="34" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">公告写明开放</tspan></text></g></g></g></g><g class="s rise only-p" data-at="0" data-until="2" data-n="quiz.claim0"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:185px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="claim0" role="button" tabindex="-1" aria-pressed="false" aria-label="周日开放，公告支持吗？，点击翻面" data-front-label="周日开放，公告支持吗？，点击翻面" data-back-label="得到支持，点击翻回"><g class="front" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-25" font-size="50" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">周日开放</tspan></text><text x="0" y="90" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击核对</tspan></text></g><g class="back" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-25" font-size="50" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">得到支持</tspan></text><text x="0" y="65" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">公告写明开放</tspan></text></g></g></g></g><g class="s rise only-l" data-at="0" data-until="2" data-n="quiz.claim1"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:600px;--py:350px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="claim1" role="button" tabindex="-1" aria-pressed="false" aria-label="晚上九点关门，公告支持吗？，点击翻面" data-front-label="晚上九点关门，公告支持吗？，点击翻面" data-back-label="与材料矛盾，点击翻回"><g class="front" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-40" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">晚上九点关门</tspan></text><text x="0" y="165" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击核对</tspan></text></g><g class="back" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-40" font-size="42" fill="#d42c16" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">与材料矛盾</tspan></text><text x="0" y="110" font-size="34" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">公告为 18:00 关闭</tspan></text></g></g></g></g><g class="s rise only-p" data-at="0" data-until="2" data-n="quiz.claim1"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:510px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="claim1" role="button" tabindex="-1" aria-pressed="false" aria-label="晚上九点关门，公告支持吗？，点击翻面" data-front-label="晚上九点关门，公告支持吗？，点击翻面" data-back-label="与材料矛盾，点击翻回"><g class="front" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-25" font-size="50" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">晚上九点关门</tspan></text><text x="0" y="90" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击核对</tspan></text></g><g class="back" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-25" font-size="50" fill="#d42c16" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">与材料矛盾</tspan></text><text x="0" y="65" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">公告为 18:00 关闭</tspan></text></g></g></g></g><g class="s rise only-l" data-at="0" data-until="2" data-n="quiz.claim2"><g class="pos" style="--lx:990px;--ly:350px;--ls:1;--lr:0deg;--px:990px;--py:350px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="claim2" role="button" tabindex="-1" aria-pressed="false" aria-label="无需预约，公告支持吗？，点击翻面" data-front-label="无需预约，公告支持吗？，点击翻面" data-back-label="材料未说明，点击翻回"><g class="front" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-40" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">无需预约</tspan></text><text x="0" y="165" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击核对</tspan></text></g><g class="back" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-40" font-size="42" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">材料未说明</tspan></text><text x="0" y="110" font-size="34" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">公告未提预约</tspan></text></g></g></g></g><g class="s rise only-p" data-at="0" data-until="2" data-n="quiz.claim2"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:835px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="claim2" role="button" tabindex="-1" aria-pressed="false" aria-label="无需预约，公告支持吗？，点击翻面" data-front-label="无需预约，公告支持吗？，点击翻面" data-back-label="材料未说明，点击翻回"><g class="front" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-25" font-size="50" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">无需预约</tspan></text><text x="0" y="90" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击核对</tspan></text></g><g class="back" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-25" font-size="50" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">材料未说明</tspan></text><text x="0" y="65" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">公告未提预约</tspan></text></g></g></g></g></g></svg>
+<svg class="scene" data-scene="privacy" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="chapter.art"><g class="pos" style="--lx:600px;--ly:275px;--ls:1;--lr:0deg;--px:400px;--py:370px;--ps:1;--pr:0deg"><rect x="-270" y="-165" width="540" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-235 -65 L235 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">查公开开馆时间</tspan></text><text x="0" y="13.32" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">通常无需</tspan><tspan x="0" dy="63.36">个人资料</tspan></text></g></g><g class="s pop" data-at="0" data-until="1" data-n="chapter.note" style="--d:140ms"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:880px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="54" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">核查也要遵守隐私边界</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="item.0"><g class="pos" style="--lx:210px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:130px;--ps:1;--pr:0deg"><rect x="-170" y="-85" width="340" height="170" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">姓名</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="item.1"><g class="pos" style="--lx:600px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:450px;--ps:1;--pr:0deg"><rect x="-170" y="-85" width="340" height="170" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">家庭住址</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="item.2"><g class="pos" style="--lx:990px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:770px;--ps:1;--pr:0deg"><rect x="-170" y="-85" width="340" height="170" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">健康信息</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">查公开开馆时间 · 不必顺手全上传</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:230px;--ps:1;--pr:0deg"><rect x="-270" y="-165" width="540" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-235 -65 L235 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">教学与试验</tspan></text><text x="0" y="45" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">优先使用虚构材料</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><rect x="-285" y="-120" width="570" height="240" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-29.04" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">确需个人信息时</tspan><tspan x="0" dy="58.08">核准用途、权限与安排</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:230px;--ps:1;--pr:0deg"><rect x="-265" y="-120" width="530" height="240" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-31.68" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">删掉姓名</tspan><tspan x="0" dy="63.36">未必足够匿名</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><rect x="-275" y="-120" width="550" height="240" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">班级 · 时间 · 地点</tspan><tspan x="0" dy="60.72">仍可能认出某个人</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:230px;--ps:1;--pr:0deg"><rect x="-275" y="-120" width="550" height="240" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">故事灵感</tspan><tspan x="0" dy="60.72">核查投入随用途决定</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><rect x="-275" y="-120" width="550" height="240" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">健康、升学、处分</tspan><tspan x="0" dy="60.72">正式来源与人工复核</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="-29.04" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">后果越重要</tspan><tspan x="0" dy="58.08">越需要负有责任的人复核</tspan></text></g></g><g class="s pop" data-at="5" data-until="6" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:230px;--ps:1;--pr:0deg"><rect x="-270" y="-165" width="540" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-235 -65 L235 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">回到原句</tspan></text><text x="0" y="45" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本校 · 本周日开放</tspan></text></g></g><g class="s pop" data-at="5" data-until="6" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><rect x="-265" y="-120" width="530" height="240" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">得到支持</tspan><tspan x="0" dy="60.72">适用公告确实支持</tspan></text></g></g><g class="s pop" data-at="5" data-until="6" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="-29.04" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">语气、链接与总分</tspan><tspan x="0" dy="58.08">放回来源与适用范围检查</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="refs" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="title"><g class="pos" style="--lx:600px;--ly:75px;--ls:1;--lr:0deg;--px:400px;--py:100px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="62" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">资料来源</tspan></text></g></g><g class="s pop" data-at="0" data-until="1" data-n="scope"><g class="pos" style="--lx:600px;--ly:155px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">构造公告与计数示意 · 非真实产品测评</tspan></text></g></g><g class="s pop only-l" data-at="0" data-until="1" data-n="source0"><g class="pos" style="--lx:600px;--ly:255px;--ls:1;--lr:0deg;--px:400px;--py:360px;--ps:1;--pr:0deg"><a class="hit" href="https://arxiv.org/abs/2305.14627" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-label="〔1〕生成回答的引用研究，打开原始资料"><rect x="-475" y="-42" width="950" height="84" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">〔1〕生成回答的引用研究</tspan></text></a></g></g><g class="s pop only-p" data-at="0" data-until="1" data-n="source0"><g class="pos" style="--lx:600px;--ly:255px;--ls:1;--lr:0deg;--px:400px;--py:360px;--ps:1;--pr:0deg"><a class="hit" href="https://arxiv.org/abs/2305.14627" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-label="〔1〕生成回答的引用研究，打开原始资料"><rect x="-375" y="-42" width="750" height="84" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">〔1〕生成回答的引用研究</tspan></text></a></g></g><g class="s pop only-l" data-at="0" data-until="1" data-n="source1"><g class="pos" style="--lx:600px;--ly:355px;--ls:1;--lr:0deg;--px:400px;--py:490px;--ps:1;--pr:0deg"><a class="hit" href="https://proceedings.mlr.press/v70/guo17a.html" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-label="〔2〕分类模型的校准研究，打开原始资料"><rect x="-475" y="-42" width="950" height="84" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">〔2〕分类模型的校准研究</tspan></text></a></g></g><g class="s pop only-p" data-at="0" data-until="1" data-n="source1"><g class="pos" style="--lx:600px;--ly:355px;--ls:1;--lr:0deg;--px:400px;--py:490px;--ps:1;--pr:0deg"><a class="hit" href="https://proceedings.mlr.press/v70/guo17a.html" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-label="〔2〕分类模型的校准研究，打开原始资料"><rect x="-375" y="-42" width="750" height="84" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">〔2〕分类模型的校准研究</tspan></text></a></g></g><g class="s pop only-l" data-at="0" data-until="1" data-n="source2"><g class="pos" style="--lx:600px;--ly:455px;--ls:1;--lr:0deg;--px:400px;--py:620px;--ps:1;--pr:0deg"><a class="hit" href="https://www.unesco.org/en/articles/ai-competency-framework-students" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-label="〔3〕UNESCO 学生能力框架，打开原始资料"><rect x="-475" y="-42" width="950" height="84" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">〔3〕UNESCO 学生能力框架</tspan></text></a></g></g><g class="s pop only-p" data-at="0" data-until="1" data-n="source2"><g class="pos" style="--lx:600px;--ly:455px;--ls:1;--lr:0deg;--px:400px;--py:620px;--ps:1;--pr:0deg"><a class="hit" href="https://www.unesco.org/en/articles/ai-competency-framework-students" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-label="〔3〕UNESCO 学生能力框架，打开原始资料"><rect x="-375" y="-42" width="750" height="84" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">〔3〕UNESCO 学生能力框架</tspan></text></a></g></g><g class="s pop" data-at="0" data-until="1" data-n="read"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:950px;--ps:1;--pr:0deg"><a class="hit" href="?read" data-action="read" tabindex="-1" aria-label="阅读全文与完整资料说明"><rect x="-310" y="-40" width="620" height="80" rx="40" fill="#137a7f" stroke="#203845" stroke-width="5" stroke-linejoin="round"/><text x="0" y="2" font-size="42" fill="#ffffff" text-anchor="middle" font-weight="800" dominant-baseline="central"><tspan x="0" dy="0">阅读全文与完整资料说明</tspan></text></a></g></g></g></svg>
+<header class="hud">
+<div class="hud-l">
+<button class="pill" id="btn-toc" type="button" aria-haspopup="dialog" aria-label="目录"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01"/></svg><span class="lbl" aria-hidden="true">目录</span></button>
+<span class="pill sec" id="sec"><span id="sec-num"></span><span id="sec-name"></span></span>
+</div>
+<div class="hud-r">
+<button class="pill" id="btn-play" type="button" data-playing="false">播放</button>
+<a class="pill" href="?read" data-action="read">全文</a>
+</div>
+</header>
+<div class="cap" id="capcard" role="status" aria-live="polite" aria-atomic="true"><p id="cap"></p></div>
+<footer class="foot">
+<p id="hint"></p>
+<div class="steps">
+<button class="pill icon" id="btn-prev" type="button" aria-label="上一拍"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 10.5 8 5.5l5 5"/></svg></button>
+<span id="count"></span>
+<button class="pill icon" id="btn-next" type="button" aria-label="下一拍"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 5.5 8 10.5l5-5"/></svg></button>
+</div>
+<div id="bar"></div>
+</footer>
+</main>
+<dialog id="toc" aria-labelledby="toc-title">
+<div class="toc-head"><h2 id="toc-title">AI 答得像真的，应该怎样检查？</h2><button class="pill" id="toc-close" type="button">关闭</button></div>
+<ol id="toc-list"></ol>
+<p class="toc-foot">AI 的答案可信吗，第 4 篇 / 共 5 篇。机器人角色为 AI 辅助制作，场景与图解由代码绘制。</p>
+</dialog>
+<div id="readwrap">
+<div class="read-bar"><a class="pill" href="?stage" data-action="stage">看分镜版</a><a class="pill" href="index.html">返回本篇页面</a></div>
+<article id="read" lang="zh-CN">
+<h1><span class="tl">AI 答得像真的，</span> <span class="tl">应该怎样检查？</span></h1>
+<p>“图书馆周日开放，放心去吧。”AI 语气肯定，还给了一条公告链接。你点开一看，原文却写着“周日闭馆”。</p>
+<p>这个虚构例子里，答案有来源，来源却不支持答案。上一期我们改动摆放位置，检查关系题有没有答对；这一期面对文字回答，也要找出能与答案对照的材料。核查不能停在“有没有链接”，还得追到原文，看看它究竟说了什么。</p>
+<h2>沿着一句话找到证据</h2>
+<p>先把要检查的那句话拆清楚：“这所学校的图书馆，本周日开放。”地点、时间、开放状态，缺一项都可能查偏。另一所学校的公告，或者去年的安排，即使写着“周日开放”，也未必适用于眼前的问题。</p>
+<p>假设找到的就是本校适用于本周的公告。它写“周日开放”，这句话得到支持；它写“周日闭馆”，就与回答相矛盾；它只列周一至周五的时刻表，则没有足够信息决定周日是否开放。</p>
+<p>“没写闭馆”，为什么不能当作“开放”？因为材料根本没有交代周日的状态。此时可以明确回答：“这份时刻表没有说明周日安排。”说明资料的缺口，比凭空补出一个确定答案更有用。</p>
+<p class="pic"><img alt="核准来源后，逐项判断公告支持、反驳还是未说明具体主张" src="15_%E5%BC%95%E7%94%A8%E6%98%AF%E5%90%A6%E6%94%AF%E6%8C%81%E5%85%B7%E4%BD%93%E4%B8%BB%E5%BC%A0.png" loading="lazy"></p>
+<p class="figcap"><em>图1  来源的学校与适用时间已经核准，仍须检查原文是否支持对应主张。</em></p>
+<p>而且，一条引用未必能支持整段回答。公告写了周日开放，不等于也写了“开到晚上九点”或“无需预约”。每一个具体说法，都要找到对应依据；来源可靠，也不能省掉这一步。</p>
+<p>研究者也把回答是否流畅、事实是否正确、引用是否充分有效分开评价。关于自动生成引用的研究表明，这些方面需要分别检查，不能由其中一项替其他项作保证。<span class="cite">〔1〕</span></p>
+<p>实际查证还要留意来源本身：谁发布的，哪天发布的，适用到什么时候，有没有更新通知。多个网站转抄同一段旧文字，未必等于多份独立证据。若原始材料相互冲突，应把冲突指出来，并向负责发布的人确认。</p>
+<h2>说得肯定不等于可靠</h2>
+<p>让 AI“再确认一下”，有时能发现错误，也可能只得到一遍更坚定的重复。语言模型把文字接得顺，并不妨碍它把时间、人物或出处拼错。真正的核查，需要引入可独立对照的材料。</p>
+<p>数字也可能制造错觉。屏幕上出现“可信度90%”，究竟指什么？是模型内部的分数、另外一个程序的评分，还是生成出来的一句话？若没有说明计算和验证方式，就不能直接理解成“这次有九成概率正确”。</p>
+<p>对能够给出概率预测的分类模型，研究者会检查：许多被报为约90%把握的预测，实际是否约有90%正确。这类工作叫校准。所引论文研究的是图像、文档分类等任务，不能把它直接当作聊天答案已经校准的证据。校准讨论一批适当样本中的对应关系，不能替某一个答案免去核实；换了使用环境，这种对应还可能改变。<span class="cite">〔2〕</span></p>
+<p>“不知道”也可以回答得很清楚。例如：“只查到本学期安排，无法据此确定明年。”它指出了证据缺在哪里，读者才知道下一步该查什么；一句笼统的“仅供参考”做不到这一点。</p>
+<h2>一个高分会遮住什么</h2>
+<p>再看一组人为设定的成绩。共有100个问题：A类是90个常规时刻表问题，全部答对；B类是10个临时变更问题，全部答错。总正确率为90÷100＝90%，看起来相当不错。</p>
+<p>分开看，A类正确率是100%，B类却是0%。如果现在要问“今天检修还开不开”，90%的总分就帮不上太多忙。这组数量和成绩只是在演示平均数的盲点，并非真实产品测评。</p>
+<p class="pic"><img alt="100 道构造题总体正确率 90%，临时变更组却为 0%" src="15_%E6%80%BB%E4%BD%93%E9%AB%98%E5%88%86%E4%B8%8E%E5%88%86%E7%BB%84%E7%9B%B2%E7%82%B9.png" loading="lazy"></p>
+<p class="figcap"><em>图2  100个构造例子中，A类90题全对，B类10题全错；总正确率90%掩盖了B类的0%。</em></p>
+<p>分组之后，也别只盯着百分比。某组只有两三个例子，成绩可能因为偶然而大起大落。应根据用途挑出重要情形，同时记录样本数，并检查错误可能造成的后果。</p>
+<p>偏差还可能体现在不同人使用同一系统时，得到的帮助并不一样。例如某种表达方式在资料中很少出现，系统可能更常误解它。发现差异后，要调查数据、任务和使用方式，不能把低分直接归咎于使用者。UNESCO 的2024年框架把批判判断、人的权利与责任放在 AI 能力的重要位置。<span class="cite">〔3〕</span></p>
+<h2>给一段回答逐句找依据</h2>
+<p>假设本校适用于本周的公告只写「周日 12:00—18:00 开放」，助手回答「周日开放，晚上九点关门，无需预约」。试着给三个说法分别标记：得到支持、与材料矛盾，还是材料没有说明？</p>
+<p>「周日开放」得到支持；「晚上九点关门」与 18:00 关闭的安排矛盾；「无需预约」则没有依据。第三项不能因为没写预约要求就判为正确，也不能凭空判为一定要预约。核查的结果可以保留未知。</p>
+<h2>核查也有隐私边界</h2>
+<p>核查时还有一件事容易顺手做错：为了补背景，上传太多个人资料。同学的姓名、家庭住址、健康信息，不应因为提问方便就全交给工具。查公开的开馆时间，通常并不需要这些信息。</p>
+<p>能用虚构材料说明问题时，就不必拿真实学生资料试验。确需处理个人信息，应先确认用途、权限和服务的数据处理安排，只提供必要内容。删掉姓名也未必足够匿名，班级、时间、地点等线索仍可能让人认出某个人。</p>
+<p>核查的投入应与后果相称。随手找个故事灵感，与据此作出有关健康、升学或处分的决定，显然不能用同一把尺子。后者需要可靠的正式来源和负有责任的人工复核，不能把最终责任交给一段机器文字。</p>
+<p>回到“周日开放”这句话，值得信任的依据应当是：适用的公告确实支持它。语气、链接、总分都可以提供线索，但每一条线索，都要放回来源、时间和适用范围里检查。</p>
+<h2>资料来源</h2><div class="refs">
+<p>文中算例与图解用于说明原理，不是实际模型的测评结果。研究结论对应以下资料。</p>
+<p><span class="cite">〔1〕</span> Gao、Yen、Yu、Chen，2023，Enabling Large Language Models to Generate Text with Citations，EMNLP。arXiv:2305.14627。</p>
+<p><a href="https://arxiv.org/abs/2305.14627" rel="noopener noreferrer">https://arxiv.org/abs/2305.14627</a></p>
+<p><span class="cite">〔2〕</span> Guo 等，2017，On Calibration of Modern Neural Networks，ICML，PMLR 70:1321–1330。</p>
+<p><a href="https://proceedings.mlr.press/v70/guo17a.html" rel="noopener noreferrer">https://proceedings.mlr.press/v70/guo17a.html</a></p>
+<p><span class="cite">〔3〕</span> UNESCO，2024，AI Competency Framework for Students。DOI:10.54675/JKJB9835。作为批判判断、隐私与责任的背景参考。</p>
+<p><a href="https://www.unesco.org/en/articles/ai-competency-framework-students" rel="noopener noreferrer">https://www.unesco.org/en/articles/ai-competency-framework-students</a></p>
+</div>
+<div class="read-end"><a class="pill" href="?stage" data-action="stage">看分镜版</a><a class="pill" href="正文.md">查看正文 Markdown</a></div>
+<p class="read-note">AI 的答案可信吗，第 4 篇 / 共 5 篇。机器人角色为 AI 辅助制作，场景与图解由代码绘制。</p>
+</article>
+</div>
+<script type="application/json" id="stage-data">{"total":42,"sectionCount":5,"sections":[{"num":0,"label":"导读","mark":"导","first":0,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003cpath d=\"M79.2 79.2 L178.2 178.2\" fill=\"none\" stroke=\"#203845\" stroke-width=\"16\" stroke-linecap=\"round\"/>\u003cpath d=\"M79.2 79.2 L178.2 178.2\" fill=\"none\" stroke=\"#ee6a58\" stroke-width=\"8\" stroke-linecap=\"round\"/>\u003ccircle cx=\"0\" cy=\"0\" r=\"110\" fill=\"rgba(222,243,238,.7)\" stroke=\"#203845\" stroke-width=\"7\"/>\u003cpath d=\"M-60.50000000000001 -11 C-49.5 -55 -16.5 -77 16.5 -74.80000000000001\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\u003c/svg>"},{"num":1,"label":"沿着一句话找到证据","first":3,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003cg transform=\"translate(0 0) rotate(0) scale(0.65)\">\u003crect x=\"-270\" y=\"-165\" width=\"540\" height=\"330\" rx=\"12\" fill=\"#ffffff\" stroke=\"#203845\" stroke-width=\"6\" stroke-linejoin=\"round\"/>\u003cpath d=\"M-235 -65 L235 -65\" fill=\"none\" stroke=\"#203845\" stroke-width=\"3\" stroke-linecap=\"round\"/>\u003ctext x=\"0\" y=\"-115\" font-size=\"44\" fill=\"#137a7f\" text-anchor=\"middle\" font-weight=\"700\" dominant-baseline=\"central\">\u003ctspan x=\"0\" dy=\"0\">公告\u003c/tspan>\u003c/text>\u003ctext x=\"0\" y=\"45\" font-size=\"48\" fill=\"#203845\" text-anchor=\"middle\" font-weight=\"700\" dominant-baseline=\"central\">\u003ctspan x=\"0\" dy=\"0\">逐句核对\u003c/tspan>\u003c/text>\u003c/g>\u003c/svg>"},{"num":2,"label":"说得肯定不等于可靠","first":14,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003ccircle cx=\"0\" cy=\"0\" r=\"110\" fill=\"#d42c16\" stroke=\"#203845\" stroke-width=\"5\"/>\u003cg transform=\"translate(0 0.72) rotate(0) scale(2.89)\">\u003cpath d=\"M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\u003ccircle cx=\"0\" cy=\"16\" r=\"3.5\" fill=\"#ffffff\"/>\u003c/g>\u003c/svg>"},{"num":3,"label":"一个高分会遮住什么","first":22,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003cg transform=\"translate(0 0) rotate(0) scale(0.6)\">\u003ccircle cx=\"-225\" cy=\"-225\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-175\" cy=\"-225\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-125\" cy=\"-225\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-75\" cy=\"-225\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-25\" cy=\"-225\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"25\" cy=\"-225\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"75\" cy=\"-225\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"125\" cy=\"-225\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"175\" cy=\"-225\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"225\" cy=\"-225\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-225\" cy=\"-175\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-175\" cy=\"-175\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-125\" cy=\"-175\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-75\" cy=\"-175\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-25\" cy=\"-175\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"25\" cy=\"-175\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"75\" cy=\"-175\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"125\" cy=\"-175\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"175\" cy=\"-175\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"225\" cy=\"-175\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-225\" cy=\"-125\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-175\" cy=\"-125\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-125\" cy=\"-125\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-75\" cy=\"-125\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-25\" cy=\"-125\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"25\" cy=\"-125\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"75\" cy=\"-125\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"125\" cy=\"-125\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"175\" cy=\"-125\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"225\" cy=\"-125\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-225\" cy=\"-75\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-175\" cy=\"-75\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-125\" cy=\"-75\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-75\" cy=\"-75\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-25\" cy=\"-75\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"25\" cy=\"-75\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"75\" cy=\"-75\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"125\" cy=\"-75\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"175\" cy=\"-75\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"225\" cy=\"-75\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-225\" cy=\"-25\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-175\" cy=\"-25\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-125\" cy=\"-25\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-75\" cy=\"-25\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-25\" cy=\"-25\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"25\" cy=\"-25\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"75\" cy=\"-25\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"125\" cy=\"-25\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"175\" cy=\"-25\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"225\" cy=\"-25\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-225\" cy=\"25\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-175\" cy=\"25\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-125\" cy=\"25\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-75\" cy=\"25\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-25\" cy=\"25\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"25\" cy=\"25\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"75\" cy=\"25\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"125\" cy=\"25\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"175\" cy=\"25\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"225\" cy=\"25\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-225\" cy=\"75\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-175\" cy=\"75\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-125\" cy=\"75\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-75\" cy=\"75\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-25\" cy=\"75\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"25\" cy=\"75\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"75\" cy=\"75\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"125\" cy=\"75\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"175\" cy=\"75\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"225\" cy=\"75\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-225\" cy=\"125\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-175\" cy=\"125\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-125\" cy=\"125\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-75\" cy=\"125\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-25\" cy=\"125\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"25\" cy=\"125\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"75\" cy=\"125\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"125\" cy=\"125\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"175\" cy=\"125\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"225\" cy=\"125\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-225\" cy=\"175\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-175\" cy=\"175\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-125\" cy=\"175\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-75\" cy=\"175\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-25\" cy=\"175\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"25\" cy=\"175\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"75\" cy=\"175\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"125\" cy=\"175\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"175\" cy=\"175\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"225\" cy=\"175\" r=\"16\" fill=\"#def3ee\" stroke=\"#137a7f\" stroke-width=\"4\"/>\u003ccircle cx=\"-225\" cy=\"225\" r=\"16\" fill=\"#ffe7df\" stroke=\"#d42c16\" stroke-width=\"4\"/>\u003ccircle cx=\"-175\" cy=\"225\" r=\"16\" fill=\"#ffe7df\" stroke=\"#d42c16\" stroke-width=\"4\"/>\u003ccircle cx=\"-125\" cy=\"225\" r=\"16\" fill=\"#ffe7df\" stroke=\"#d42c16\" stroke-width=\"4\"/>\u003ccircle cx=\"-75\" cy=\"225\" r=\"16\" fill=\"#ffe7df\" stroke=\"#d42c16\" stroke-width=\"4\"/>\u003ccircle cx=\"-25\" cy=\"225\" r=\"16\" fill=\"#ffe7df\" stroke=\"#d42c16\" stroke-width=\"4\"/>\u003ccircle cx=\"25\" cy=\"225\" r=\"16\" fill=\"#ffe7df\" stroke=\"#d42c16\" stroke-width=\"4\"/>\u003ccircle cx=\"75\" cy=\"225\" r=\"16\" fill=\"#ffe7df\" stroke=\"#d42c16\" stroke-width=\"4\"/>\u003ccircle cx=\"125\" cy=\"225\" r=\"16\" fill=\"#ffe7df\" stroke=\"#d42c16\" stroke-width=\"4\"/>\u003ccircle cx=\"175\" cy=\"225\" r=\"16\" fill=\"#ffe7df\" stroke=\"#d42c16\" stroke-width=\"4\"/>\u003ccircle cx=\"225\" cy=\"225\" r=\"16\" fill=\"#ffe7df\" stroke=\"#d42c16\" stroke-width=\"4\"/>\u003c/g>\u003c/svg>"},{"num":4,"label":"给一段回答逐句找依据","first":30,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003ccircle cx=\"0\" cy=\"0\" r=\"110\" fill=\"#d42c16\" stroke=\"#203845\" stroke-width=\"5\"/>\u003cg transform=\"translate(0 0.72) rotate(0) scale(2.89)\">\u003cpath d=\"M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\u003ccircle cx=\"0\" cy=\"16\" r=\"3.5\" fill=\"#ffffff\"/>\u003c/g>\u003c/svg>"},{"num":5,"label":"核查也有隐私边界","first":35,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003cg transform=\"translate(0 0) rotate(0) scale(0.65)\">\u003crect x=\"-270\" y=\"-165\" width=\"540\" height=\"330\" rx=\"12\" fill=\"#ffffff\" stroke=\"#203845\" stroke-width=\"6\" stroke-linejoin=\"round\"/>\u003cpath d=\"M-235 -65 L235 -65\" fill=\"none\" stroke=\"#203845\" stroke-width=\"3\" stroke-linecap=\"round\"/>\u003ctext x=\"0\" y=\"-115\" font-size=\"44\" fill=\"#137a7f\" text-anchor=\"middle\" font-weight=\"700\" dominant-baseline=\"central\">\u003ctspan x=\"0\" dy=\"0\">公开资料\u003c/tspan>\u003c/text>\u003ctext x=\"0\" y=\"45\" font-size=\"48\" fill=\"#203845\" text-anchor=\"middle\" font-weight=\"700\" dominant-baseline=\"central\">\u003ctspan x=\"0\" dy=\"0\">只用必要信息\u003c/tspan>\u003c/text>\u003c/g>\u003c/svg>"},{"num":0,"mark":"源","label":"资料来源","first":41,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003cpath d=\"M79.2 79.2 L178.2 178.2\" fill=\"none\" stroke=\"#203845\" stroke-width=\"16\" stroke-linecap=\"round\"/>\u003cpath d=\"M79.2 79.2 L178.2 178.2\" fill=\"none\" stroke=\"#ee6a58\" stroke-width=\"8\" stroke-linecap=\"round\"/>\u003ccircle cx=\"0\" cy=\"0\" r=\"110\" fill=\"rgba(222,243,238,.7)\" stroke=\"#203845\" stroke-width=\"7\"/>\u003cpath d=\"M-60.50000000000001 -11 C-49.5 -55 -16.5 -77 16.5 -74.80000000000001\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\u003c/svg>"}],"scenes":{"cover":{"cams":{"all":{"l":[0,0,1600,900],"p":[0,0,900,1500]}}},"open":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"trace":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"confidence":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"scores":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"challenge":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"exercise":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"privacy":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"refs":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}}},"beats":[{"scene":"cover","step":0,"cam":"all","html":"AI 答得像真的，应该怎样检查？","kind":"title","chars":15,"section":0,"quiet":true},{"scene":"open","step":0,"cam":"desk","html":"“图书馆周日开放，放心去吧。”AI 语气肯定，还给了一条公告链接。你点开一看，原文却写着“周日闭馆”。","kind":"text","chars":50,"section":0},{"scene":"open","step":1,"cam":"desk","html":"这个虚构例子里，答案有来源，来源却不支持答案。上一期我们改动摆放位置，检查关系题有没有答对；这一期面对文字回答，也要找出能与答案对照的材料。核查不能停在“有没有链接”，还得追到原文，看看它究竟说了什么。","kind":"text","chars":101,"section":0},{"scene":"trace","step":0,"cam":"desk","html":"\u003cb class=\"no\">1\u003c/b>\u003cspan>沿着一句话找到证据\u003c/span>","kind":"h2","chars":9,"section":1},{"scene":"trace","step":1,"cam":"desk","html":"先把要检查的那句话拆清楚：“这所学校的图书馆，本周日开放。”地点、时间、开放状态，缺一项都可能查偏。","kind":"text","chars":50,"section":1},{"scene":"trace","step":2,"cam":"desk","html":"另一所学校的公告，或者去年的安排，即使写着“周日开放”，也未必适用于眼前的问题。","kind":"text","chars":40,"section":1},{"scene":"trace","step":3,"cam":"desk","html":"假设找到的就是本校适用于本周的公告。它写“周日开放”，这句话得到支持；它写“周日闭馆”，就与回答相矛盾；它只列周一至周五的时刻表，则没有足够信息决定周日是否开放。","kind":"text","chars":81,"section":1},{"scene":"trace","step":4,"cam":"desk","html":"“没写闭馆”，为什么不能当作“开放”？因为材料根本没有交代周日的状态。","kind":"text","chars":35,"section":1},{"scene":"trace","step":5,"cam":"desk","html":"此时可以明确回答：“这份时刻表没有说明周日安排。”说明资料的缺口，比凭空补出一个确定答案更有用。","kind":"text","chars":48,"section":1},{"scene":"trace","step":6,"cam":"desk","html":"\u003cb class=\"fig\">图1\u003c/b> 来源的学校与适用时间已经核准，仍须检查原文是否支持对应主张。","kind":"caption","chars":32,"section":1},{"scene":"trace","step":7,"cam":"desk","html":"而且，一条引用未必能支持整段回答。公告写了周日开放，不等于也写了“开到晚上九点”或“无需预约”。每一个具体说法，都要找到对应依据；来源可靠，也不能省掉这一步。","kind":"text","chars":79,"section":1},{"scene":"trace","step":8,"cam":"desk","html":"研究者也把回答是否流畅、事实是否正确、引用是否充分有效分开评价。关于自动生成引用的研究表明，这些方面需要分别检查，不能由其中一项替其他项作保证。\u003cspan class=\"cite\">〔1〕\u003c/span>","kind":"text","chars":75,"section":1},{"scene":"trace","step":9,"cam":"desk","html":"实际查证还要留意来源本身：谁发布的，哪天发布的，适用到什么时候，有没有更新通知。","kind":"text","chars":40,"section":1},{"scene":"trace","step":10,"cam":"desk","html":"多个网站转抄同一段旧文字，未必等于多份独立证据。若原始材料相互冲突，应把冲突指出来，并向负责发布的人确认。","kind":"text","chars":53,"section":1},{"scene":"confidence","step":0,"cam":"desk","html":"\u003cb class=\"no\">2\u003c/b>\u003cspan>说得肯定不等于可靠\u003c/span>","kind":"h2","chars":9,"section":2},{"scene":"confidence","step":1,"cam":"desk","html":"让 AI“再确认一下”，有时能发现错误，也可能只得到一遍更坚定的重复。语言模型把文字接得顺，并不妨碍它把时间、人物或出处拼错。真正的核查，需要引入可独立对照的材料。","kind":"text","chars":81,"section":2},{"scene":"confidence","step":2,"cam":"desk","html":"数字也可能制造错觉。屏幕上出现“可信度90%”，究竟指什么？","kind":"text","chars":30,"section":2},{"scene":"confidence","step":3,"cam":"desk","html":"是模型内部的分数、另外一个程序的评分，还是生成出来的一句话？若没有说明计算和验证方式，就不能直接理解成“这次有九成概率正确”。","kind":"text","chars":63,"section":2},{"scene":"confidence","step":4,"cam":"desk","html":"对能够给出概率预测的分类模型，研究者会检查：许多被报为约90%把握的预测，实际是否约有90%正确。这类工作叫校准。","kind":"text","chars":57,"section":2},{"scene":"confidence","step":5,"cam":"desk","html":"所引论文研究的是图像、文档分类等任务，不能把它直接当作聊天答案已经校准的证据。","kind":"text","chars":39,"section":2},{"scene":"confidence","step":6,"cam":"desk","html":"校准讨论一批适当样本中的对应关系，不能替某一个答案免去核实；换了使用环境，这种对应还可能改变。\u003cspan class=\"cite\">〔2〕\u003c/span>","kind":"text","chars":50,"section":2},{"scene":"confidence","step":7,"cam":"desk","html":"“不知道”也可以回答得很清楚。例如：“只查到本学期安排，无法据此确定明年。”它指出了证据缺在哪里，读者才知道下一步该查什么；一句笼统的“仅供参考”做不到这一点。","kind":"text","chars":80,"section":2},{"scene":"scores","step":0,"cam":"desk","html":"\u003cb class=\"no\">3\u003c/b>\u003cspan>一个高分会遮住什么\u003c/span>","kind":"h2","chars":9,"section":3},{"scene":"scores","step":1,"cam":"desk","html":"再看一组人为设定的成绩。共有100个问题：A类是90个常规时刻表问题，全部答对；B类是10个临时变更问题，全部答错。总正确率为90÷100＝90%，看起来相当不错。","kind":"text","chars":82,"section":3},{"scene":"scores","step":2,"cam":"desk","html":"分开看，A类正确率是100%，B类却是0%。如果现在要问“今天检修还开不开”，90%的总分就帮不上太多忙。这组数量和成绩只是在演示平均数的盲点，并非真实产品测评。","kind":"text","chars":81,"section":3},{"scene":"scores","step":3,"cam":"desk","html":"\u003cb class=\"fig\">图2\u003c/b> 100个构造例子中，A类90题全对，B类10题全错；总正确率90%掩盖了B类的0%。","kind":"caption","chars":44,"section":3},{"scene":"scores","step":4,"cam":"desk","html":"分组之后，也别只盯着百分比。某组只有两三个例子，成绩可能因为偶然而大起大落。","kind":"text","chars":38,"section":3},{"scene":"scores","step":5,"cam":"desk","html":"应根据用途挑出重要情形，同时记录样本数，并检查错误可能造成的后果。","kind":"text","chars":33,"section":3},{"scene":"scores","step":6,"cam":"desk","html":"偏差还可能体现在不同人使用同一系统时，得到的帮助并不一样。例如某种表达方式在资料中很少出现，系统可能更常误解它。发现差异后，要调查数据、任务和使用方式，不能把低分直接归咎于使用者。","kind":"text","chars":90,"section":3},{"scene":"scores","step":7,"cam":"desk","html":"UNESCO 的2024年框架把批判判断、人的权利与责任放在 AI 能力的重要位置。\u003cspan class=\"cite\">〔3〕\u003c/span>","kind":"text","chars":42,"section":3},{"scene":"challenge","step":0,"cam":"desk","html":"\u003cb class=\"no\">4\u003c/b>\u003cspan>给一段回答逐句找依据\u003c/span>","kind":"h2","chars":10,"section":4},{"scene":"challenge","step":1,"cam":"desk","html":"假设本校适用于本周的公告只写「周日 12:00—18:00 开放」，助手回答「周日开放，晚上九点关门，无需预约」。试着给三个说法分别标记：得到支持、与材料矛盾，还是材料没有说明？","kind":"text","chars":87,"section":4},{"scene":"exercise","step":0,"cam":"desk","html":"","kind":"text","chars":0,"section":4,"quiet":true},{"scene":"exercise","step":1,"cam":"desk","html":"「周日开放」得到支持；「晚上九点关门」与 18:00 关闭的安排矛盾；「无需预约」则没有依据。","kind":"text","chars":45,"section":4,"reveal":true},{"scene":"challenge","step":2,"cam":"desk","html":"第三项不能因为没写预约要求就判为正确，也不能凭空判为一定要预约。核查的结果可以保留未知。","kind":"text","chars":44,"section":4},{"scene":"privacy","step":0,"cam":"desk","html":"\u003cb class=\"no\">5\u003c/b>\u003cspan>核查也有隐私边界\u003c/span>","kind":"h2","chars":8,"section":5},{"scene":"privacy","step":1,"cam":"desk","html":"核查时还有一件事容易顺手做错：为了补背景，上传太多个人资料。同学的姓名、家庭住址、健康信息，不应因为提问方便就全交给工具。查公开的开馆时间，通常并不需要这些信息。","kind":"text","chars":81,"section":5},{"scene":"privacy","step":2,"cam":"desk","html":"能用虚构材料说明问题时，就不必拿真实学生资料试验。确需处理个人信息，应先确认用途、权限和服务的数据处理安排，只提供必要内容。","kind":"text","chars":62,"section":5},{"scene":"privacy","step":3,"cam":"desk","html":"删掉姓名也未必足够匿名，班级、时间、地点等线索仍可能让人认出某个人。","kind":"text","chars":34,"section":5},{"scene":"privacy","step":4,"cam":"desk","html":"核查的投入应与后果相称。随手找个故事灵感，与据此作出有关健康、升学或处分的决定，显然不能用同一把尺子。后者需要可靠的正式来源和负有责任的人工复核，不能把最终责任交给一段机器文字。","kind":"text","chars":89,"section":5},{"scene":"privacy","step":5,"cam":"desk","html":"回到“周日开放”这句话，值得信任的依据应当是：适用的公告确实支持它。语气、链接、总分都可以提供线索，但每一条线索，都要放回来源、时间和适用范围里检查。","kind":"text","chars":75,"section":5},{"scene":"refs","step":0,"cam":"desk","html":"","kind":"text","chars":0,"section":6,"quiet":true}]}</script>
+<script data-stage-source="stage.js">/* 互动版运行时：一次手势一拍的分镜阅读器。
+ * 经典脚本，无依赖，双击 file:// 也能运行。
+ * 不依赖浏览器的滚动：滚轮、触摸、键盘各自折算成「前进一拍 / 后退一拍」，画面固定不动，
+ * 所以触控板惯性、鼠标滚轮、手指轻划在各浏览器里表现一致。
+ * 纯函数在 Node 下经 module.exports 暴露，供单元测试。 */
+(function () {
+  'use strict';
+
+  /* ---------------- 纯函数 ---------------- */
+
+  /* 自动播放时每拍停留的秒数：按字数估读，已含 0.7s 的镜头移动。 */
+  function dwell(chars) {
+    return Math.min(12, Math.max(2.4, 1.4 + 0.14 * chars));
+  }
+
+  /* 把世界坐标里的矩形 rect=[x,y,w,h] 等比放进 area={x,y,w,h} 并居中。 */
+  function fitCamera(rect, area) {
+    var s = Math.min(area.w / rect[2], area.h / rect[3]);
+    return {
+      s: s,
+      x: area.x + (area.w - rect[2] * s) / 2 - rect[0] * s,
+      y: area.y + (area.h - rect[3] * s) / 2 - rect[1] * s
+    };
+  }
+
+  /* 元素在第 i 拍是否可见：at 起、until 前。 */
+  function visibleAt(at, until, i) {
+    return i >= at && (until == null || i < until);
+  }
+
+  /* 元素名 name 是否被聚焦列表点名：全等，或以 "<项>." 开头。 */
+  function focusHit(focus, name) {
+    for (var k = 0; k < focus.length; k++) {
+      if (name === focus[k] || name.indexOf(focus[k] + '.') === 0) return true;
+    }
+    return false;
+  }
+
+  /* '#b12' → 第 12 拍（下标 11）；无效返回 -1。 */
+  function parseBeatHash(hash, total) {
+    var m = /^#b(\d+)$/.exec(hash || '');
+    if (!m) return -1;
+    var n = Number(m[1]);
+    return n >= 1 && n <= total ? n - 1 : -1;
+  }
+  function formatBeatHash(i) { return '#b' + (i + 1); }
+
+  /* 滚轮手势限流：一次手势只前进一拍。feed(dy, t) 返回 +1 / -1 / 0；t 是毫秒时间戳，由调用方传入，
+   * 所以测试可以喂合成的事件序列。
+   * 触控板松手后还会有一两秒的惯性事件：翻页后锁住，直到事件流停顿 quiet 毫秒才解锁。
+   * 锁定期间有两种情况视为读者又发起了一次手势：
+   *   1) 锁定 minLock 毫秒后，增量突然比最近的平均值大得多（在惯性上又甩了一下）；
+   *   2) 锁定 restart 毫秒后，增量仍不小于本次手势峰值的 restartRatio（一直在匀速滚动的鼠标滚轮）。 */
+  function createWheelGate(options) {
+    var o = { threshold: 18, quiet: 130, minLock: 350, reaccel: 1.7, restart: 900, restartRatio: 0.7 };
+    for (var key in options) o[key] = options[key];
+    var sum = 0, locked = false, lastT = -1e9, lockedAt = 0, avg = 0, peak = 0;
+    return {
+      feed: function (dy, t) {
+        var a = Math.abs(dy);
+        if (!a) return 0;
+        if (t - lastT > o.quiet) { locked = false; sum = 0; avg = 0; peak = 0; }
+        lastT = t;
+        var prev = avg;
+        avg = prev ? prev * 0.6 + a * 0.4 : a;
+        if (locked) {
+          peak = Math.max(peak, a);
+          var since = t - lockedAt;
+          var surge = since > o.minLock && a > prev * o.reaccel + 8;
+          var steady = since > o.restart && a >= peak * o.restartRatio && a >= 20;
+          if (!surge && !steady) return 0;
+          locked = false; sum = 0;
+        }
+        sum += dy;
+        if (Math.abs(sum) < o.threshold) return 0;
+        var dir = sum > 0 ? 1 : -1;
+        sum = 0; locked = true; lockedAt = t; peak = a;
+        return dir;
+      }
+    };
+  }
+
+  /* 触摸滑动：手指上滑为前进。慢拖需要 48px，快速一划 24px 即可；斜着划不算。 */
+  function swipeStep(dx, dy, ms) {
+    var ay = Math.abs(dy), ax = Math.abs(dx);
+    if (ay < ax * 1.2) return 0;
+    if (ay >= 48 || (ay >= 24 && ms < 220)) return dy < 0 ? 1 : -1;
+    return 0;
+  }
+
+  /* 画面区：为顶栏和字幕卡留出位置。capH 是字幕卡实际占的高度（含它离底边的距离），
+   * 由页面量出，所以短句子给画面留更多地方；静默拍（封面）没有字幕卡，只留底栏。 */
+  function artArea(w, h, capH) {
+    var portrait = w / h < 0.85;
+    var top = portrait ? 56 : 64;
+    var bottom = capH ? capH + 14 : 64;
+    return { x: 0, y: top, w: w, h: Math.max(120, h - top - bottom), portrait: portrait };
+  }
+
+  var api = {
+    dwell: dwell, fitCamera: fitCamera, visibleAt: visibleAt, focusHit: focusHit,
+    parseBeatHash: parseBeatHash, formatBeatHash: formatBeatHash,
+    createWheelGate: createWheelGate, swipeStep: swipeStep, artArea: artArea
+  };
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  if (typeof document === 'undefined') return;
+
+  /* ---------------- 页面 ---------------- */
+
+  var dataEl = document.getElementById('stage-data');
+  if (!dataEl) return;
+  var data = JSON.parse(dataEl.textContent);
+  var beats = data.beats;
+  var total = beats.length;
+  var root = document.documentElement;
+  var $ = function (sel, scope) { return (scope || document).querySelector(sel); };
+  var $$ = function (sel, scope) { return Array.prototype.slice.call((scope || document).querySelectorAll(sel)); };
+
+  var stage = $('#stage');
+  var capText = $('#cap');
+  var capCard = $('#capcard');
+  var count = $('#count');
+  var hint = $('#hint');
+  var secNum = $('#sec-num');
+  var secName = $('#sec-name');
+  var secPill = $('#sec');
+  var bar = $('#bar');
+  var btnPrev = $('#btn-prev');
+  var btnNext = $('#btn-next');
+  var btnPlay = $('#btn-play');
+  var btnToc = $('#btn-toc');
+  var toc = $('#toc');
+  var readEl = $('#read');
+
+  var cur = -1;
+  var playing = false;
+  var timer = 0;
+  var lastScene = null;
+  var urlTimer = 0;
+  var flipState = {};
+
+  /* 每个场景自己编步号（0 起）；每一拍在分镜里声明自己对应哪一步。 */
+  var scenes = {};
+  $$('.scene').forEach(function (svg) {
+    var timed = $$('[data-at]', svg);
+    timed.forEach(function (el) {
+      el._at = Number(el.getAttribute('data-at'));
+      var un = el.getAttribute('data-until');
+      el._until = un == null ? null : Number(un);
+    });
+    scenes[svg.getAttribute('data-scene')] = { el: svg, cam: $('.cam', svg), timed: timed };
+  });
+
+  function mode() { return root.getAttribute('data-mode'); }
+
+  /* ---- 渲染：状态只由（场景、步号、镜头）决定，所以跳转和逐拍走得到同样的画面 ---- */
+
+  function setOn(sc, step) {
+    for (var k = 0; k < sc.timed.length; k++) {
+      var on = visibleAt(sc.timed[k]._at, sc.timed[k]._until, step);
+      sc.timed[k].classList.toggle('on', on);
+      sc.timed[k].setAttribute('aria-hidden', String(!on));
+    }
+  }
+
+  /* 聚焦：这一拍点名的元素保持原样，其余压暗（solo 时整个藏起来）。镜头放大时用，
+   * 免得露出一半的邻居显得像出错。名字用 data-n。 */
+  function setFocus(sc, focus, solo) {
+    var has = !!(focus && focus.length);
+    sc.el.classList.toggle('has-focus', has);
+    sc.el.classList.toggle('solo', has && !!solo);
+    for (var k = 0; k < sc.timed.length; k++) {
+      var e = sc.timed[k];
+      e.classList.toggle('focus', has && focusHit(focus, e.getAttribute('data-n') || ''));
+    }
+  }
+
+  /* how：'instant' 直接到位；'enter' 刚切入场景，先复位再让元素依次出现；'diff' 同场景内只动变化的元素。 */
+  function applyElements(i, how) {
+    var b = beats[i];
+    var sc = scenes[b.scene];
+    if (!sc) return;
+    if (how === 'instant') {
+      sc.el.classList.add('snap');
+      setOn(sc, b.step);
+      setFocus(sc, b.focus, b.solo);
+      void sc.el.getBoundingClientRect();
+      sc.el.classList.remove('snap');
+    } else if (how === 'enter') {
+      sc.el.classList.add('snap');
+      sc.timed.forEach(function (e) { e.classList.remove('on'); });
+      setFocus(sc, b.focus, b.solo);
+      void sc.el.getBoundingClientRect();
+      sc.el.classList.remove('snap');
+      setOn(sc, b.step);
+    } else {
+      setOn(sc, b.step);
+      setFocus(sc, b.focus, b.solo);
+    }
+  }
+
+  function applyCamera(i, instant) {
+    var b = beats[i];
+    var sc = scenes[b.scene];
+    if (!sc) return;
+    var cam = data.scenes[b.scene].cams[b.cam];
+    var area = artArea(innerWidth, innerHeight, b.quiet ? 0 : innerHeight - capCard.getBoundingClientRect().top);
+    var rect = area.portrait ? cam.p : cam.l;
+    var t = fitCamera(rect, area);
+    var g = sc.cam;
+    if (instant) g.style.transition = 'none';
+    g.style.transform = 'translate(' + t.x.toFixed(2) + 'px,' + t.y.toFixed(2) + 'px) scale(' + t.s.toFixed(4) + ')';
+    if (instant) { void g.getBoundingClientRect(); g.style.transition = ''; }
+  }
+
+  function applyScene(i) {
+    var id = beats[i].scene;
+    if (id === lastScene) return false;
+    Object.keys(scenes).forEach(function (key) {
+      scenes[key].el.classList.toggle('is-active', key === id);
+      scenes[key].el.setAttribute('aria-hidden', String(key !== id));
+    });
+    lastScene = id;
+    return true;
+  }
+
+  /* 静默拍（封面）：字幕卡不显示，但文字仍写进状态区，读屏照样播报。 */
+  function applyCaption(i) {
+    var b = beats[i];
+    capText.innerHTML = b.html || '';
+    capText.setAttribute('data-kind', b.kind || 'text');
+    capCard.classList.toggle('quiet', !!b.quiet);
+    capText.classList.remove('in');
+    void capText.offsetWidth;
+    capText.classList.add('in');
+  }
+
+  function applyHud(i) {
+    var b = beats[i];
+    var sec = data.sections[b.section];
+    secNum.textContent = sec.num ? sec.num + '/' + data.sectionCount : '';
+    secName.textContent = sec.label;
+    secPill.hidden = !sec.label;
+    bar.style.transform = 'scaleX(' + ((i + 1) / total).toFixed(4) + ')';
+    count.textContent = (i + 1) + ' / ' + total;
+    btnPrev.disabled = i <= 0;
+    btnNext.disabled = i >= total - 1;
+  }
+
+  function syncUrl(i) {
+    clearTimeout(urlTimer);
+    urlTimer = setTimeout(function () {
+      if (mode() !== 'stage') return;
+      try { history.replaceState(null, '', location.pathname + location.search + formatBeatHash(i)); } catch (e) { /* Safari 限频时忽略 */ }
+    }, 200);
+  }
+
+  function render(i, opts) {
+    opts = opts || {};
+    i = Math.max(0, Math.min(total - 1, i));
+    if (i === cur && !opts.force) return;
+    stage.setAttribute('data-orient', artArea(innerWidth, innerHeight).portrait ? 'portrait' : 'landscape');
+    var changed = applyScene(i);
+    cur = i;
+    applyCaption(i);   // 先排字幕：镜头要按字幕卡的实际高度留白
+    applyElements(i, opts.instant ? 'instant' : changed ? 'enter' : 'diff');
+    syncInteractions();
+    applyCamera(i, opts.instant || changed);
+    applyHud(i);
+    syncUrl(i);
+    if (i > 0 && hint) hint.hidden = true;
+    schedule();
+  }
+
+  function go(i, fromAuto) {
+    if (!fromAuto) stopPlay();
+    render(i);
+  }
+  function step(dir, fromAuto) { go(cur + dir, fromAuto); }
+
+  /* ---- 自动播放：读者一操作就停 ---- */
+
+  function stopPlay() {
+    if (!playing) return;
+    playing = false;
+    clearTimeout(timer);
+    btnPlay.setAttribute('data-playing', 'false');
+    btnPlay.textContent = '播放';
+  }
+  function startPlay() {
+    if (cur >= total - 1) render(0);
+    playing = true;
+    btnPlay.setAttribute('data-playing', 'true');
+    btnPlay.textContent = '暂停';
+    schedule();
+  }
+  function schedule() {
+    clearTimeout(timer);
+    if (!playing || document.hidden || mode() !== 'stage') return;
+    timer = setTimeout(function () {
+      if (cur >= total - 1) { stopPlay(); return; }
+      step(1, true);
+    }, dwell(beats[cur].chars || 0) * 1000);
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) clearTimeout(timer); else schedule();
+  });
+
+  /* ---- 输入：滚轮、触摸、键盘各自折算成一拍 ---- */
+
+  var gate = createWheelGate();
+  function inDialog(t) { return !!(t && t.closest && t.closest('dialog')); }
+
+  /* 挂在 document 上：光标停在顶栏按钮上时滚轮也要接管。 */
+  document.addEventListener('wheel', function (e) {
+    if (mode() !== 'stage' || e.ctrlKey || toc.open || inDialog(e.target)) return;
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY) * 1.5) return;   // 横向手势留给浏览器（后退/前进）
+    e.preventDefault();
+    if (e.deltaY) stopPlay();   // 自动播放中读者一动滚轮就接管，哪怕这一下没够翻页
+    var unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? innerHeight : 1;
+    var dir = gate.feed(e.deltaY * unit, e.timeStamp);
+    if (dir) step(dir);
+  }, { passive: false });
+
+  var touch = null;
+  document.addEventListener('touchstart', function (e) {
+    if (mode() !== 'stage' || inDialog(e.target) || e.touches.length !== 1) { touch = null; return; }
+    var p = e.touches[0];
+    touch = { x: p.clientX, y: p.clientY, t: e.timeStamp };
+  }, { passive: true });
+  document.addEventListener('touchmove', function (e) {
+    if (touch && e.cancelable) e.preventDefault();   // 不让页面跟着手指橡皮筋
+  }, { passive: false });
+  document.addEventListener('touchend', function (e) {
+    if (!touch) return;
+    var p = e.changedTouches[0], t0 = touch;
+    touch = null;
+    var dir = swipeStep(p.clientX - t0.x, p.clientY - t0.y, e.timeStamp - t0.t);
+    if (dir) step(dir);
+  });
+  document.addEventListener('touchcancel', function () { touch = null; });
+
+  /* 键盘：焦点在按钮或链接上时，空格和回车留给它们自己。 */
+  document.addEventListener('keydown', function (e) {
+    if (mode() !== 'stage' || e.ctrlKey || e.metaKey || e.altKey || toc.open) return;
+    var t = e.target;
+    if (t && t.closest && t.closest('input,textarea,select,[contenteditable]')) return;
+    var key = e.key;
+    var onControl = t && t.closest && t.closest('button,a,.hit');
+    if ((key === ' ' || key === 'Enter') && onControl) return;
+    var dir = 0, to = -1;
+    if (key === 'ArrowDown' || key === 'ArrowRight' || key === 'PageDown' || (key === ' ' && !e.shiftKey)) dir = 1;
+    else if (key === 'ArrowUp' || key === 'ArrowLeft' || key === 'PageUp' || (key === ' ' && e.shiftKey)) dir = -1;
+    else if (key === 'Home') to = 0;
+    else if (key === 'End') to = total - 1;
+    else return;
+    e.preventDefault();
+    if (e.repeat) return;
+    if (to >= 0) go(to); else step(dir);
+  });
+
+  btnPrev.addEventListener('click', function () { step(-1); });
+  btnNext.addEventListener('click', function () { step(1); });
+  btnPlay.addEventListener('click', function () { if (playing) stopPlay(); else startPlay(); });
+
+  /* 翻面是独立的阅读动作，不推动拍号；横竖屏共用同一张卡的状态。 */
+  function syncInteractions() {
+    Object.keys(scenes).forEach(function (id) {
+      var sc = scenes[id];
+      $$('.hit', sc.el).forEach(function (hit) {
+        var host = hit.closest('.s');
+        var shown = id === lastScene && host.classList.contains('on') && getComputedStyle(host).display !== 'none' &&
+          !(sc.el.classList.contains('solo') && !host.classList.contains('focus'));
+        hit.setAttribute('tabindex', shown ? '0' : '-1');
+        var key = hit.getAttribute('data-flip');
+        if (!key) return;
+        var reveal = !!(beats[cur] && beats[cur].reveal);
+        var stateKey = (reveal ? cur + ':' : '') + key;
+        var flipped = flipState[stateKey] == null ? reveal : flipState[stateKey];
+        hit.classList.toggle('is-flipped', flipped);
+        hit.setAttribute('aria-pressed', String(flipped));
+        hit.setAttribute('aria-label', hit.getAttribute(flipped ? 'data-back-label' : 'data-front-label'));
+      });
+    });
+    var focused = document.activeElement;
+    if (focused && focused.matches('.hit') && focused.getAttribute('tabindex') !== '0') {
+      stage.setAttribute('tabindex', '-1');
+      stage.focus({ preventScroll: true });
+    }
+  }
+  function flip(hit) {
+    if (!hit || hit.getAttribute('tabindex') !== '0') return;
+    stopPlay();
+    var key = (beats[cur].reveal ? cur + ':' : '') + hit.getAttribute('data-flip');
+    flipState[key] = !hit.classList.contains('is-flipped');
+    syncInteractions();
+  }
+  stage.addEventListener('click', function (e) {
+    var hit = e.target.closest && e.target.closest('[data-flip]');
+    if (hit) { e.preventDefault(); flip(hit); }
+  });
+  stage.addEventListener('keydown', function (e) {
+    var hit = e.target.closest && e.target.closest('[data-flip]');
+    if (!hit || (e.key !== 'Enter' && e.key !== ' ')) return;
+    e.preventDefault(); e.stopPropagation();
+    if (!e.repeat) flip(hit);
+  });
+
+  /* ---- 目录 ---- */
+
+  function buildToc() {
+    var list = $('#toc-list');
+    list.innerHTML = '';
+    data.sections.forEach(function (sec) {
+      var li = document.createElement('li');
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'toc-card';
+      b.innerHTML = '<span class="toc-no"></span><span class="toc-name"></span>';
+      if (sec.thumbnail) b.insertAdjacentHTML('afterbegin', sec.thumbnail);
+      $('.toc-no', b).textContent = sec.num || sec.mark || '';
+      $('.toc-name', b).textContent = sec.label;
+      b.addEventListener('click', function () { closeToc(); go(sec.first); });
+      li.appendChild(b);
+      list.appendChild(li);
+    });
+  }
+  function openToc() {
+    stopPlay();
+    if (toc.showModal) toc.showModal(); else toc.setAttribute('open', '');
+  }
+  function closeToc() {
+    if (toc.close) toc.close(); else toc.removeAttribute('open');
+  }
+  btnToc.addEventListener('click', openToc);
+  toc.addEventListener('click', function (e) { if (e.target === toc) closeToc(); });
+  toc.addEventListener('close', function () { btnToc.focus(); });
+  $('#toc-close').addEventListener('click', closeToc);
+
+  /* ---- 模式：分镜 / 全文 ---- */
+
+  /* 改查询参数：?read 与 ?stage 互斥；空值写成无等号的形式。 */
+  function queryWith(changes) {
+    var p = new URLSearchParams(location.search);
+    Object.keys(changes).forEach(function (name) {
+      if (changes[name]) p.set(name, ''); else p.delete(name);
+    });
+    var qs = p.toString().replace(/=(?=&|$)/g, '');
+    return location.pathname + (qs ? '?' + qs : '');
+  }
+  var startBeat = parseBeatHash(location.hash, total);
+
+  function setMode(next) {
+    root.setAttribute('data-mode', next);
+    if (next === 'read') {
+      stopPlay();
+      history.replaceState(null, '', queryWith({ read: true, stage: false }));
+      window.scrollTo(0, 0);
+      readEl.setAttribute('tabindex', '-1');
+      readEl.focus({ preventScroll: true });
+    } else {
+      /* 系统开了「减少动态效果」时，要用 ?stage 才能留在分镜版。 */
+      var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      history.replaceState(null, '', queryWith({ read: false, stage: reduced }));
+      render(cur < 0 ? Math.max(startBeat, 0) : cur, { force: true, instant: true });
+    }
+  }
+  $$('[data-action="read"]').forEach(function (el) {
+    el.addEventListener('click', function (e) { e.preventDefault(); setMode('read'); });
+  });
+  $$('[data-action="stage"]').forEach(function (el) {
+    el.addEventListener('click', function (e) { e.preventDefault(); setMode('stage'); });
+  });
+
+  window.addEventListener('hashchange', function () {
+    var i = parseBeatHash(location.hash, total);
+    if (i >= 0 && mode() === 'stage') go(i);
+  });
+  var resizeTimer = 0;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      if (mode() === 'stage' && cur >= 0) render(cur, { force: true, instant: true });
+    }, 80);
+  });
+
+  /* ---- 启动 ---- */
+
+  buildToc();
+  if (hint) hint.textContent = matchMedia('(pointer: coarse)').matches ? '上滑翻页' : '滚动或按 ↓ 翻页';
+  var begin = function () {
+    if (mode() === 'stage') render(Math.max(startBeat, 0), { force: true, instant: true });
+    requestAnimationFrame(function () { requestAnimationFrame(function () { stage.classList.add('ready'); }); });
+  };
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(begin, begin); else begin();
+})();
+</script>
+</body>
+</html>

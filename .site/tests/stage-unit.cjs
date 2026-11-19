@@ -708,4 +708,47 @@ test('五格存储拒绝非法地址、形状与内容，不隐式扩容或换�
   for(const memory of [[],[null,null],Array(5),[1,null,null,null,null]]) assert.throws(()=>storage.read(memory,1),/存储/);
   for(const v of ['',null,1]) assert.throws(()=>storage.write(storage.initial,2,v),/内容/);
 });
-console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权、解码、存储、方案筛选、编码与关系算例）`);
+
+const evidence=require('../stage/evidence.cjs');
+test('同一主张在适用公告中区分支持、矛盾和未说明',()=>{
+  const claim=evidence.claims[0];
+  assert.deepEqual(['open','closed','weekday'].map(id=>evidence.assess(evidence.sources[id],claim)),['supports','contradicts','unknown']);
+});
+test('未知不是相反事实，预约两种主张都不能从空白推断',()=>{
+  const claim=evidence.claims[2];
+  assert.equal(evidence.assess(evidence.sources.timed,claim),'unknown');
+  assert.equal(evidence.assess(evidence.sources.timed,{...claim,value:true}),'unknown');
+  assert.equal(evidence.assess({...evidence.scope,facts:{reservationRequired:false}},claim),'supports');
+  assert.equal(evidence.assess({...evidence.scope,facts:{reservationRequired:true}},claim),'contradicts');
+});
+test('逐句判断不把开放公告当成整段答案的保证',()=>{
+  assert.deepEqual(evidence.claims.map(c=>evidence.assess(evidence.sources.timed,c)),['supports','contradicts','unknown']);
+  assert.equal(evidence.assess(evidence.sources.timed,{...evidence.claims[1],value:18}),'supports');
+});
+test('学校或适用期不符时不把碰巧相同的文字判为支持或矛盾',()=>{
+  for(const change of [{school:'另一所学校'},{period:'去年'}]){
+    for(const source of [evidence.sources.open,evidence.sources.closed])assert.equal(evidence.assess({...source,...change},evidence.claims[0]),'inapplicable');
+  }
+});
+test('分组题数加权后总分90%，两组分别100%和0%，不平均百分比',()=>{
+  const s=evidence.summarize(evidence.groups);
+  assert.deepEqual([s.total,s.correct,s.rate],[100,90,.9]);
+  assert.deepEqual(s.groups.map(g=>[g.total,g.correct,g.rate]),[[90,90,1],[10,0,0]]);
+  const split=evidence.summarize([{label:'甲',total:45,correct:45},{label:'乙',total:45,correct:45},evidence.groups[1]]);
+  assert.equal(split.rate,s.rate);
+  assert.equal(evidence.summarize([...evidence.groups].reverse()).rate,s.rate);
+  assert.equal(evidence.summarize([{label:'空组',total:0,correct:0}]).rate,null);
+});
+test('构造事实与成绩冻结，计算输出不修改或共享原始记录',()=>{
+  assert.ok(Object.isFrozen(evidence.sources.timed.facts)&&evidence.claims.every(Object.isFrozen)&&evidence.groups.every(Object.isFrozen));
+  const input=[{label:'一组',total:3,correct:2}],before=JSON.stringify(input),out=evidence.summarize(input);
+  assert.equal(out.rate,2/3);out.groups[0].correct=0;
+  assert.equal(JSON.stringify(input),before);assert.equal(evidence.groups[0].correct,90);
+});
+test('缺失范围、非法字段值与无效题数会报错，不补事实或截断数值',()=>{
+  for(const change of [{school:''},{period:null}])assert.throws(()=>evidence.assess({...evidence.sources.open,...change},evidence.claims[0]),/学校与适用期/);
+  for(const facts of [null,[],{sundayOpen:'true'},{reservationRequired:0},{closeHour:25},{closeHour:18.5},{unknown:true}])assert.throws(()=>evidence.assess({...evidence.scope,facts},evidence.claims[0]),/事实/);
+  assert.throws(()=>evidence.assess(evidence.sources.open,{...evidence.claims[0],value:'true'}),/事实/);
+  for(const records of [[],null,Array(1),[{label:'',total:1,correct:1}],[{label:'错',total:1,correct:2}],[{label:'负',total:-1,correct:0}],[{label:'小数',total:1.5,correct:1}],[{label:'布尔',total:true,correct:1}],[{label:'无穷',total:Infinity,correct:1}],[{label:'大',total:Number.MAX_SAFE_INTEGER,correct:1},{label:'加',total:1,correct:0}]])assert.throws(()=>evidence.summarize(records),/分组|题数|合计/);
+});
+console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权、解码、存储、方案筛选、编码、关系与证据核对算例）`);

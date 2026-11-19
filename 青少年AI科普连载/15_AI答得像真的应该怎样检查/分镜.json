@@ -1,0 +1,302 @@
+{
+  "complete": true,
+  "beats": [
+    {
+      "take": 1,
+      "scene": "cover",
+      "step": 0,
+      "cam": "all",
+      "quiet": true,
+      "from": "AI 答得像真的，应该怎样检查？"
+    },
+    {
+      "take": 3,
+      "scene": "open",
+      "step": 0,
+      "cam": "desk",
+      "from": "“图书馆周日开放，放心去吧。”"
+    },
+    {
+      "take": 3,
+      "scene": "open",
+      "step": 1,
+      "cam": "desk",
+      "from": "这个虚构例子里，答案有来源，来源却不支持答案。"
+    },
+    {
+      "take": 1,
+      "scene": "trace",
+      "step": 0,
+      "cam": "desk",
+      "from": "沿着一句话找到证据"
+    },
+    {
+      "take": 2,
+      "scene": "trace",
+      "step": 1,
+      "cam": "desk",
+      "from": "先把要检查的那句话拆清楚：“这所学校的图书馆，本"
+    },
+    {
+      "take": 1,
+      "scene": "trace",
+      "step": 2,
+      "cam": "desk",
+      "from": "另一所学校的公告，或者去年的安排，即使写着“周日"
+    },
+    {
+      "take": 2,
+      "scene": "trace",
+      "step": 3,
+      "cam": "desk",
+      "from": "假设找到的就是本校适用于本周的公告。"
+    },
+    {
+      "take": 2,
+      "scene": "trace",
+      "step": 4,
+      "cam": "desk",
+      "from": "“没写闭馆”，为什么不能当作“开放”？"
+    },
+    {
+      "take": 2,
+      "scene": "trace",
+      "step": 5,
+      "cam": "desk",
+      "from": "此时可以明确回答：“这份时刻表没有说明周日安排。"
+    },
+    {
+      "take": 1,
+      "scene": "trace",
+      "step": 6,
+      "cam": "desk",
+      "from": "图1  来源的学校与适用时间已经核准，仍须检查原"
+    },
+    {
+      "take": 3,
+      "scene": "trace",
+      "step": 7,
+      "cam": "desk",
+      "from": "而且，一条引用未必能支持整段回答。"
+    },
+    {
+      "take": 2,
+      "scene": "trace",
+      "step": 8,
+      "cam": "desk",
+      "from": "研究者也把回答是否流畅、事实是否正确、引用是否充"
+    },
+    {
+      "take": 1,
+      "scene": "trace",
+      "step": 9,
+      "cam": "desk",
+      "from": "实际查证还要留意来源本身：谁发布的，哪天发布的，"
+    },
+    {
+      "take": 2,
+      "scene": "trace",
+      "step": 10,
+      "cam": "desk",
+      "from": "多个网站转抄同一段旧文字，未必等于多份独立证据。"
+    },
+    {
+      "take": 1,
+      "scene": "confidence",
+      "step": 0,
+      "cam": "desk",
+      "from": "说得肯定不等于可靠"
+    },
+    {
+      "take": 3,
+      "scene": "confidence",
+      "step": 1,
+      "cam": "desk",
+      "from": "让 AI“再确认一下”，有时能发现错误，也可能只"
+    },
+    {
+      "take": 2,
+      "scene": "confidence",
+      "step": 2,
+      "cam": "desk",
+      "from": "数字也可能制造错觉。"
+    },
+    {
+      "take": 2,
+      "scene": "confidence",
+      "step": 3,
+      "cam": "desk",
+      "from": "是模型内部的分数、另外一个程序的评分，还是生成出"
+    },
+    {
+      "take": 2,
+      "scene": "confidence",
+      "step": 4,
+      "cam": "desk",
+      "from": "对能够给出概率预测的分类模型，研究者会检查：许多"
+    },
+    {
+      "take": 1,
+      "scene": "confidence",
+      "step": 5,
+      "cam": "desk",
+      "from": "所引论文研究的是图像、文档分类等任务，不能把它直"
+    },
+    {
+      "take": 1,
+      "scene": "confidence",
+      "step": 6,
+      "cam": "desk",
+      "from": "校准讨论一批适当样本中的对应关系，不能替某一个答"
+    },
+    {
+      "take": 3,
+      "scene": "confidence",
+      "step": 7,
+      "cam": "desk",
+      "from": "“不知道”也可以回答得很清楚。"
+    },
+    {
+      "take": 1,
+      "scene": "scores",
+      "step": 0,
+      "cam": "desk",
+      "from": "一个高分会遮住什么"
+    },
+    {
+      "take": 3,
+      "scene": "scores",
+      "step": 1,
+      "cam": "desk",
+      "from": "再看一组人为设定的成绩。"
+    },
+    {
+      "take": 3,
+      "scene": "scores",
+      "step": 2,
+      "cam": "desk",
+      "from": "分开看，A类正确率是100%，B类却是0%。"
+    },
+    {
+      "take": 1,
+      "scene": "scores",
+      "step": 3,
+      "cam": "desk",
+      "from": "图2  100个构造例子中，A类90题全对，B类"
+    },
+    {
+      "take": 2,
+      "scene": "scores",
+      "step": 4,
+      "cam": "desk",
+      "from": "分组之后，也别只盯着百分比。"
+    },
+    {
+      "take": 1,
+      "scene": "scores",
+      "step": 5,
+      "cam": "desk",
+      "from": "应根据用途挑出重要情形，同时记录样本数，并检查错"
+    },
+    {
+      "take": 3,
+      "scene": "scores",
+      "step": 6,
+      "cam": "desk",
+      "from": "偏差还可能体现在不同人使用同一系统时，得到的帮助"
+    },
+    {
+      "take": 1,
+      "scene": "scores",
+      "step": 7,
+      "cam": "desk",
+      "from": "UNESCO 的2024年框架把批判判断、人的权"
+    },
+    {
+      "take": 1,
+      "scene": "challenge",
+      "step": 0,
+      "cam": "desk",
+      "from": "给一段回答逐句找依据"
+    },
+    {
+      "take": 2,
+      "scene": "challenge",
+      "step": 1,
+      "cam": "desk",
+      "from": "假设本校适用于本周的公告只写「周日 12:00—"
+    },
+    {
+      "take": 0,
+      "scene": "exercise",
+      "step": 0,
+      "cam": "desk",
+      "quiet": true
+    },
+    {
+      "take": 1,
+      "scene": "exercise",
+      "step": 1,
+      "cam": "desk",
+      "reveal": true,
+      "from": "「周日开放」得到支持；「晚上九点关门」与 18:"
+    },
+    {
+      "take": 2,
+      "scene": "challenge",
+      "step": 2,
+      "cam": "desk",
+      "from": "第三项不能因为没写预约要求就判为正确，也不能凭空"
+    },
+    {
+      "take": 1,
+      "scene": "privacy",
+      "step": 0,
+      "cam": "desk",
+      "from": "核查也有隐私边界"
+    },
+    {
+      "take": 3,
+      "scene": "privacy",
+      "step": 1,
+      "cam": "desk",
+      "from": "核查时还有一件事容易顺手做错：为了补背景，上传太"
+    },
+    {
+      "take": 2,
+      "scene": "privacy",
+      "step": 2,
+      "cam": "desk",
+      "from": "能用虚构材料说明问题时，就不必拿真实学生资料试验"
+    },
+    {
+      "take": 1,
+      "scene": "privacy",
+      "step": 3,
+      "cam": "desk",
+      "from": "删掉姓名也未必足够匿名，班级、时间、地点等线索仍"
+    },
+    {
+      "take": 3,
+      "scene": "privacy",
+      "step": 4,
+      "cam": "desk",
+      "from": "核查的投入应与后果相称。"
+    },
+    {
+      "take": 2,
+      "scene": "privacy",
+      "step": 5,
+      "cam": "desk",
+      "from": "回到“周日开放”这句话，值得信任的依据应当是：适"
+    },
+    {
+      "take": 0,
+      "scene": "refs",
+      "step": 0,
+      "cam": "desk",
+      "quiet": true,
+      "refs": true
+    }
+  ]
+}
