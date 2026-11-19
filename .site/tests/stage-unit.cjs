@@ -355,6 +355,36 @@ test('状态算例拒绝非法系数、非有限数、未知规则及过多步�
   assert.throws(()=>recurrent.trace('unknown'),/未知/);
   for(const n of [-1,.5,21]) assert.throws(()=>recurrent.decay(2,.5,n),/步数/);
 });
+const attention = require('../stage/attention.cjs');
+test('固定信息 2 和 10，三组非负归一权重分别产生 4、8、6', () => {
+  const expected=[['first',[1.5,2.5],4],['swapped',[.5,7.5],8],['equal',[1,5],6]];
+  for (const [name,products,result] of expected) {
+    const r=attention.trial(name);
+    assert.deepEqual(r.values,[2,10]); assert.deepEqual(r.products,products); assert.equal(r.result,result);
+    assert.equal(r.weights.reduce((a,b)=>a+b),1);
+  }
+});
+test('加权组合逐项处理向量且不修改信息或权重', () => {
+  const values=[[2,4],[10,8]], weights=[.75,.25];
+  assert.deepEqual(attention.combine(values,weights),{products:[[1.5,3],[2.5,2]],result:[4,5]});
+  assert.deepEqual(values,[[2,4],[10,8]]); assert.deepEqual(weights,[.75,.25]);
+  assert.ok(Object.isFrozen(attention.values) && Object.isFrozen(attention.weights.first));
+});
+test('非负归一权重的组合始终处在原数的范围，端点权重也有效', () => {
+  for(const w of [0,.1,.25,.5,.75,.9,1]) {
+    const r=attention.combine([-4,12],[w,1-w]).result;
+    assert.ok(r>=-4 && r<=12);
+  }
+  assert.equal(attention.combine([2,10],[1,0]).result,2);
+  assert.equal(attention.combine([2,10],[0,1]).result,10);
+});
+test('加权计算拒绝负权重、非归一权重、非有限数与错形向量', () => {
+  for(const w of [[-.1,1.1],[.5,.4],[NaN,1],[Infinity,0]]) assert.throws(()=>attention.combine([2,10],w),/权重/);
+  for(const v of [[NaN,10],[[2,4],[10]],[[2,4],10],[2,[10,8]],['2',10]]) assert.throws(()=>attention.combine(v,[.5,.5]),/信息/);
+  assert.throws(()=>attention.combine([],[]),/数量/);
+  assert.throws(()=>attention.combine([2,10],[1]),/数量/);
+  assert.throws(()=>attention.trial('unknown'),/未知/);
+});
 const generation = require('../stage/generation.cjs');
 test('玩具贪心分两步接出读书和句号，并把新增片段接回上下文', () => {
   const r=generation.generate();
@@ -464,4 +494,4 @@ test('手动试数支持有限小数，拒绝无效参数和目标', () => {
   for (const b of [NaN, Infinity, '2']) assert.throws(() => parameter.trial(b), /有限数/);
   for (const answers of [[3,4], [3,4,NaN]]) assert.throws(() => parameter.trial(2,answers), /目标/);
 });
-console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态与生成算例）`);
+console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成与加权算例）`);

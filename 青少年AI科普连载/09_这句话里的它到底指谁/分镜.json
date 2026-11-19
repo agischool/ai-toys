@@ -1,0 +1,274 @@
+{
+  "complete": true,
+  "beats": [
+    {
+      "from": "这句话里的“它”，到底指谁？",
+      "take": 1,
+      "scene": "cover",
+      "step": 0,
+      "cam": "all",
+      "quiet": true
+    },
+    {
+      "from": "“小球没放进盒子，因为它太大了。”",
+      "take": 2,
+      "scene": "open",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "把“大”换成“小”，读成“因为它太小了”",
+      "take": 2,
+      "scene": "open",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "模型也需要把散落在句子里的线索联系起来。",
+      "take": 2,
+      "scene": "open",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "阅读提示：本篇只需要乘法和加法。",
+      "take": 2,
+      "scene": "open",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "一句话不能只看附近的词",
+      "take": 1,
+      "scene": "context",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "在上面的日常情境中，小球太大，或者盒子太",
+      "take": 2,
+      "scene": "context",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "这些句子展示的是通常的理解，不是永远只有",
+      "take": 3,
+      "scene": "context",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "图1并排展示这两种通常的句意理解。",
+      "take": 2,
+      "scene": "context",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "计算机处理词句时，会先把它们表示成一组组",
+      "take": 3,
+      "scene": "context",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "先看一次已经算完的组合",
+      "take": 1,
+      "scene": "weights",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "暂时放下句子，把两份待组合的信息缩成两个",
+      "take": 1,
+      "scene": "weights",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "假设给2分配0.75的权重，给10分配0",
+      "take": 2,
+      "scene": "weights",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "2×0.75＋10×0.25＝1.5＋2",
+      "take": 1,
+      "scene": "weights",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "现在信息仍是2和10，只交换权重。",
+      "take": 3,
+      "scene": "weights",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "两次都用了2和10，结果却从4变成8，因",
+      "take": 3,
+      "scene": "weights",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "先分清这两个例子的分工：小球和盒子说明“",
+      "take": 2,
+      "scene": "weights",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "take": 0,
+      "scene": "exercise",
+      "step": 0,
+      "cam": "desk",
+      "quiet": true
+    },
+    {
+      "from": "试着把两个权重都改成 0.5，先算一次再",
+      "take": 1,
+      "scene": "exercise",
+      "step": 1,
+      "cam": "desk",
+      "reveal": true
+    },
+    {
+      "from": "它落在 4 与 8 之间",
+      "take": 2,
+      "scene": "weights",
+      "step": 10,
+      "cam": "desk"
+    },
+    {
+      "from": "真实模型的每份信息通常包含许多数字。",
+      "take": 2,
+      "scene": "weights",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "take": 0,
+      "scene": "weights",
+      "step": 8,
+      "cam": "desk",
+      "quiet": true
+    },
+    {
+      "from": "得到的也是一组数字，它还要进入后续模块，",
+      "take": 2,
+      "scene": "weights",
+      "step": 9,
+      "cam": "desk"
+    },
+    {
+      "from": "权重究竟从哪里来",
+      "take": 1,
+      "scene": "qkv",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "真实模型里的权重，不需要人遇到一句话就手",
+      "take": 3,
+      "scene": "qkv",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "先想清三种分工：当前位置需要找什么信息，",
+      "take": 2,
+      "scene": "qkv",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "查询与各位置的键一起计算，得到匹配分数；",
+      "take": 3,
+      "scene": "qkv",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "这里的 0.75 表示组合时分配的比重，",
+      "take": 2,
+      "scene": "qkv",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "可以把过程记成“算匹配分数，再分配比重，",
+      "take": 2,
+      "scene": "qkv",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "同一个位置可以同时采用多组这样的计算，各",
+      "take": 3,
+      "scene": "qkv",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "顺着句子再走一步",
+      "take": 1,
+      "scene": "scope",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "开头的“太大”和“太小”位于“它”的后面",
+      "take": 1,
+      "scene": "scope",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "若模型能同时处理整句，这些后文也可以成为",
+      "take": 2,
+      "scene": "scope",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "因此，同一句话在不同任务中，信息可用的范",
+      "take": 3,
+      "scene": "scope",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "不过，权重图展示的不是决策的全部原因。",
+      "take": 3,
+      "scene": "evidence",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "权重图可以帮助观察某一步怎样组合信息，但",
+      "take": 2,
+      "scene": "evidence",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "注意力这个名字听起来很像人的专注，它在这",
+      "take": 2,
+      "scene": "evidence",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "take": 0,
+      "scene": "refs",
+      "step": 0,
+      "cam": "desk",
+      "refs": true,
+      "quiet": true
+    }
+  ]
+}
