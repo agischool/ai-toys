@@ -529,6 +529,58 @@ test('换选吗产生另一上下文，接回片段不修改原数组',()=>{
   assert.deepEqual(before,['今天','下雨']);
   for(const args of [[[],'了'],[before,''],[[1],'了']]) assert.throws(()=>decoder.append(...args),/文字/);
 });
+const relations=require('../stage/relations.cjs');
+test('交换排列保留同一对象清单及颜色形状，冻结原始记录',()=>{
+  const a=relations.arrangements;
+  assert.deepEqual(relations.inventory(a.first),relations.inventory(a.swapped));
+  assert.deepEqual(relations.objects.map(o=>[o.id,o.color,o.shape]),[['red','红','圆'],['blue','蓝','方'],['green','绿','三角']]);
+  assert.ok(Object.isFrozen(a.first)&&Object.isFrozen(a.swapped)&&relations.objects.every(Object.isFrozen));
+});
+test('蓝方左侧由1变2，改问右侧与换目标都重新计数',()=>{
+  const a=relations.arrangements;
+  assert.equal(relations.count(a.first,'blue'),1);assert.equal(relations.count(a.swapped,'blue'),2);
+  assert.equal(relations.count(a.swapped,'blue','right'),0);assert.equal(relations.count(a.swapped,'green','right'),1);
+  assert.equal(relations.count(a.swapped,'red'),0);
+});
+test('完整左关系包含不相邻边，没有反向边和自身边',()=>{
+  const edges=relations.edges(relations.arrangements.first);
+  assert.deepEqual(edges,[{from:'red',to:'blue'},{from:'red',to:'green'},{from:'blue',to:'green'}]);
+  assert.ok(!edges.some(e=>e.from===e.to||e.from==='blue'&&e.to==='red'));
+});
+test('全部六种排列的入边出边数都等于对应左右计数',()=>{
+  const ids=['red','blue','green'];
+  for(const a of ids)for(const b of ids.filter(v=>v!==a)){
+    const order=[a,b,ids.find(v=>v!==a&&v!==b)],edges=relations.edges(order);
+    for(const target of ids){
+      assert.equal(edges.filter(e=>e.to===target).length,relations.count(order,target));
+      assert.equal(edges.filter(e=>e.from===target).length,relations.count(order,target,'right'));
+      assert.equal(relations.count(order,target)+relations.count(order,target,'right'),2);
+    }
+  }
+});
+test('手工逐对象比较汇总为2，自身不在自身左侧',()=>{
+  const rows=relations.comparisons(relations.arrangements.swapped);
+  assert.deepEqual(rows.map(r=>[r.id,r.contributes]),[['red',true],['green',true],['blue',false]]);
+  assert.equal(rows.reduce((s,r)=>s+Number(r.contributes),0),2);
+  assert.deepEqual(relations.comparisons(relations.arrangements.swapped,'green','right').filter(r=>r.contributes).map(r=>r.id),['blue']);
+});
+test('同一顺序可以对应不同坐标间隔，输出与传入数据均不共享可变状态',()=>{
+  const order=[...relations.arrangements.first],xs=[0,1,2];
+  const near=relations.positions(order,xs),far=relations.positions(order,[0,10,20]);
+  assert.deepEqual(near.map(o=>o.id),far.map(o=>o.id));
+  assert.notEqual(near[2].x-near[1].x,far[2].x-far[1].x);
+  near[0].id='changed';relations.inventory(order)[0].color='changed';relations.edges(order)[0].to='changed';
+  assert.deepEqual(xs,[0,1,2]);assert.deepEqual(order,['red','blue','green']);
+  assert.equal(relations.positions(order)[0].id,'red');assert.equal(relations.objects[0].color,'红');
+});
+test('拒绝缺失重复对象、非法目标方向与无效坐标，不隐式补全或排序',()=>{
+  const order=relations.arrangements.first;
+  for(const bad of [null,[],['red','blue'],['red','blue','blue'],['red','blue','other'],Array(3)])assert.throws(()=>relations.edges(bad),/排列/);
+  assert.throws(()=>relations.count(order,'other'),/目标/);
+  assert.throws(()=>relations.comparisons(order,'blue','up'),/方向/);
+  assert.throws(()=>relations.count(order,'blue','up'),/方向/);
+  for(const xs of [null,[],[0,1],[0,0,2],[2,1,0],[0,NaN,2],[0,1,Infinity],Array(3)])assert.throws(()=>relations.positions(order,xs),/坐标/);
+});
 const coding=require('../stage/coding.cjs');
 test('直接记录、重复规则和单例外均按字符计费并恢复完整原串',()=>{
   assert.deepEqual(['LABABABAB','R4AB','R4AB8C'].map(c=>[coding.decode(c),coding.inspect(c).length]),[['ABABABAB',9],['ABABABAB',4],['ABABABAC',6]]);
@@ -656,4 +708,4 @@ test('五格存储拒绝非法地址、形状与内容，不隐式扩容或换�
   for(const memory of [[],[null,null],Array(5),[1,null,null,null,null]]) assert.throws(()=>storage.read(memory,1),/存储/);
   for(const v of ['',null,1]) assert.throws(()=>storage.write(storage.initial,2,v),/内容/);
 });
-console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权、解码、存储、方案筛选与编码算例）`);
+console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权、解码、存储、方案筛选、编码与关系算例）`);

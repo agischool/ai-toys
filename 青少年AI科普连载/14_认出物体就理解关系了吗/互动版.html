@@ -1,0 +1,855 @@
+<!doctype html>
+<html lang="zh-CN" data-mode="read">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#fffdf6">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='8.25' fill='none' stroke='%23185b46' stroke-width='1.5'/%3E%3Ccircle cx='10' cy='10' r='3.4' fill='%23185b46'/%3E%3C/svg%3E">
+<title>认出物体，就理解它们的关系了吗？ · 互动版 · 看得见的 AI</title>
+<meta name="description" content="物体全认对了，&quot;蓝方左边有几个&quot;未必答得对。这篇演示位置信息为什么不可省，箭头怎样记录关系，以及关系网络怎样把&quot;看懂联系&quot;变成可计算的问题。">
+<style data-stage-source="stage.css">/* 互动版样式。
+ * 控件沿用 library.css 的纸色、墨绿、焦点色与 250ms ease-out；
+ * 画面沿用连载图解的 #fffdf6 底与 #203845 描边。不加阴影、发光和渐变。 */
+
+:root {
+  color-scheme: light;
+  --paper: #f6f5ef;
+  --ink: #22352d;
+  --muted: #5c6d63;
+  --line: #d8ded5;
+  --accent: #185b46;
+  --focus: #ba651f;
+  --white: #fffef9;
+  --serif: "Songti SC", "Noto Serif CJK SC", serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+
+  --art-paper: #fffdf6;
+  --art-ink: #203845;
+  --art-muted: #586e79;
+  --art-teal: #168f94;
+  --art-mint: #def3ee;
+  --art-coral: #ee6a58;
+  --art-peach: #ffe7df;
+  --art-yellow: #ffcf62;
+  --art-cream: #fff1d2;
+  --art-blue: #e3efff;
+  /* 文字或白字底用的深色变体：原色青 / 珊瑚与白字、纸色分别只有 3.9 / 3.1 比 1，压深后 5.0 比 1。 */
+  --art-teal-ink: #137a7f;
+  --art-coral-ink: #d42c16;
+
+  --move: 700ms cubic-bezier(.22, 1, .36, 1);
+}
+
+* { box-sizing: border-box }
+html, body { margin: 0; height: 100% }
+body {
+  background: var(--art-paper);
+  color: var(--art-ink);
+  font: 16px/1.75 var(--sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+}
+button { font: inherit; color: inherit }
+a { color: inherit }
+:lang(zh) { text-autospace: normal; text-spacing-trim: trim-start }
+p, li { text-wrap: pretty }
+h1, h2, h3 { text-wrap: balance }
+[hidden] { display: none !important }
+
+a:focus-visible, button:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.skip {
+  position: fixed; left: 12px; top: -64px; z-index: 20;
+  padding: 9px 16px; background: var(--white); border: 1px solid var(--line); border-radius: 9px;
+  font-size: 14px; font-weight: 600; text-decoration: none;
+  transition: top 250ms ease-out;
+}
+.skip:focus { top: 12px }
+
+/* ---------------- 模式 ---------------- */
+
+html[data-mode="stage"], html[data-mode="stage"] body { overflow: hidden }
+html[data-mode="read"] #stage, html[data-mode="read"] #toc { display: none }
+html[data-mode="stage"] #readwrap { display: none }
+html[data-mode="read"] body { background: var(--paper); color: var(--ink) }
+.hit { pointer-events: auto; cursor: pointer }
+.scene:not(.is-active) .hit, .s:not(.on) .hit, .solo .s:not(.focus) .hit { pointer-events: none }
+.hit:focus-visible { outline: 4px solid var(--art-coral-ink); outline-offset: 6px }
+
+/* ---------------- 舞台 ---------------- */
+
+/* 翻页由脚本接管：禁掉浏览器自己的拖动、缩放和橡皮筋，滚轮与滑动才不会同时触发两套行为。 */
+html[data-mode="stage"], html[data-mode="stage"] body { overscroll-behavior: none }
+#stage { position: fixed; inset: 0; background: var(--art-paper); overflow: hidden; touch-action: none }
+#stage button, #stage a, #stage .hit { touch-action: manipulation }
+#stage:not(.ready) * { transition: none !important; animation: none !important }
+
+.scene {
+  position: absolute; inset: 0; width: 100%; height: 100%; display: block;
+  pointer-events: none;
+  opacity: 0; visibility: hidden;
+  transition: opacity 250ms ease-out, visibility 0s linear 250ms;
+}
+.scene.is-active { opacity: 1; visibility: visible; transition-delay: 0s }
+.cam { transition: transform var(--move) }
+
+/* 画面元素：外层 .s 只管出现动画，内层 .pos 只管摆位（横屏用 --l*，竖屏用 --p*）。 */
+.s {
+  opacity: 0; transform: translateY(14px);
+  transition: opacity 250ms ease-out var(--d, 0ms), transform 250ms ease-out var(--d, 0ms);
+}
+.s.on { opacity: 1; transform: none }
+.s.pop { transform: scale(.86); transform-box: fill-box; transform-origin: center }
+.s.pop.on { transform: none }
+.s.fade, .s.fade.on { transform: none }
+.snap .s { transition: none !important }
+.has-focus .s.on:not(.focus) { opacity: .22 }
+.solo .s.on:not(.focus) { opacity: 0 }
+
+.pos { transform: translate(var(--lx, 0), var(--ly, 0)) rotate(var(--lr, 0deg)) scale(var(--ls, 1)) }
+#stage[data-orient="portrait"] .pos { transform: translate(var(--px, 0), var(--py, 0)) rotate(var(--pr, 0deg)) scale(var(--ps, 1)) }
+#stage[data-orient="portrait"] .only-l, #stage[data-orient="landscape"] .only-p { display: none }
+
+/* 可翻转的卡：翻面时正反两层交换。 */
+.flip .front, .flip .back { transition: opacity 250ms ease-out }
+.flip .back { opacity: 0 }
+.flip.is-flipped .front { opacity: 0 }
+.flip.is-flipped .back { opacity: 1 }
+
+.cap.quiet {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+
+/* ---------------- 顶栏 ---------------- */
+
+.hud {
+  position: absolute; z-index: 3; left: 0; right: 0; top: 0;
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+  padding: calc(12px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) 0 calc(14px + env(safe-area-inset-left));
+  pointer-events: none;
+}
+.hud-l, .hud-r { display: flex; gap: 8px; min-width: 0; pointer-events: auto }
+.hud-l { flex: 0 1 auto }
+
+.pill {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 34px; padding: 0 14px;
+  border: 1px solid var(--line); border-radius: 12px;
+  background: rgba(255, 254, 249, .94); color: var(--ink);
+  font: 600 13px/1 var(--sans); text-decoration: none; white-space: nowrap; cursor: pointer;
+  touch-action: manipulation;
+  transition: border-color 250ms ease-out, background 250ms ease-out, color 250ms ease-out;
+}
+.pill:hover { border-color: var(--accent); color: var(--accent) }
+.pill:active { transform: translateY(1px) }
+.pill:disabled { opacity: .4; cursor: default; border-color: var(--line); color: var(--ink) }
+.pill[data-playing="true"] { background: var(--accent); border-color: var(--accent); color: #fff }
+.pill svg { width: 14px; height: 14px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round }
+.pill.icon { width: 34px; padding: 0 }
+
+.sec { cursor: default; min-width: 0 }
+.sec:hover { border-color: var(--line); color: var(--ink) }
+#sec-num { color: var(--art-teal-ink); font-variant-numeric: tabular-nums }
+#sec-num:empty { display: none }
+#sec-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; max-width: min(46vw, 380px) }
+
+/* ---------------- 字幕与底栏 ---------------- */
+
+.cap {
+  position: absolute; z-index: 2; left: 50%; transform: translateX(-50%);
+  bottom: calc(56px + env(safe-area-inset-bottom));
+  width: min(calc(100% - 28px), 900px);
+  padding: 16px 22px;
+  background: var(--art-paper); border: 3px solid var(--art-ink); border-radius: 22px;
+  pointer-events: none;
+}
+.cap p { margin: 0; font-size: clamp(18px, 2.3vw, 24px); line-height: 1.65; font-weight: 600 }
+.cap p[data-kind="caption"] { font-weight: 500 }
+.cap p[data-kind="title"] { font-size: clamp(20px, 2.8vw, 30px); text-align: center }
+.cap p[data-kind="h2"] {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  font-size: clamp(22px, 3vw, 32px); font-weight: 800; line-height: 1.4;
+}
+.cap .no {
+  flex: none; display: inline-grid; place-items: center; min-width: 36px; height: 36px; padding: 0 8px;
+  border-radius: 18px; background: var(--art-coral-ink); color: #fff; font: 800 20px/1 var(--sans);
+}
+.cap .fig { color: var(--art-teal-ink); font-weight: 800 }
+.cap p.in { animation: cap-in 250ms ease-out both }
+@keyframes cap-in { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
+.cite { color: #b15b21; font-weight: 600 }
+
+.foot {
+  position: absolute; z-index: 3; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 0 calc(14px + env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left));
+  pointer-events: none;
+}
+.foot > * { pointer-events: auto }
+#bar { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--art-teal); transform-origin: left; transform: scaleX(0); transition: transform 250ms ease-out; pointer-events: none }
+#hint { margin: 0; font-size: 13px; color: var(--art-muted); pointer-events: none }
+#count { font-size: 12px; color: var(--art-muted); font-variant-numeric: tabular-nums; min-width: 4.6em; text-align: center }
+.steps { display: flex; align-items: center; gap: 8px; margin-left: auto }
+
+/* ---------------- 目录 ---------------- */
+
+#toc {
+  width: min(960px, calc(100% - 28px)); max-height: calc(100% - 28px);
+  padding: 0; border: 3px solid var(--art-ink); border-radius: 24px;
+  background: var(--art-paper); color: var(--art-ink);
+}
+#toc[open] { display: flex; flex-direction: column }
+#toc::backdrop { background: rgba(32, 56, 69, .5) }
+.toc-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--line) }
+.toc-head h2 { margin: 0; font-size: 16px; line-height: 1.5 }
+#toc-list { list-style: none; margin: 0; padding: 20px; overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px }
+.toc-foot { margin: 0; padding: 12px 20px 16px; border-top: 1px solid var(--line); font-size: 13px; line-height: 1.7; color: var(--art-muted) }
+.toc-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+  width: 100%; height: 100%; padding: 14px; text-align: left;
+  background: var(--white); border: 1px solid var(--line); border-radius: 18px; cursor: pointer;
+  transition: border-color 250ms ease-out, transform 250ms ease-out;
+}
+.toc-card:hover { border-color: var(--accent) }
+.toc-card:active { transform: translateY(1px) }
+.toc-thumb { display: block; width: 100%; height: 115px; flex: none }
+.toc-no {
+  display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding: 0 8px;
+  border-radius: 15px; background: var(--art-coral-ink); color: #fff; font: 700 14px/1 var(--sans);
+}
+.toc-name { font-size: 15px; font-weight: 600; line-height: 1.5 }
+
+/* ---------------- 全文 ---------------- */
+
+.read-bar {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 20px; background: var(--paper); border-bottom: 1px solid var(--line);
+}
+#read { max-width: 680px; margin: 0 auto; padding: 8px 20px 96px; font-size: 17px; line-height: 1.9; color: var(--ink) }
+#read:focus { outline: none }
+#read h1 { margin: 32px 0 24px; font: 650 28px/1.4 var(--serif); letter-spacing: -.01em }
+#read h1 .tl { display: inline-block }
+#read h2 { margin: 40px 0 16px; font-size: 20px; line-height: 1.5 }
+#read p { margin: 0 0 18px }
+#read .pic { margin: 24px 0 8px }
+#read img { display: block; max-width: 100%; height: auto; margin: 0 auto; border: 1px solid var(--line); border-radius: 12px; background: #fff }
+#read .figcap { margin: 0 0 24px; font-size: 14px; line-height: 1.7; color: var(--muted) }
+#read .figcap em { font-style: normal }
+.read-note { margin: 24px 0 0; font-size: 14px; line-height: 1.7; color: var(--muted) }
+#read .refs p { font-size: 14px; line-height: 1.75; overflow-wrap: anywhere }
+#read a { color: var(--accent); text-underline-offset: 3px }
+.read-end { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 40px }
+
+/* ---------------- 小屏与矮屏 ---------------- */
+
+@media (max-width: 560px) {
+  .hud { gap: 8px }
+  .lbl { display: none }
+  .cap { padding: 12px 16px; border-radius: 18px }
+  .cap p { font-size: 18px }
+}
+@media (max-width: 420px) {
+  #sec-name { max-width: 34vw }
+  .pill { padding: 0 11px }
+}
+@media (max-height: 560px) {
+  .cap { padding: 8px 16px }
+  .cap p { font-size: 17px; line-height: 1.55 }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene, .cam, .s, .flip .front, .flip .back, .pill, .toc-card, #bar, .skip { transition: none }
+  .cap p.in { animation: none }
+}
+</style>
+<script>(function(){var q=new URLSearchParams(location.search),r=matchMedia('(prefers-reduced-motion: reduce)').matches;if(!(q.has('read')||(r&&!q.has('stage'))))document.documentElement.setAttribute('data-mode','stage')})()</script>
+</head>
+<body>
+<a class="skip" href="?read" data-action="read">跳到全文</a>
+<main id="stage" data-orient="landscape">
+<svg class="scene" data-scene="cover" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s fade bleed" data-at="0" data-n="wash"><g class="pos" style="--lx:1300px;--ly:500px;--ls:1;--lr:0deg;--px:700px;--py:1180px;--ps:1;--pr:0deg"><ellipse cx="0" cy="0" rx="470" ry="520" fill="#def3ee"/></g></g><g class="s rise" data-at="0" data-n="series"><g class="pos" style="--lx:350px;--ly:155px;--ls:1;--lr:0deg;--px:310px;--py:170px;--ps:1;--pr:0deg"><rect x="-240" y="-33" width="480" height="66" rx="33" fill="#137a7f" stroke="#203845" stroke-width="5" stroke-linejoin="round"/><text x="0" y="2" font-size="36" fill="#ffffff" text-anchor="middle" font-weight="800" dominant-baseline="central"><tspan x="0" dy="0">AI 的答案可信吗</tspan></text></g></g><g class="s rise" data-at="0" data-n="nth"><g class="pos" style="--lx:110px;--ly:235px;--ls:1;--lr:0deg;--px:70px;--py:270px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="32" fill="#586e79" text-anchor="start" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">第 3 篇 / 共 5 篇</tspan></text></g></g><g class="s rise only-l" data-at="0" data-n="title"><g class="pos" style="--lx:110px;--ly:400px;--ls:1;--lr:0deg;--px:110px;--py:400px;--ps:1;--pr:0deg"><text x="0" y="-51.3" font-size="76" fill="#203845" text-anchor="start" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">认出物体，</tspan><tspan x="0" dy="102.6">就理解它们的关系了吗？</tspan></text></g></g><g class="s rise only-p" data-at="0" data-n="title"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:70px;--py:470px;--ps:1;--pr:0deg"><text x="0" y="-46.2" font-size="66" fill="#203845" text-anchor="start" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">认出物体，</tspan><tspan x="0" dy="92.4">就理解它们的关系了吗？</tspan></text></g></g><g class="s rise" data-at="0" data-n="rule"><g class="pos" style="--lx:114px;--ly:555px;--ls:1;--lr:0deg;--px:74px;--py:625px;--ps:1;--pr:0deg"><path d="M0 0 L145 0" fill="none" stroke="#ee6a58" stroke-width="10" stroke-linecap="round"/></g></g><g class="s rise" data-at="0" data-n="mechanism"><g class="pos" style="--lx:1240px;--ly:445px;--ls:0.85;--lr:0deg;--px:450px;--py:990px;--ps:1;--pr:0deg"><g transform="translate(0 0) rotate(0) scale(0.95)"><g transform="translate(-170 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(0 0) rotate(0) scale(1)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(170 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g></g><g class="s rise" data-at="0" data-n="robot"><g class="pos" style="--lx:105px;--ly:625px;--ls:1;--lr:0deg;--px:70px;--py:1160px;--ps:1;--pr:0deg"><image href="../../.site/assets/serial-robot-480.png" x="0" y="0" width="240" height="219.5" preserveAspectRatio="xMidYMid meet"/></g></g><g class="s rise" data-at="0" data-n="question"><g class="pos" style="--lx:1230px;--ly:800px;--ls:1;--lr:0deg;--px:620px;--py:1350px;--ps:0.85;--pr:0deg"><rect x="-220" y="-38" width="440" height="76" rx="38" fill="#137a7f" stroke="#203845" stroke-width="5" stroke-linejoin="round"/><text x="0" y="2" font-size="40" fill="#ffffff" text-anchor="middle" font-weight="800" dominant-baseline="central"><tspan x="0" dy="0">认出对象 · 还要看关系</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="open" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop only-l" data-at="0" data-until="1" data-n="objects"><g class="pos" style="--lx:600px;--ly:270px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(-350 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红圆</tspan></text></g><g transform="translate(0 0) rotate(0) scale(1)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝方</tspan></text></g><g transform="translate(350 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">绿三角</tspan></text></g></g></g><g class="s pop only-p" data-at="0" data-until="1" data-n="objects"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:340px;--ps:1;--pr:0deg"><g transform="translate(-260 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红圆</tspan></text></g><g transform="translate(0 0) rotate(0) scale(1)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝方</tspan></text></g><g transform="translate(260 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">绿三角</tspan></text></g></g></g><g class="s pop" data-at="0" data-until="1" data-n="objects.title"><g class="pos" style="--lx:600px;--ly:100px;--ls:1;--lr:0deg;--px:400px;--py:155px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">颜色、形状都认对了</tspan></text></g></g><g class="s pop" data-at="0" data-until="1" data-n="scope"><g class="pos" style="--lx:600px;--ly:675px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝方左边有几个物体？</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="left"><g class="pos" style="--lx:300px;--ly:270px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-265" y="-110" width="530" height="220" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-33" font-size="50" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">上期</tspan><tspan x="0" dy="66">能完整还原原串</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:270px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><rect x="-275" y="-110" width="550" height="220" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本期</tspan><tspan x="0" dy="60.72">够不够回答眼前的问题</tspan></text></g></g><g class="s pop only-l" data-at="2" data-until="3" data-n="before"><g class="pos" style="--lx:600px;--ly:200px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(-350 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(0 0) rotate(0) scale(1)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(350 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g><g class="s pop only-p" data-at="2" data-until="3" data-n="before"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:240px;--ps:1;--pr:0deg"><g transform="translate(-260 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(0 0) rotate(0) scale(1)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(260 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g><g class="s pop" data-at="2" data-until="3" data-n="before.title"><g class="pos" style="--lx:600px;--ly:30px;--ls:1;--lr:0deg;--px:400px;--py:55px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">交换前 · 蓝方左侧 1 个</tspan></text></g></g><g class="s pop only-l" data-at="2" data-until="3" data-n="after"><g class="pos" style="--lx:600px;--ly:520px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(-350 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(0 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(350 0) rotate(0) scale(1)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g><g class="s pop only-p" data-at="2" data-until="3" data-n="after"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:690px;--ps:1;--pr:0deg"><g transform="translate(-260 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(0 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(260 0) rotate(0) scale(1)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g><g class="s pop" data-at="2" data-until="3" data-n="after.title"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:505px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">交换后 · 蓝方左侧 2 个</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="scope"><g class="pos" style="--lx:600px;--ly:675px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">形状与颜色相同 · 位置关系改变</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="arrange" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="chapter.art"><g class="pos" style="--lx:600px;--ly:275px;--ls:1;--lr:0deg;--px:400px;--py:370px;--ps:1;--pr:0deg"><g transform="translate(0 0) rotate(0) scale(0.7)"><g transform="translate(-230 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(0 0) rotate(0) scale(1)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(230 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g></g><g class="s pop" data-at="0" data-until="1" data-n="chapter.note" style="--d:140ms"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:880px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="54" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">同一份清单 · 可以有不同答案</tspan></text></g></g><g class="s pop only-l" data-at="1" data-until="2" data-n="objects"><g class="pos" style="--lx:600px;--ly:270px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(-350 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红圆</tspan></text></g><g transform="translate(0 0) rotate(0) scale(1)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝方</tspan></text></g><g transform="translate(350 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">绿三角</tspan></text></g></g></g><g class="s pop only-p" data-at="1" data-until="2" data-n="objects"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:340px;--ps:1;--pr:0deg"><g transform="translate(-260 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红圆</tspan></text></g><g transform="translate(0 0) rotate(0) scale(1)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝方</tspan></text></g><g transform="translate(260 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">绿三角</tspan></text></g></g></g><g class="s pop" data-at="1" data-until="2" data-n="objects.title"><g class="pos" style="--lx:600px;--ly:100px;--ls:1;--lr:0deg;--px:400px;--py:155px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">按图上的左右 · 不改变观察视角</tspan></text></g></g><g class="s pop only-l" data-at="2" data-until="3" data-n="objects"><g class="pos" style="--lx:600px;--ly:270px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(-350 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红圆</tspan></text></g><g transform="translate(0 0) rotate(0) scale(1)"><rect x="-100" y="-110" width="200" height="220" rx="16" fill="none" stroke="#137a7f" stroke-width="6" stroke-linejoin="round"/><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝方</tspan></text></g><g transform="translate(350 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">绿三角</tspan></text></g></g></g><g class="s pop only-p" data-at="2" data-until="3" data-n="objects"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:340px;--ps:1;--pr:0deg"><g transform="translate(-260 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红圆</tspan></text></g><g transform="translate(0 0) rotate(0) scale(1)"><rect x="-100" y="-110" width="200" height="220" rx="16" fill="none" stroke="#137a7f" stroke-width="6" stroke-linejoin="round"/><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝方</tspan></text></g><g transform="translate(260 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">绿三角</tspan></text></g></g></g><g class="s pop" data-at="2" data-until="3" data-n="objects.title"><g class="pos" style="--lx:600px;--ly:100px;--ls:1;--lr:0deg;--px:400px;--py:155px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">哪个物体是蓝色的？</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="objects.result"><g class="pos" style="--lx:600px;--ly:530px;--ls:1;--lr:0deg;--px:400px;--py:620px;--ps:1;--pr:0deg"><rect x="-325" y="-57.5" width="650" height="115" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">答案：蓝方</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="left"><g class="pos" style="--lx:300px;--ly:270px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><g transform="translate(0 0) rotate(0) scale(1.15)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝方</tspan></text></g></g></g><g class="s pop" data-at="3" data-until="4" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:270px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><rect x="-270" y="-110" width="540" height="220" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-31.68" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝色 · 方形</tspan><tspan x="0" dy="63.36">是单个对象的属性</tspan></text></g></g><g class="s pop only-l" data-at="4" data-until="5" data-n="objects"><g class="pos" style="--lx:600px;--ly:270px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(-350 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红圆</tspan></text></g><g transform="translate(0 0) rotate(0) scale(1)"><rect x="-100" y="-110" width="200" height="220" rx="16" fill="none" stroke="#137a7f" stroke-width="6" stroke-linejoin="round"/><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝方</tspan></text></g><g transform="translate(350 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">绿三角</tspan></text></g></g></g><g class="s pop only-p" data-at="4" data-until="5" data-n="objects"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:340px;--ps:1;--pr:0deg"><g transform="translate(-260 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红圆</tspan></text></g><g transform="translate(0 0) rotate(0) scale(1)"><rect x="-100" y="-110" width="200" height="220" rx="16" fill="none" stroke="#137a7f" stroke-width="6" stroke-linejoin="round"/><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝方</tspan></text></g><g transform="translate(260 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">绿三角</tspan></text></g></g></g><g class="s pop" data-at="4" data-until="5" data-n="objects.title"><g class="pos" style="--lx:600px;--ly:100px;--ls:1;--lr:0deg;--px:400px;--py:155px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝方左边有几个？</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="objects.result"><g class="pos" style="--lx:600px;--ly:530px;--ls:1;--lr:0deg;--px:400px;--py:620px;--ps:1;--pr:0deg"><rect x="-325" y="-57.5" width="650" height="115" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">左边 1 个：红圆</tspan></text></g></g><g class="s pop only-l" data-at="5" data-until="6" data-n="objects"><g class="pos" style="--lx:600px;--ly:270px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(-350 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红圆</tspan></text></g><g transform="translate(0 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">绿三角</tspan></text></g><g transform="translate(350 0) rotate(0) scale(1)"><rect x="-100" y="-110" width="200" height="220" rx="16" fill="none" stroke="#137a7f" stroke-width="6" stroke-linejoin="round"/><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝方</tspan></text></g></g></g><g class="s pop only-p" data-at="5" data-until="6" data-n="objects"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:340px;--ps:1;--pr:0deg"><g transform="translate(-260 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红圆</tspan></text></g><g transform="translate(0 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">绿三角</tspan></text></g><g transform="translate(260 0) rotate(0) scale(1)"><rect x="-100" y="-110" width="200" height="220" rx="16" fill="none" stroke="#137a7f" stroke-width="6" stroke-linejoin="round"/><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝方</tspan></text></g></g></g><g class="s pop" data-at="5" data-until="6" data-n="objects.title"><g class="pos" style="--lx:600px;--ly:100px;--ls:1;--lr:0deg;--px:400px;--py:155px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">交换蓝方与绿三角</tspan></text></g></g><g class="s pop" data-at="5" data-until="6" data-n="objects.result"><g class="pos" style="--lx:600px;--ly:530px;--ls:1;--lr:0deg;--px:400px;--py:620px;--ps:1;--pr:0deg"><rect x="-325" y="-57.5" width="650" height="115" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">左边 2 个：红圆、绿三角</tspan></text></g></g><g class="s pop only-l" data-at="6" data-until="7" data-n="before"><g class="pos" style="--lx:600px;--ly:200px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(-350 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(0 0) rotate(0) scale(1)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(350 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g><g class="s pop only-p" data-at="6" data-until="7" data-n="before"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:240px;--ps:1;--pr:0deg"><g transform="translate(-260 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(0 0) rotate(0) scale(1)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(260 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g><g class="s pop" data-at="6" data-until="7" data-n="before.title"><g class="pos" style="--lx:600px;--ly:30px;--ls:1;--lr:0deg;--px:400px;--py:55px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">交换前 · 蓝方左侧 1 个</tspan></text></g></g><g class="s pop only-l" data-at="6" data-until="7" data-n="after"><g class="pos" style="--lx:600px;--ly:520px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(-350 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(0 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(350 0) rotate(0) scale(1)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g><g class="s pop only-p" data-at="6" data-until="7" data-n="after"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:690px;--ps:1;--pr:0deg"><g transform="translate(-260 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(0 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(260 0) rotate(0) scale(1)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g><g class="s pop" data-at="6" data-until="7" data-n="after.title"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:505px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">交换后 · 蓝方左侧 2 个</tspan></text></g></g><g class="s pop" data-at="6" data-until="7" data-n="scope"><g class="pos" style="--lx:600px;--ly:675px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">形状与颜色相同 · 位置关系改变</tspan></text></g></g><g class="s pop" data-at="7" data-until="8" data-n="left"><g class="pos" style="--lx:300px;--ly:270px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-250" y="-210" width="500" height="420" rx="16" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-150" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">清单（没有位置）</tspan></text><g transform="translate(0 -40) rotate(0) scale(1)"><g transform="translate(-165 0) rotate(0) scale(0.42)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><text x="20" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="20" dy="0">红圆 × 1</tspan></text></g><g transform="translate(0 60) rotate(0) scale(1)"><g transform="translate(-165 0) rotate(0) scale(0.42)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><text x="20" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="20" dy="0">蓝方 × 1</tspan></text></g><g transform="translate(0 160) rotate(0) scale(1)"><g transform="translate(-165 0) rotate(0) scale(0.42)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><text x="20" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="20" dy="0">绿三角 × 1</tspan></text></g></g></g><g class="s pop" data-at="7" data-until="8" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:270px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><circle cx="0" cy="0" r="85" fill="#d42c16" stroke="#203845" stroke-width="5"/><g transform="translate(0 0.56) rotate(0) scale(2.24)"><path d="M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="0" cy="16" r="3.5" fill="#ffffff"/></g><text x="0" y="209.64" font-size="46" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">只剩清单</tspan><tspan x="0" dy="60.72">分不清两种排列</tspan></text></g></g><g class="s pop" data-at="8" data-until="9" data-n="left"><g class="pos" style="--lx:300px;--ly:270px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-250" y="-210" width="500" height="420" rx="16" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-150" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">清单（没有位置）</tspan></text><g transform="translate(0 -40) rotate(0) scale(1)"><g transform="translate(-165 0) rotate(0) scale(0.42)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><text x="20" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="20" dy="0">红圆 × 1</tspan></text></g><g transform="translate(0 60) rotate(0) scale(1)"><g transform="translate(-165 0) rotate(0) scale(0.42)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><text x="20" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="20" dy="0">蓝方 × 1</tspan></text></g><g transform="translate(0 160) rotate(0) scale(1)"><g transform="translate(-165 0) rotate(0) scale(0.42)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><text x="20" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="20" dy="0">绿三角 × 1</tspan></text></g></g></g><g class="s pop" data-at="8" data-until="9" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:270px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><rect x="-275" y="-115" width="550" height="230" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-29.04" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">有没有蓝方：能回答</tspan><tspan x="0" dy="58.08">左边有几个：缺位置</tspan></text></g></g><g class="s pop" data-at="8" data-until="9" data-n="scope"><g class="pos" style="--lx:600px;--ly:675px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">保存的信息 · 要由任务决定</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="graph" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="chapter.art"><g class="pos" style="--lx:600px;--ly:275px;--ls:1;--lr:0deg;--px:400px;--py:370px;--ps:1;--pr:0deg"><g transform="translate(0 0) rotate(0) scale(0.75)"><g transform="translate(-140 0) rotate(0) scale(0.78)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(140 0) rotate(0) scale(0.78)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g fill="none" stroke="#137a7f" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M-65 0 L56 0"/><path d="M49.2 -8.63 L65 0 L49.2 8.63"/></g><text x="-140" y="120" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="-140" dy="0">红圆</tspan></text><text x="140" y="120" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="140" dy="0">蓝方</tspan></text><text x="0" y="235" font-size="56" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">成立</tspan></text></g></g></g><g class="s pop" data-at="0" data-until="1" data-n="chapter.note" style="--d:140ms"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:880px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="54" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">给关系画箭头 · 先说清含义</tspan></text></g></g><g class="s pop only-l" data-at="1" data-until="2" data-n="meaning"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(350 260) rotate(0) scale(1)"><circle cx="0" cy="0" r="75" fill="#e3efff" stroke="#203845" stroke-width="6"/><text x="0" y="0" font-size="64" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">甲</tspan></text></g><g transform="translate(850 260) rotate(0) scale(1)"><circle cx="0" cy="0" r="75" fill="#def3ee" stroke="#203845" stroke-width="6"/><text x="0" y="0" font-size="64" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">乙</tspan></text></g><g fill="none" stroke="#203845" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M455 260 L735 260"/><path d="M727.45 250.41 L745 260 L727.45 269.59"/></g></g></g><g class="s pop only-p" data-at="1" data-until="2" data-n="meaning"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(200 350) rotate(0) scale(1)"><circle cx="0" cy="0" r="75" fill="#e3efff" stroke="#203845" stroke-width="6"/><text x="0" y="0" font-size="64" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">甲</tspan></text></g><g transform="translate(600 350) rotate(0) scale(1)"><circle cx="0" cy="0" r="75" fill="#def3ee" stroke="#203845" stroke-width="6"/><text x="0" y="0" font-size="64" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">乙</tspan></text></g><g fill="none" stroke="#203845" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"><path d="M305 350 L485 350"/><path d="M477.45 340.41 L495 350 L477.45 359.59"/></g></g></g><g class="s pop" data-at="1" data-until="2" data-n="scope"><g class="pos" style="--lx:600px;--ly:675px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="-29.04" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">甲 → 乙：甲在乙左边</tspan><tspan x="0" dy="58.08">方向与含义 · 一起说清楚</tspan></text></g></g><g class="s pop only-l" data-at="2" data-until="3" data-n="edges"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0"></tspan></text><g transform="translate(210 230) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><text x="210" y="80" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="210" dy="0">红圆</tspan></text><g transform="translate(600 230) rotate(0) scale(1)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><text x="600" y="80" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="600" dy="0">蓝方</tspan></text><g transform="translate(990 230) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><text x="990" y="80" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="990" dy="0">绿三角</tspan></text><g fill="none" stroke="#203845" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M315 230 L486 230"/><path d="M479.2 221.37 L495 230 L479.2 238.63"/></g><g fill="none" stroke="#203845" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M210 345 L210 470 L990 470 L990 364"/><path d="M981.37 370.8 L990 355 L998.63 370.8"/></g><g fill="none" stroke="#203845" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M705 230 L876 230"/><path d="M869.2 221.37 L885 230 L869.2 238.63"/></g><text x="600" y="610" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="600" dy="0">也包括不相邻的红圆 → 绿三角</tspan></text></g></g><g class="s pop only-p" data-at="2" data-until="3" data-n="edges"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0"></tspan></text><g transform="translate(140 300) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><text x="140" y="150" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="140" dy="0">红圆</tspan></text><g transform="translate(400 300) rotate(0) scale(1)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><text x="400" y="150" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="400" dy="0">蓝方</tspan></text><g transform="translate(660 300) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><text x="660" y="150" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="660" dy="0">绿三角</tspan></text><g fill="none" stroke="#203845" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M245 300 L286 300"/><path d="M279.2 291.37 L295 300 L279.2 308.63"/></g><g fill="none" stroke="#203845" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M140 415 L140 650 L660 650 L660 434"/><path d="M651.37 440.8 L660 425 L668.63 440.8"/></g><g fill="none" stroke="#203845" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M505 300 L546 300"/><path d="M539.2 291.37 L555 300 L539.2 308.63"/></g><text x="400" y="820" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="400" dy="0">也包括不相邻的红圆 → 绿三角</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="meaning"><g class="pos" style="--lx:600px;--ly:25px;--ls:1;--lr:0deg;--px:400px;--py:30px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">甲 → 乙：甲在乙左边</tspan></text></g></g><g class="s pop only-l" data-at="3" data-until="4" data-n="edges"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0"></tspan></text><g transform="translate(210 230) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><text x="210" y="80" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="210" dy="0">红圆</tspan></text><g transform="translate(600 230) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><text x="600" y="80" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="600" dy="0">绿三角</tspan></text><g transform="translate(990 230) rotate(0) scale(1)"><rect x="-100" y="-110" width="200" height="220" rx="16" fill="none" stroke="#137a7f" stroke-width="6" stroke-linejoin="round"/><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><text x="990" y="80" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="990" dy="0">蓝方</tspan></text><g fill="none" stroke="#137a7f" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M210 345 L210 470 L990 470 L990 364"/><path d="M981.37 370.8 L990 355 L998.63 370.8"/></g><g fill="none" stroke="#137a7f" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M705 230 L876 230"/><path d="M869.2 221.37 L885 230 L869.2 238.63"/></g><text x="600" y="610" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="600" dy="0">指向蓝方的左关系：2 条</tspan></text></g></g><g class="s pop only-p" data-at="3" data-until="4" data-n="edges"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0"></tspan></text><g transform="translate(140 300) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><text x="140" y="150" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="140" dy="0">红圆</tspan></text><g transform="translate(400 300) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><text x="400" y="150" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="400" dy="0">绿三角</tspan></text><g transform="translate(660 300) rotate(0) scale(1)"><rect x="-100" y="-110" width="200" height="220" rx="16" fill="none" stroke="#137a7f" stroke-width="6" stroke-linejoin="round"/><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><text x="660" y="150" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="660" dy="0">蓝方</tspan></text><g fill="none" stroke="#137a7f" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M140 415 L140 650 L660 650 L660 434"/><path d="M651.37 440.8 L660 425 L668.63 440.8"/></g><g fill="none" stroke="#137a7f" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M505 300 L546 300"/><path d="M539.2 291.37 L555 300 L539.2 308.63"/></g><text x="400" y="820" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="400" dy="0">指向蓝方的左关系：2 条</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="meaning"><g class="pos" style="--lx:600px;--ly:25px;--ls:1;--lr:0deg;--px:400px;--py:30px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">只画指向蓝方的左关系</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="left"><g class="pos" style="--lx:300px;--ly:270px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><g transform="translate(-140 0) rotate(0) scale(0.78)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(140 0) rotate(0) scale(0.78)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g fill="none" stroke="#137a7f" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M-65 0 L56 0"/><path d="M49.2 -8.63 L65 0 L49.2 8.63"/></g><text x="-140" y="120" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="-140" dy="0">红圆</tspan></text><text x="140" y="120" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="140" dy="0">蓝方</tspan></text><text x="0" y="235" font-size="56" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">成立</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:270px;--ls:1;--lr:0deg;--px:400px;--py:590px;--ps:1;--pr:0deg"><g transform="translate(-140 0) rotate(0) scale(0.78)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(140 0) rotate(0) scale(0.78)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g fill="none" stroke="#d42c16" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M65 0 L-56 0"/><path d="M-49.2 8.63 L-65 0 L-49.2 -8.63"/></g><text x="-140" y="120" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="-140" dy="0">红圆</tspan></text><text x="140" y="120" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="140" dy="0">蓝方</tspan></text><text x="0" y="235" font-size="56" fill="#d42c16" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">不成立</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="scope"><g class="pos" style="--lx:600px;--ly:675px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">仍用第一种排列 · 方向不能颠倒</tspan></text></g></g><g class="s pop only-l" data-at="5" data-until="6" data-n="objects"><g class="pos" style="--lx:600px;--ly:270px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(-350 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红圆</tspan></text></g><g transform="translate(0 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">绿三角</tspan></text></g><g transform="translate(350 0) rotate(0) scale(1)"><rect x="-100" y="-110" width="200" height="220" rx="16" fill="none" stroke="#137a7f" stroke-width="6" stroke-linejoin="round"/><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝方</tspan></text></g></g></g><g class="s pop only-p" data-at="5" data-until="6" data-n="objects"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:340px;--ps:1;--pr:0deg"><g transform="translate(-260 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红圆</tspan></text></g><g transform="translate(0 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">绿三角</tspan></text></g><g transform="translate(260 0) rotate(0) scale(1)"><rect x="-100" y="-110" width="200" height="220" rx="16" fill="none" stroke="#137a7f" stroke-width="6" stroke-linejoin="round"/><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝方</tspan></text></g></g></g><g class="s pop" data-at="5" data-until="6" data-n="objects.title"><g class="pos" style="--lx:600px;--ly:100px;--ls:1;--lr:0deg;--px:400px;--py:155px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">换成问蓝方右边有几个？</tspan></text></g></g><g class="s pop" data-at="5" data-until="6" data-n="objects.result"><g class="pos" style="--lx:600px;--ly:530px;--ls:1;--lr:0deg;--px:400px;--py:620px;--ps:1;--pr:0deg"><rect x="-325" y="-57.5" width="650" height="115" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">左侧 2 个 · 右侧 0 个</tspan></text></g></g><g class="s pop only-l" data-at="6" data-until="7" data-n="objects"><g class="pos" style="--lx:600px;--ly:270px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(-350 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红圆</tspan></text></g><g transform="translate(0 0) rotate(0) scale(1)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝方</tspan></text></g><g transform="translate(350 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">绿三角</tspan></text></g></g></g><g class="s pop only-p" data-at="6" data-until="7" data-n="objects"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:280px;--ps:1;--pr:0deg"><g transform="translate(-260 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红圆</tspan></text></g><g transform="translate(0 0) rotate(0) scale(1)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝方</tspan></text></g><g transform="translate(260 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">绿三角</tspan></text></g></g></g><g class="s pop" data-at="6" data-until="7" data-n="objects.title"><g class="pos" style="--lx:600px;--ly:100px;--ls:1;--lr:0deg;--px:400px;--py:95px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">示意横坐标 · 不表示厘米</tspan></text></g></g><g class="s pop" data-at="6" data-until="7" data-n="coordinate.red"><g class="pos" style="--lx:250px;--ly:525px;--ls:1;--lr:0deg;--px:140px;--py:600px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">x = 0</tspan></text></g></g><g class="s pop" data-at="6" data-until="7" data-n="coordinate.blue"><g class="pos" style="--lx:600px;--ly:525px;--ls:1;--lr:0deg;--px:400px;--py:600px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">x = 1</tspan></text></g></g><g class="s pop" data-at="6" data-until="7" data-n="coordinate.green"><g class="pos" style="--lx:950px;--ly:525px;--ls:1;--lr:0deg;--px:660px;--py:600px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">x = 2</tspan></text></g></g><g class="s pop" data-at="6" data-until="7" data-n="scope"><g class="pos" style="--lx:600px;--ly:675px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="-29.04" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">也可以比较坐标大小</tspan><tspan x="0" dy="58.08">图示不等于所有 AI 的内部形态</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="model" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="chapter.art"><g class="pos" style="--lx:600px;--ly:275px;--ls:1;--lr:0deg;--px:400px;--py:370px;--ps:1;--pr:0deg"><path d="M79.2 79.2 L178.2 178.2" fill="none" stroke="#203845" stroke-width="16" stroke-linecap="round"/><path d="M79.2 79.2 L178.2 178.2" fill="none" stroke="#ee6a58" stroke-width="8" stroke-linecap="round"/><circle cx="0" cy="0" r="110" fill="rgba(222,243,238,.7)" stroke="#203845" stroke-width="7"/><path d="M-60.50000000000001 -11 C-49.5 -55 -16.5 -77 16.5 -74.80000000000001" fill="none" stroke="#ffffff" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/></g></g><g class="s pop" data-at="0" data-until="1" data-n="chapter.note" style="--d:140ms"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:880px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="54" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">把对象联系纳入计算</tspan></text></g></g><g class="s pop only-l" data-at="1" data-until="2" data-n="network"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><text x="600" y="30" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="600" dy="0">同一个问题信息</tspan></text><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M600 80 L600 105 L210 105 L210 117.5"/><path d="M217.19 111.84 L210 125 L202.81 111.84"/></g><g transform="translate(210 250) rotate(0) scale(1)"><rect x="-155" y="-105" width="310" height="210" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">一组</tspan><tspan x="0" dy="60.72">对象对</tspan></text></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M210 375 L210 430 L600 430 L600 457.5"/><path d="M607.19 451.84 L600 465 L592.81 451.84"/></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M600 80 L600 105 L600 105 L600 117.5"/><path d="M607.19 111.84 L600 125 L592.81 111.84"/></g><g transform="translate(600 250) rotate(0) scale(1)"><rect x="-155" y="-105" width="310" height="210" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">另一组</tspan><tspan x="0" dy="60.72">对象对</tspan></text></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M600 375 L600 430 L600 430 L600 457.5"/><path d="M607.19 451.84 L600 465 L592.81 451.84"/></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M600 80 L600 105 L990 105 L990 117.5"/><path d="M997.19 111.84 L990 125 L982.81 111.84"/></g><g transform="translate(990 250) rotate(0) scale(1)"><rect x="-155" y="-105" width="310" height="210" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">更多组</tspan><tspan x="0" dy="60.72">对象对</tspan></text></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M990 375 L990 430 L600 430 L600 457.5"/><path d="M607.19 451.84 L600 465 L592.81 451.84"/></g><g transform="translate(600 555) rotate(0) scale(1)"><rect x="-390" y="-70" width="780" height="140" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">汇总多组结果 · 产生回答</tspan></text></g><text x="600" y="690" font-size="42" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="600" dy="0">结构示意 · 没有训练论文模型</tspan></text></g></g><g class="s pop only-p" data-at="1" data-until="2" data-n="network"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><text x="400" y="60" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="400" dy="0">同一个问题信息</tspan></text><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M400 125 L400 170 L140 170 L140 202.5"/><path d="M147.19 196.84 L140 210 L132.81 196.84"/></g><g transform="translate(140 350) rotate(0) scale(1)"><rect x="-105" y="-120" width="210" height="240" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">一组</tspan><tspan x="0" dy="60.72">对象对</tspan></text></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M140 490 L140 620 L400 620 L400 657.5"/><path d="M407.19 651.84 L400 665 L392.81 651.84"/></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M400 125 L400 170 L400 170 L400 202.5"/><path d="M407.19 196.84 L400 210 L392.81 196.84"/></g><g transform="translate(400 350) rotate(0) scale(1)"><rect x="-105" y="-120" width="210" height="240" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">另一组</tspan><tspan x="0" dy="60.72">对象对</tspan></text></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M400 490 L400 620 L400 620 L400 657.5"/><path d="M407.19 651.84 L400 665 L392.81 651.84"/></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M400 125 L400 170 L660 170 L660 202.5"/><path d="M667.19 196.84 L660 210 L652.81 196.84"/></g><g transform="translate(660 350) rotate(0) scale(1)"><rect x="-105" y="-120" width="210" height="240" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">更多组</tspan><tspan x="0" dy="60.72">对象对</tspan></text></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M660 490 L660 620 L400 620 L400 657.5"/><path d="M407.19 651.84 L400 665 L392.81 651.84"/></g><g transform="translate(400 755) rotate(0) scale(1)"><rect x="-325" y="-70" width="650" height="140" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">汇总多组结果 · 产生回答</tspan></text></g><text x="400" y="945" font-size="42" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="400" dy="0">结构示意 · 没有训练论文模型</tspan></text></g></g><g class="s pop only-l" data-at="2" data-until="3" data-n="network"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><text x="600" y="30" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="600" dy="0">问题：蓝方左边有几个？</tspan></text><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M600 80 L600 105 L210 105 L210 117.5"/><path d="M217.19 111.84 L210 125 L202.81 111.84"/></g><g transform="translate(210 250) rotate(0) scale(1)"><rect x="-155" y="-105" width="310" height="210" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-60.72" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红圆</tspan><tspan x="0" dy="60.72">在左边？</tspan><tspan x="0" dy="60.72">是 · 1</tspan></text></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M210 375 L210 430 L600 430 L600 457.5"/><path d="M607.19 451.84 L600 465 L592.81 451.84"/></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M600 80 L600 105 L600 105 L600 117.5"/><path d="M607.19 111.84 L600 125 L592.81 111.84"/></g><g transform="translate(600 250) rotate(0) scale(1)"><rect x="-155" y="-105" width="310" height="210" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-60.72" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">绿三角</tspan><tspan x="0" dy="60.72">在左边？</tspan><tspan x="0" dy="60.72">是 · 1</tspan></text></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M600 375 L600 430 L600 430 L600 457.5"/><path d="M607.19 451.84 L600 465 L592.81 451.84"/></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M600 80 L600 105 L990 105 L990 117.5"/><path d="M997.19 111.84 L990 125 L982.81 111.84"/></g><g transform="translate(990 250) rotate(0) scale(1)"><rect x="-155" y="-105" width="310" height="210" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-60.72" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝方</tspan><tspan x="0" dy="60.72">在左边？</tspan><tspan x="0" dy="60.72">否 · 0</tspan></text></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M990 375 L990 430 L600 430 L600 457.5"/><path d="M607.19 451.84 L600 465 L592.81 451.84"/></g><g transform="translate(600 555) rotate(0) scale(1)"><rect x="-390" y="-70" width="780" height="140" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">合计 2 个</tspan></text></g><text x="600" y="690" font-size="42" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="600" dy="0">手工计数示意 · 没有训练论文模型</tspan></text></g></g><g class="s pop only-p" data-at="2" data-until="3" data-n="network"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><text x="400" y="60" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="400" dy="0">问题：蓝方左边有几个？</tspan></text><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M400 125 L400 170 L140 170 L140 202.5"/><path d="M147.19 196.84 L140 210 L132.81 196.84"/></g><g transform="translate(140 350) rotate(0) scale(1)"><rect x="-105" y="-120" width="210" height="240" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-60.72" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红圆</tspan><tspan x="0" dy="60.72">在左边？</tspan><tspan x="0" dy="60.72">是 · 1</tspan></text></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M140 490 L140 620 L400 620 L400 657.5"/><path d="M407.19 651.84 L400 665 L392.81 651.84"/></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M400 125 L400 170 L400 170 L400 202.5"/><path d="M407.19 196.84 L400 210 L392.81 196.84"/></g><g transform="translate(400 350) rotate(0) scale(1)"><rect x="-105" y="-120" width="210" height="240" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-60.72" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">绿三角</tspan><tspan x="0" dy="60.72">在左边？</tspan><tspan x="0" dy="60.72">是 · 1</tspan></text></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M400 490 L400 620 L400 620 L400 657.5"/><path d="M407.19 651.84 L400 665 L392.81 651.84"/></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M400 125 L400 170 L660 170 L660 202.5"/><path d="M667.19 196.84 L660 210 L652.81 196.84"/></g><g transform="translate(660 350) rotate(0) scale(1)"><rect x="-105" y="-120" width="210" height="240" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-60.72" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝方</tspan><tspan x="0" dy="60.72">在左边？</tspan><tspan x="0" dy="60.72">否 · 0</tspan></text></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M660 490 L660 620 L400 620 L400 657.5"/><path d="M407.19 651.84 L400 665 L392.81 651.84"/></g><g transform="translate(400 755) rotate(0) scale(1)"><rect x="-325" y="-70" width="650" height="140" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">合计 2 个</tspan></text></g><text x="400" y="945" font-size="42" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="400" dy="0">手工计数示意 · 没有训练论文模型</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="left"><g class="pos" style="--lx:300px;--ly:270px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-270" y="-110" width="540" height="220" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-33" font-size="50" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">论文模块</tspan><tspan x="0" dy="66">学习的是数值运算</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:270px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><circle cx="0" cy="0" r="85" fill="#d42c16" stroke="#203845" stroke-width="5"/><g transform="translate(0 0.56) rotate(0) scale(2.24)"><path d="M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="0" cy="16" r="3.5" fill="#ffffff"/></g><text x="0" y="215.96" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">中间结果未必写成</tspan><tspan x="0" dy="58.08">“左边”“右边”这些词</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="left"><g class="pos" style="--lx:300px;--ly:270px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-175" y="-175" width="350" height="350" rx="10" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><rect x="-150" y="-150" width="100" height="100" rx="24" fill="#e3efff" stroke="#203845" stroke-width="3" stroke-linejoin="round"/><rect x="-50" y="-150" width="100" height="100" rx="24" fill="#e3efff" stroke="#203845" stroke-width="3" stroke-linejoin="round"/><rect x="50" y="-150" width="100" height="100" rx="24" fill="#e3efff" stroke="#203845" stroke-width="3" stroke-linejoin="round"/><rect x="-150" y="-50" width="100" height="100" rx="24" fill="#e3efff" stroke="#203845" stroke-width="3" stroke-linejoin="round"/><rect x="-50" y="-50" width="100" height="100" rx="24" fill="#def3ee" stroke="#203845" stroke-width="3" stroke-linejoin="round"/><rect x="50" y="-50" width="100" height="100" rx="24" fill="#e3efff" stroke="#203845" stroke-width="3" stroke-linejoin="round"/><rect x="-150" y="50" width="100" height="100" rx="24" fill="#e3efff" stroke="#203845" stroke-width="3" stroke-linejoin="round"/><rect x="-50" y="50" width="100" height="100" rx="24" fill="#e3efff" stroke="#203845" stroke-width="3" stroke-linejoin="round"/><rect x="50" y="50" width="100" height="100" rx="24" fill="#e3efff" stroke="#203845" stroke-width="3" stroke-linejoin="round"/><text x="0" y="270" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">图像区域表示</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:270px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><rect x="-275" y="-110" width="550" height="220" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">加入位置信息</tspan><tspan x="0" dy="60.72">后续计算学习有用关系</tspan></text></g></g><g class="s pop" data-at="5" data-until="6" data-n="left"><g class="pos" style="--lx:300px;--ly:270px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-110" width="550" height="220" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">先从图中取得信息</tspan><tspan x="0" dy="60.72">可能漏掉蓝方</tspan></text></g></g><g class="s pop" data-at="5" data-until="6" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:270px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><rect x="-270" y="-110" width="540" height="220" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-31.68" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">再组合信息比较</tspan><tspan x="0" dy="63.36">也可能因此失效</tspan></text></g></g><g class="s pop" data-at="6" data-until="7" data-n="left"><g class="pos" style="--lx:300px;--ly:270px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-265" y="-110" width="530" height="220" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-33" font-size="50" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">关系网络</tspan><tspan x="0" dy="66">只是其中一种途径</tspan></text></g></g><g class="s pop" data-at="6" data-until="7" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:270px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><circle cx="0" cy="0" r="85" fill="#d42c16" stroke="#203845" stroke-width="5"/><g transform="translate(0 0.56) rotate(0) scale(2.24)"><path d="M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="0" cy="16" r="3.5" fill="#ffffff"/></g><text x="0" y="214.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">手工图示</tspan><tspan x="0" dy="60.72">没有复现论文模型</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="evidence" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="chapter.art"><g class="pos" style="--lx:600px;--ly:275px;--ls:1;--lr:0deg;--px:400px;--py:370px;--ps:1;--pr:0deg"><path d="M79.2 79.2 L178.2 178.2" fill="none" stroke="#203845" stroke-width="16" stroke-linecap="round"/><path d="M79.2 79.2 L178.2 178.2" fill="none" stroke="#ee6a58" stroke-width="8" stroke-linecap="round"/><circle cx="0" cy="0" r="110" fill="rgba(222,243,238,.7)" stroke="#203845" stroke-width="7"/><path d="M-60.50000000000001 -11 C-49.5 -55 -16.5 -77 16.5 -74.80000000000001" fill="none" stroke="#ffffff" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/></g></g><g class="s pop" data-at="0" data-until="1" data-n="chapter.note" style="--d:140ms"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:880px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="54" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">答对一个关系题 · 说明多少？</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="item.0"><g class="pos" style="--lx:210px;--ly:270px;--ls:1;--lr:0deg;--px:400px;--py:120px;--ps:1;--pr:0deg"><rect x="-160" y="-75" width="320" height="150" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">视觉问答</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="item.1"><g class="pos" style="--lx:600px;--ly:270px;--ls:1;--lr:0deg;--px:400px;--py:455px;--ps:1;--pr:0deg"><rect x="-160" y="-75" width="320" height="150" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">文字问答</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="item.2"><g class="pos" style="--lx:990px;--ly:270px;--ls:1;--lr:0deg;--px:400px;--py:790px;--ps:1;--pr:0deg"><rect x="-160" y="-75" width="320" height="150" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">物理系统</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="scope"><g class="pos" style="--lx:600px;--ly:675px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="-29.04" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">特定任务的证据</tspan><tspan x="0" dy="58.08">不能推出全部生活中的关系理解</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="left"><g class="pos" style="--lx:300px;--ly:270px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-265" y="-110" width="530" height="220" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-33" font-size="50" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">哪个最近？</tspan><tspan x="0" dy="66">需要距离信息</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:270px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><rect x="-275" y="-110" width="550" height="220" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">为什么被挪？</tspan><tspan x="0" dy="60.72">需要动作与原因证据</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="item.0"><g class="pos" style="--lx:210px;--ly:270px;--ls:1;--lr:0deg;--px:400px;--py:120px;--ps:1;--pr:0deg"><rect x="-160" y="-75" width="320" height="150" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">物体数目</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="item.1"><g class="pos" style="--lx:600px;--ly:270px;--ls:1;--lr:0deg;--px:400px;--py:455px;--ps:1;--pr:0deg"><rect x="-160" y="-75" width="320" height="150" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">排列</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="item.2"><g class="pos" style="--lx:990px;--ly:270px;--ls:1;--lr:0deg;--px:400px;--py:790px;--ps:1;--pr:0deg"><rect x="-160" y="-75" width="320" height="150" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">问题</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="scope"><g class="pos" style="--lx:600px;--ly:675px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">变化之后 · 仍要检查答案依据</tspan></text></g></g><g class="s pop only-l" data-at="4" data-until="5" data-n="objects"><g class="pos" style="--lx:600px;--ly:270px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(-350 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红圆</tspan></text></g><g transform="translate(0 0) rotate(0) scale(1)"><rect x="-100" y="-110" width="200" height="220" rx="16" fill="none" stroke="#137a7f" stroke-width="6" stroke-linejoin="round"/><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝方</tspan></text></g><g transform="translate(350 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">绿三角</tspan></text></g></g></g><g class="s pop only-p" data-at="4" data-until="5" data-n="objects"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:340px;--ps:1;--pr:0deg"><g transform="translate(-260 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红圆</tspan></text></g><g transform="translate(0 0) rotate(0) scale(1)"><rect x="-100" y="-110" width="200" height="220" rx="16" fill="none" stroke="#137a7f" stroke-width="6" stroke-linejoin="round"/><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝方</tspan></text></g><g transform="translate(260 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">绿三角</tspan></text></g></g></g><g class="s pop" data-at="4" data-until="5" data-n="objects.title"><g class="pos" style="--lx:600px;--ly:100px;--ls:1;--lr:0deg;--px:400px;--py:155px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">对象认对了 · 关系也处理对了吗？</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="objects.result"><g class="pos" style="--lx:600px;--ly:530px;--ls:1;--lr:0deg;--px:400px;--py:620px;--ps:1;--pr:0deg"><rect x="-325" y="-57.5" width="650" height="115" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝方左边：1 个</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="challenge" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="chapter.art"><g class="pos" style="--lx:600px;--ly:275px;--ls:1;--lr:0deg;--px:400px;--py:370px;--ps:1;--pr:0deg"><circle cx="0" cy="0" r="110" fill="#d42c16" stroke="#203845" stroke-width="5"/><g transform="translate(0 0.72) rotate(0) scale(2.89)"><path d="M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="0" cy="16" r="3.5" fill="#ffffff"/></g></g></g><g class="s pop" data-at="0" data-until="1" data-n="chapter.note" style="--d:140ms"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:880px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="54" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">换个问题 · 检查表示够不够用</tspan></text></g></g><g class="s pop only-l" data-at="1" data-until="2" data-n="objects"><g class="pos" style="--lx:600px;--ly:270px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(-350 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红圆</tspan></text></g><g transform="translate(0 0) rotate(0) scale(1)"><rect x="-100" y="-110" width="200" height="220" rx="16" fill="none" stroke="#137a7f" stroke-width="6" stroke-linejoin="round"/><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">绿三角</tspan></text></g><g transform="translate(350 0) rotate(0) scale(1)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝方</tspan></text></g></g></g><g class="s pop only-p" data-at="1" data-until="2" data-n="objects"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:340px;--ps:1;--pr:0deg"><g transform="translate(-260 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红圆</tspan></text></g><g transform="translate(0 0) rotate(0) scale(1)"><rect x="-100" y="-110" width="200" height="220" rx="16" fill="none" stroke="#137a7f" stroke-width="6" stroke-linejoin="round"/><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">绿三角</tspan></text></g><g transform="translate(260 0) rotate(0) scale(1)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝方</tspan></text></g></g></g><g class="s pop" data-at="1" data-until="2" data-n="objects.title"><g class="pos" style="--lx:600px;--ly:100px;--ls:1;--lr:0deg;--px:400px;--py:155px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">绿三角右边有几个物体？</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="objects.result"><g class="pos" style="--lx:600px;--ly:530px;--ls:1;--lr:0deg;--px:400px;--py:620px;--ps:1;--pr:0deg"><rect x="-325" y="-57.5" width="650" height="115" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">右边 1 个：蓝方</tspan></text></g></g><g class="s pop only-l" data-at="2" data-until="3" data-n="objects"><g class="pos" style="--lx:600px;--ly:270px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(-350 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红圆</tspan></text></g><g transform="translate(0 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">绿三角</tspan></text></g><g transform="translate(350 0) rotate(0) scale(1)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝方</tspan></text></g></g></g><g class="s pop only-p" data-at="2" data-until="3" data-n="objects"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:340px;--ps:1;--pr:0deg"><g transform="translate(-260 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红圆</tspan></text></g><g transform="translate(0 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">绿三角</tspan></text></g><g transform="translate(260 0) rotate(0) scale(1)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="140" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝方</tspan></text></g></g></g><g class="s pop" data-at="2" data-until="3" data-n="objects.title"><g class="pos" style="--lx:600px;--ly:100px;--ls:1;--lr:0deg;--px:400px;--py:155px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">绿三角与蓝方相距几厘米？</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="scope"><g class="pos" style="--lx:600px;--ly:675px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">仅凭这份左右顺序 · 能回答吗？</tspan></text></g></g><g class="s pop only-l" data-at="3" data-until="4" data-n="near"><g class="pos" style="--lx:600px;--ly:200px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(-220 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(0 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(220 0) rotate(0) scale(1)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g><g class="s pop only-p" data-at="3" data-until="4" data-n="near"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:240px;--ps:1;--pr:0deg"><g transform="translate(-180 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(0 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(180 0) rotate(0) scale(1)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g><g class="s pop" data-at="3" data-until="4" data-n="near.title"><g class="pos" style="--lx:600px;--ly:30px;--ls:1;--lr:0deg;--px:400px;--py:55px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">可以摆得近一些</tspan></text></g></g><g class="s pop only-l" data-at="3" data-until="4" data-n="far"><g class="pos" style="--lx:600px;--ly:520px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(-390 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(0 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(390 0) rotate(0) scale(1)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g><g class="s pop only-p" data-at="3" data-until="4" data-n="far"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:690px;--ps:1;--pr:0deg"><g transform="translate(-280 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(0 0) rotate(0) scale(1)"><polygon points="0,-80 78,65 -78,65" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(280 0) rotate(0) scale(1)"><rect x="-70" y="-70" width="140" height="140" rx="5" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g><g class="s pop" data-at="3" data-until="4" data-n="far.title"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:505px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">也可以摆得远一些</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="scope"><g class="pos" style="--lx:600px;--ly:675px;--ls:1;--lr:0deg;--px:400px;--py:945px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">顺序相同 · 距离可不同 · 图示无厘米尺度</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="left"><g class="pos" style="--lx:300px;--ly:270px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-110" width="550" height="220" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-31.68" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">还需补充</tspan><tspan x="0" dy="63.36">带单位的距离信息</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:270px;--ls:1;--lr:0deg;--px:400px;--py:680px;--ps:1;--pr:0deg"><circle cx="0" cy="0" r="85" fill="#d42c16" stroke="#203845" stroke-width="5"/><g transform="translate(0 0.56) rotate(0) scale(2.24)"><path d="M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="0" cy="16" r="3.5" fill="#ffffff"/></g><text x="0" y="215.96" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">缺少信息</tspan><tspan x="0" dy="58.08">不能只归为“数错了”</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="exercise" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="1" data-until="2" data-n="answer-note"><g class="pos" style="--lx:600px;--ly:50px;--ls:1;--lr:0deg;--px:400px;--py:22px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击卡片可翻回题目</tspan></text></g></g><g class="s rise only-l" data-at="0" data-until="2" data-n="quiz.distance"><g class="pos" style="--lx:210px;--ly:350px;--ls:1;--lr:0deg;--px:210px;--py:350px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="distance" role="button" tabindex="-1" aria-pressed="false" aria-label="仅靠左右顺序能确定厘米距离吗？，点击翻面" data-front-label="仅靠左右顺序能确定厘米距离吗？，点击翻面" data-back-label="不能，点击翻回"><g class="front" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-62.44" font-size="34" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">只知道左右顺序</tspan><tspan x="0" dy="44.88">能确定厘米距离吗？</tspan></text><text x="0" y="165" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击核对</tspan></text></g><g class="back" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-50" font-size="60" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">不能</tspan></text><text x="0" y="110" font-size="32" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">顺序不提供厘米尺度</tspan></text></g></g></g></g><g class="s rise only-p" data-at="0" data-until="2" data-n="quiz.distance"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:185px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="distance" role="button" tabindex="-1" aria-pressed="false" aria-label="仅靠左右顺序能确定厘米距离吗？，点击翻面" data-front-label="仅靠左右顺序能确定厘米距离吗？，点击翻面" data-back-label="不能，点击翻回"><g class="front" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-55.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">只知道左右顺序</tspan><tspan x="0" dy="60.72">能确定厘米距离吗？</tspan></text><text x="0" y="90" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击核对</tspan></text></g><g class="back" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30" font-size="68" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">不能</tspan></text><text x="0" y="65" font-size="42" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">顺序不提供厘米尺度</tspan></text></g></g></g></g><g class="s rise only-l" data-at="0" data-until="2" data-n="quiz.missing"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:600px;--py:350px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="missing" role="button" tabindex="-1" aria-pressed="false" aria-label="要回答相距几厘米，还缺什么？，点击翻面" data-front-label="要回答相距几厘米，还缺什么？，点击翻面" data-back-label="带单位的距离信息，点击翻回"><g class="front" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-62.44" font-size="34" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">要回答相距几厘米</tspan><tspan x="0" dy="44.88">还缺什么？</tspan></text><text x="0" y="165" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击核对</tspan></text></g><g class="back" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-59.04" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">带单位的</tspan><tspan x="0" dy="58.08">距离信息</tspan></text></g></g></g></g><g class="s rise only-p" data-at="0" data-until="2" data-n="quiz.missing"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:510px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="missing" role="button" tabindex="-1" aria-pressed="false" aria-label="要回答相距几厘米，还缺什么？，点击翻面" data-front-label="要回答相距几厘米，还缺什么？，点击翻面" data-back-label="带单位的距离信息，点击翻回"><g class="front" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-55.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">要回答相距几厘米</tspan><tspan x="0" dy="60.72">还缺什么？</tspan></text><text x="0" y="90" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击核对</tspan></text></g><g class="back" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-44.32" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">带单位的</tspan><tspan x="0" dy="68.64">距离信息</tspan></text></g></g></g></g><g class="s rise only-l" data-at="0" data-until="2" data-n="quiz.count"><g class="pos" style="--lx:990px;--ly:350px;--ls:1;--lr:0deg;--px:990px;--py:350px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="count" role="button" tabindex="-1" aria-pressed="false" aria-label="这能只归为数错了吗？，点击翻面" data-front-label="这能只归为数错了吗？，点击翻面" data-back-label="不能，缺少必要信息，点击翻回"><g class="front" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-62.44" font-size="34" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">这能只归为</tspan><tspan x="0" dy="44.88">“数错了”吗？</tspan></text><text x="0" y="165" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击核对</tspan></text></g><g class="back" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-50" font-size="60" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">不能</tspan></text><text x="0" y="110" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">缺少必要信息</tspan></text></g></g></g></g><g class="s rise only-p" data-at="0" data-until="2" data-n="quiz.count"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:835px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="count" role="button" tabindex="-1" aria-pressed="false" aria-label="这能只归为数错了吗？，点击翻面" data-front-label="这能只归为数错了吗？，点击翻面" data-back-label="不能，缺少必要信息，点击翻回"><g class="front" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-55.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">这能只归为</tspan><tspan x="0" dy="60.72">“数错了”吗？</tspan></text><text x="0" y="90" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击核对</tspan></text></g><g class="back" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30" font-size="68" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">不能</tspan></text><text x="0" y="65" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">缺少必要信息</tspan></text></g></g></g></g></g></svg>
+<svg class="scene" data-scene="refs" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="title"><g class="pos" style="--lx:600px;--ly:75px;--ls:1;--lr:0deg;--px:400px;--py:100px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="62" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">资料来源</tspan></text></g></g><g class="s pop" data-at="0" data-until="1" data-n="scope"><g class="pos" style="--lx:600px;--ly:155px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">手工关系与计数示意 · 未训练论文模型</tspan></text></g></g><g class="s pop only-l" data-at="0" data-until="1" data-n="source0"><g class="pos" style="--lx:600px;--ly:255px;--ls:1;--lr:0deg;--px:400px;--py:360px;--ps:1;--pr:0deg"><a class="hit" href="https://arxiv.org/abs/1706.01427" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-label="〔1〕关系网络 · 原始论文，打开原始资料"><rect x="-475" y="-42" width="950" height="84" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">〔1〕关系网络 · 原始论文</tspan></text></a></g></g><g class="s pop only-p" data-at="0" data-until="1" data-n="source0"><g class="pos" style="--lx:600px;--ly:255px;--ls:1;--lr:0deg;--px:400px;--py:360px;--ps:1;--pr:0deg"><a class="hit" href="https://arxiv.org/abs/1706.01427" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-label="〔1〕关系网络 · 原始论文，打开原始资料"><rect x="-375" y="-42" width="750" height="84" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">〔1〕关系网络 · 原始论文</tspan></text></a></g></g><g class="s pop" data-at="0" data-until="1" data-n="read"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:950px;--ps:1;--pr:0deg"><a class="hit" href="?read" data-action="read" tabindex="-1" aria-label="阅读全文与完整资料说明"><rect x="-310" y="-40" width="620" height="80" rx="40" fill="#137a7f" stroke="#203845" stroke-width="5" stroke-linejoin="round"/><text x="0" y="2" font-size="42" fill="#ffffff" text-anchor="middle" font-weight="800" dominant-baseline="central"><tspan x="0" dy="0">阅读全文与完整资料说明</tspan></text></a></g></g></g></svg>
+<header class="hud">
+<div class="hud-l">
+<button class="pill" id="btn-toc" type="button" aria-haspopup="dialog" aria-label="目录"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01"/></svg><span class="lbl" aria-hidden="true">目录</span></button>
+<span class="pill sec" id="sec"><span id="sec-num"></span><span id="sec-name"></span></span>
+</div>
+<div class="hud-r">
+<button class="pill" id="btn-play" type="button" data-playing="false">播放</button>
+<a class="pill" href="?read" data-action="read">全文</a>
+</div>
+</header>
+<div class="cap" id="capcard" role="status" aria-live="polite" aria-atomic="true"><p id="cap"></p></div>
+<footer class="foot">
+<p id="hint"></p>
+<div class="steps">
+<button class="pill icon" id="btn-prev" type="button" aria-label="上一拍"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 10.5 8 5.5l5 5"/></svg></button>
+<span id="count"></span>
+<button class="pill icon" id="btn-next" type="button" aria-label="下一拍"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 5.5 8 10.5l5-5"/></svg></button>
+</div>
+<div id="bar"></div>
+</footer>
+</main>
+<dialog id="toc" aria-labelledby="toc-title">
+<div class="toc-head"><h2 id="toc-title">认出物体，就理解它们的关系了吗？</h2><button class="pill" id="toc-close" type="button">关闭</button></div>
+<ol id="toc-list"></ol>
+<p class="toc-foot">AI 的答案可信吗，第 3 篇 / 共 5 篇。机器人角色为 AI 辅助制作，场景与图解由代码绘制。</p>
+</dialog>
+<div id="readwrap">
+<div class="read-bar"><a class="pill" href="?stage" data-action="stage">看分镜版</a><a class="pill" href="index.html">返回本篇页面</a></div>
+<article id="read" lang="zh-CN">
+<h1><span class="tl">认出物体，</span> <span class="tl">就理解它们的关系了吗？</span></h1>
+<p>红圆、蓝方、绿三角，程序都认出来了，颜色也没认错。接着问它：“蓝方左边有几个物体？”这次，它还能答对吗？</p>
+<p>上一期用短规则记录字母，要求展开后能还原原串。换成图片，也要问：留下的表示，够不够回答眼前的问题？只记下“画面里有谁”，还不够；还要记得它们摆在哪里，并且能拿位置作比较。挪动物体，就能看出差别。</p>
+<h2>同一份清单可以摆出不同答案</h2>
+<p>先约定按图上的左右判断，不改变观察视角。三个物体互不遮挡、彼此分开，第一次从左到右摆成：红圆、蓝方、绿三角。</p>
+<p>“哪个物体是蓝色的？”答案是蓝方。这个问题主要询问单个物体的属性。颜色、形状，都是这里记录的属性。</p>
+<p>“蓝方左边有几个物体？”则需要先找到蓝方，再查看别的物体与它的位置关系。红圆在它左边，绿三角在它右边，所以答案是1。</p>
+<p>现在交换蓝方和绿三角，排列变成红圆、绿三角、蓝方。蓝色物体仍然是蓝方；蓝方左边却有红圆和绿三角，答案变成2。</p>
+<p class="pic"><img alt="交换蓝方与绿三角后，蓝方左侧物体数从 1 变成 2" src="14_%E5%AF%B9%E8%B1%A1%E7%9B%B8%E5%90%8C%E8%80%8C%E5%85%B3%E7%B3%BB%E7%AD%94%E6%A1%88%E6%94%B9%E5%8F%98.png" loading="lazy"></p>
+<p class="figcap"><em>图1  交换前后，颜色和形状不变；蓝方左侧的对象数从1变为2。图中按从左到右的顺序排列对象。</em></p>
+<p>看图1，交换前后的对象清单完全相同：一个红圆、一个蓝方、一个绿三角。若系统只留下这份清单，没留下位置，就分不清两种排列，也无法判断答案是1还是2。</p>
+<p>这份清单仍能回答“有没有蓝方”，却回答不了“蓝方左边有几个”。保存哪些信息，要由后面的任务决定。位置在前面被丢掉了，后面再认真数，也不能从这份清单里找回来。</p>
+<h2>给物体之间画上箭头</h2>
+<p>怎样记下关系？可以给每个物体画一个点，再连有方向的箭头。先约定：甲指向乙，表示“甲在乙左边”。箭头的方向和含义，要一起说清楚。</p>
+<p>在第一种排列中，红圆指向蓝方，蓝方指向绿三角，红圆也指向绿三角。“在左边”并不要求紧挨着，所以不能漏掉最后这条关系。</p>
+<p>第二种排列里，红圆指向蓝方、绿三角也指向蓝方。数一数指向蓝方的这类箭头，就得到2。图1用左右排列突出与蓝方有关的比较；这里讨论的箭头，是另一种记录关系的办法。</p>
+<p>关系常常有方向。“红圆在蓝方左边”成立时，“蓝方在红圆左边”就不成立。如果问题改问右边，计数也得跟着改。把两个对象摆在同一个句子里，还不够确定它们之间是哪种关系。</p>
+<p>也可以不用箭头，给每个物体保存横向坐标，再比较坐标大小。关系图是帮助理解的一种表示方法，并不意味着所有 AI 内部都画着同样的图。</p>
+<h2>模型怎样把关系纳入计算</h2>
+<p>2017年，Santoro等研究者提出关系网络模块，用神经网络处理对象之间的联系。一个关键做法，是把两个对象的数字表示放在一起，连同问题的信息一起计算，再汇总多组对象的比较结果，产生回答。<span class="cite">〔1〕</span></p>
+<p>套回蓝方的例子，这条路线可以理解为：取得各个对象的数字表示，结合“蓝方左边有几个”的问题来比较，再形成计数答案。论文模块学习的是数值运算，中间结果未必会写成“左边”“右边”这样的词。</p>
+<p>输入给模块的“对象”也不一定是人已经分好的一只杯子、一把椅子。论文处理图片时，可以利用卷积网络产生的图像区域表示，并加入位置信息。研究者希望后续计算从这些表示中学出有用关系。<span class="cite">〔1〕</span></p>
+<p>两步缺一不可：先从图中取得信息，再组合不同位置的信息回答问题。如果第一步就漏掉了蓝方，后面的比较也可能失效。</p>
+<p>关系网络只是处理关系的一种途径。“两两组合，再汇总”的结构，可以帮助我们理解关系计算；前面的手工图示没有复现论文模型。</p>
+<h2>答对一个关系题说明了多少</h2>
+<p>论文在特定的视觉问答、文字问答和物理系统推理任务上检验了这种方法。它提供的是这些任务中的证据；不能由此断定模型已经具备人在生活中使用的全部关系理解。<span class="cite">〔1〕</span></p>
+<p>即使面对同一张桌面图，换个问题也可能需要新信息。“哪个离蓝方最近”要比较距离，左右顺序未必够用；“蓝方为什么被挪走”则需要有关动作和原因的证据，静止画面通常没有把它们都交代出来。</p>
+<p>因此，测试关系能力，不能只换一张看起来相似的图片。还要看物体数目、排列和问题怎样变化，以及变化之后答案是否仍有依据。把蓝方挪一次，就是一个很小却有针对性的检查。</p>
+<p>认出三个物体，是起点；留下并利用它们的位置关系，才能回答“蓝方左边有几个”。以后看到模型“看懂了图片”的说法，可以多问一步：它认对了对象，还是也处理对了对象之间的关系？</p>
+<h2>换个问题检查表示是否够用</h2>
+<p>仍在第二种排列「红圆、绿三角、蓝方」里，问「绿三角右边有几个物体」，答案是 1。现在问「绿三角和蓝方相距几厘米」，仅靠这份左右顺序能回答吗？</p>
+<p>不能。顺序相同的三个物体可以摆得很近，也可以摆得很远。要回答厘米数，还得补充带单位的距离信息。自检时要同时说出缺了什么，不能把所有答不出的关系题都归为「数错了」。</p>
+<h2>资料来源</h2><div class="refs">
+<p>文中算例与图解用于说明原理，不是实际模型的测评结果。研究结论对应以下资料。</p>
+<p><span class="cite">〔1〕</span> Santoro 等，2017，A Simple Neural Network Module for Relational Reasoning。arXiv:1706.01427。</p>
+<p><a href="https://arxiv.org/abs/1706.01427" rel="noopener noreferrer">https://arxiv.org/abs/1706.01427</a></p>
+</div>
+<div class="read-end"><a class="pill" href="?stage" data-action="stage">看分镜版</a><a class="pill" href="正文.md">查看正文 Markdown</a></div>
+<p class="read-note">AI 的答案可信吗，第 3 篇 / 共 5 篇。机器人角色为 AI 辅助制作，场景与图解由代码绘制。</p>
+</article>
+</div>
+<script type="application/json" id="stage-data">{"total":40,"sectionCount":5,"sections":[{"num":0,"label":"导读","mark":"导","first":0,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003cg transform=\"translate(0 0) rotate(0) scale(0.9)\">\u003cg transform=\"translate(-160 0) rotate(0) scale(1)\">\u003ccircle cx=\"0\" cy=\"0\" r=\"65\" fill=\"#ee6a58\" stroke=\"#203845\" stroke-width=\"6\"/>\u003c/g>\u003cg transform=\"translate(0 0) rotate(0) scale(1)\">\u003crect x=\"-70\" y=\"-70\" width=\"140\" height=\"140\" rx=\"5\" fill=\"#e3efff\" stroke=\"#203845\" stroke-width=\"6\" stroke-linejoin=\"round\"/>\u003c/g>\u003cg transform=\"translate(160 0) rotate(0) scale(1)\">\u003cpolygon points=\"0,-80 78,65 -78,65\" fill=\"#def3ee\" stroke=\"#203845\" stroke-width=\"6\" stroke-linejoin=\"round\"/>\u003c/g>\u003c/g>\u003c/svg>"},{"num":1,"label":"同一份清单可以摆出不同答案","first":4,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003cg transform=\"translate(0 0) rotate(0) scale(0.9)\">\u003cg transform=\"translate(-160 0) rotate(0) scale(1)\">\u003ccircle cx=\"0\" cy=\"0\" r=\"65\" fill=\"#ee6a58\" stroke=\"#203845\" stroke-width=\"6\"/>\u003c/g>\u003cg transform=\"translate(0 0) rotate(0) scale(1)\">\u003cpolygon points=\"0,-80 78,65 -78,65\" fill=\"#def3ee\" stroke=\"#203845\" stroke-width=\"6\" stroke-linejoin=\"round\"/>\u003c/g>\u003cg transform=\"translate(160 0) rotate(0) scale(1)\">\u003crect x=\"-70\" y=\"-70\" width=\"140\" height=\"140\" rx=\"5\" fill=\"#e3efff\" stroke=\"#203845\" stroke-width=\"6\" stroke-linejoin=\"round\"/>\u003c/g>\u003c/g>\u003c/svg>"},{"num":2,"label":"给物体之间画上箭头","first":13,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003cg transform=\"translate(0 -60) rotate(0) scale(0.72)\">\u003cg transform=\"translate(-140 0) rotate(0) scale(0.78)\">\u003ccircle cx=\"0\" cy=\"0\" r=\"65\" fill=\"#ee6a58\" stroke=\"#203845\" stroke-width=\"6\"/>\u003c/g>\u003cg transform=\"translate(140 0) rotate(0) scale(0.78)\">\u003crect x=\"-70\" y=\"-70\" width=\"140\" height=\"140\" rx=\"5\" fill=\"#e3efff\" stroke=\"#203845\" stroke-width=\"6\" stroke-linejoin=\"round\"/>\u003c/g>\u003cg fill=\"none\" stroke=\"#137a7f\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\">\u003cpath d=\"M-65 0 L56 0\"/>\u003cpath d=\"M49.2 -8.63 L65 0 L49.2 8.63\"/>\u003c/g>\u003ctext x=\"-140\" y=\"120\" font-size=\"44\" fill=\"#203845\" text-anchor=\"middle\" font-weight=\"700\" dominant-baseline=\"central\">\u003ctspan x=\"-140\" dy=\"0\">红圆\u003c/tspan>\u003c/text>\u003ctext x=\"140\" y=\"120\" font-size=\"44\" fill=\"#203845\" text-anchor=\"middle\" font-weight=\"700\" dominant-baseline=\"central\">\u003ctspan x=\"140\" dy=\"0\">蓝方\u003c/tspan>\u003c/text>\u003ctext x=\"0\" y=\"235\" font-size=\"56\" fill=\"#137a7f\" text-anchor=\"middle\" font-weight=\"700\" dominant-baseline=\"central\">\u003ctspan x=\"0\" dy=\"0\">成立\u003c/tspan>\u003c/text>\u003c/g>\u003c/svg>"},{"num":3,"label":"模型怎样把关系纳入计算","first":20,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003cpath d=\"M75.6 75.6 L170.1 170.1\" fill=\"none\" stroke=\"#203845\" stroke-width=\"16\" stroke-linecap=\"round\"/>\u003cpath d=\"M75.6 75.6 L170.1 170.1\" fill=\"none\" stroke=\"#ee6a58\" stroke-width=\"8\" stroke-linecap=\"round\"/>\u003ccircle cx=\"0\" cy=\"0\" r=\"105\" fill=\"rgba(222,243,238,.7)\" stroke=\"#203845\" stroke-width=\"7\"/>\u003cpath d=\"M-57.75000000000001 -10.5 C-47.25 -52.5 -15.75 -73.5 15.75 -71.4\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\u003c/svg>"},{"num":4,"label":"答对一个关系题说明了多少","first":27,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003cpath d=\"M75.6 75.6 L170.1 170.1\" fill=\"none\" stroke=\"#203845\" stroke-width=\"16\" stroke-linecap=\"round\"/>\u003cpath d=\"M75.6 75.6 L170.1 170.1\" fill=\"none\" stroke=\"#ee6a58\" stroke-width=\"8\" stroke-linecap=\"round\"/>\u003ccircle cx=\"0\" cy=\"0\" r=\"105\" fill=\"rgba(222,243,238,.7)\" stroke=\"#203845\" stroke-width=\"7\"/>\u003cpath d=\"M-57.75000000000001 -10.5 C-47.25 -52.5 -15.75 -73.5 15.75 -71.4\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\u003c/svg>"},{"num":5,"label":"换个问题检查表示是否够用","first":32,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003ccircle cx=\"0\" cy=\"0\" r=\"105\" fill=\"#d42c16\" stroke=\"#203845\" stroke-width=\"5\"/>\u003cg transform=\"translate(0 0.69) rotate(0) scale(2.76)\">\u003cpath d=\"M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\u003ccircle cx=\"0\" cy=\"16\" r=\"3.5\" fill=\"#ffffff\"/>\u003c/g>\u003c/svg>"},{"num":0,"mark":"源","label":"资料来源","first":39,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003cpath d=\"M75.6 75.6 L170.1 170.1\" fill=\"none\" stroke=\"#203845\" stroke-width=\"16\" stroke-linecap=\"round\"/>\u003cpath d=\"M75.6 75.6 L170.1 170.1\" fill=\"none\" stroke=\"#ee6a58\" stroke-width=\"8\" stroke-linecap=\"round\"/>\u003ccircle cx=\"0\" cy=\"0\" r=\"105\" fill=\"rgba(222,243,238,.7)\" stroke=\"#203845\" stroke-width=\"7\"/>\u003cpath d=\"M-57.75000000000001 -10.5 C-47.25 -52.5 -15.75 -73.5 15.75 -71.4\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\u003c/svg>"}],"scenes":{"cover":{"cams":{"all":{"l":[0,0,1600,900],"p":[0,0,900,1500]}}},"open":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"arrange":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"graph":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"model":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"evidence":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"challenge":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"exercise":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"refs":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}}},"beats":[{"scene":"cover","step":0,"cam":"all","html":"认出物体，就理解它们的关系了吗？","kind":"title","chars":16,"section":0,"quiet":true},{"scene":"open","step":0,"cam":"desk","html":"红圆、蓝方、绿三角，程序都认出来了，颜色也没认错。接着问它：“蓝方左边有几个物体？”这次，它还能答对吗？","kind":"text","chars":52,"section":0},{"scene":"open","step":1,"cam":"desk","html":"上一期用短规则记录字母，要求展开后能还原原串。换成图片，也要问：留下的表示，够不够回答眼前的问题？","kind":"text","chars":49,"section":0},{"scene":"open","step":2,"cam":"desk","html":"只记下“画面里有谁”，还不够；还要记得它们摆在哪里，并且能拿位置作比较。挪动物体，就能看出差别。","kind":"text","chars":48,"section":0},{"scene":"arrange","step":0,"cam":"desk","html":"\u003cb class=\"no\">1\u003c/b>\u003cspan>同一份清单可以摆出不同答案\u003c/span>","kind":"h2","chars":13,"section":1},{"scene":"arrange","step":1,"cam":"desk","html":"先约定按图上的左右判断，不改变观察视角。三个物体互不遮挡、彼此分开，第一次从左到右摆成：红圆、蓝方、绿三角。","kind":"text","chars":54,"section":1},{"scene":"arrange","step":2,"cam":"desk","html":"“哪个物体是蓝色的？”答案是蓝方。","kind":"text","chars":17,"section":1},{"scene":"arrange","step":3,"cam":"desk","html":"这个问题主要询问单个物体的属性。颜色、形状，都是这里记录的属性。","kind":"text","chars":32,"section":1},{"scene":"arrange","step":4,"cam":"desk","html":"“蓝方左边有几个物体？”则需要先找到蓝方，再查看别的物体与它的位置关系。红圆在它左边，绿三角在它右边，所以答案是1。","kind":"text","chars":58,"section":1},{"scene":"arrange","step":5,"cam":"desk","html":"现在交换蓝方和绿三角，排列变成红圆、绿三角、蓝方。蓝色物体仍然是蓝方；蓝方左边却有红圆和绿三角，答案变成2。","kind":"text","chars":54,"section":1},{"scene":"arrange","step":6,"cam":"desk","html":"\u003cb class=\"fig\">图1\u003c/b> 交换前后，颜色和形状不变；蓝方左侧的对象数从1变为2。图中按从左到右的顺序排列对象。","kind":"caption","chars":44,"section":1},{"scene":"arrange","step":7,"cam":"desk","html":"看图1，交换前后的对象清单完全相同：一个红圆、一个蓝方、一个绿三角。若系统只留下这份清单，没留下位置，就分不清两种排列，也无法判断答案是1还是2。","kind":"text","chars":73,"section":1},{"scene":"arrange","step":8,"cam":"desk","html":"这份清单仍能回答“有没有蓝方”，却回答不了“蓝方左边有几个”。保存哪些信息，要由后面的任务决定。位置在前面被丢掉了，后面再认真数，也不能从这份清单里找回来。","kind":"text","chars":78,"section":1},{"scene":"graph","step":0,"cam":"desk","html":"\u003cb class=\"no\">2\u003c/b>\u003cspan>给物体之间画上箭头\u003c/span>","kind":"h2","chars":9,"section":2},{"scene":"graph","step":1,"cam":"desk","html":"怎样记下关系？可以给每个物体画一个点，再连有方向的箭头。先约定：甲指向乙，表示“甲在乙左边”。箭头的方向和含义，要一起说清楚。","kind":"text","chars":63,"section":2},{"scene":"graph","step":2,"cam":"desk","html":"在第一种排列中，红圆指向蓝方，蓝方指向绿三角，红圆也指向绿三角。“在左边”并不要求紧挨着，所以不能漏掉最后这条关系。","kind":"text","chars":58,"section":2},{"scene":"graph","step":3,"cam":"desk","html":"第二种排列里，红圆指向蓝方、绿三角也指向蓝方。数一数指向蓝方的这类箭头，就得到2。图1用左右排列突出与蓝方有关的比较；这里讨论的箭头，是另一种记录关系的办法。","kind":"text","chars":79,"section":2},{"scene":"graph","step":4,"cam":"desk","html":"关系常常有方向。“红圆在蓝方左边”成立时，“蓝方在红圆左边”就不成立。","kind":"text","chars":35,"section":2},{"scene":"graph","step":5,"cam":"desk","html":"如果问题改问右边，计数也得跟着改。把两个对象摆在同一个句子里，还不够确定它们之间是哪种关系。","kind":"text","chars":46,"section":2},{"scene":"graph","step":6,"cam":"desk","html":"也可以不用箭头，给每个物体保存横向坐标，再比较坐标大小。关系图是帮助理解的一种表示方法，并不意味着所有 AI 内部都画着同样的图。","kind":"text","chars":63,"section":2},{"scene":"model","step":0,"cam":"desk","html":"\u003cb class=\"no\">3\u003c/b>\u003cspan>模型怎样把关系纳入计算\u003c/span>","kind":"h2","chars":11,"section":3},{"scene":"model","step":1,"cam":"desk","html":"2017年，Santoro等研究者提出关系网络模块，用神经网络处理对象之间的联系。一个关键做法，是把两个对象的数字表示放在一起，连同问题的信息一起计算，再汇总多组对象的比较结果，产生回答。\u003cspan class=\"cite\">〔1〕\u003c/span>","kind":"text","chars":97,"section":3},{"scene":"model","step":2,"cam":"desk","html":"套回蓝方的例子，这条路线可以理解为：取得各个对象的数字表示，结合“蓝方左边有几个”的问题来比较，再形成计数答案。","kind":"text","chars":56,"section":3},{"scene":"model","step":3,"cam":"desk","html":"论文模块学习的是数值运算，中间结果未必会写成“左边”“右边”这样的词。","kind":"text","chars":35,"section":3},{"scene":"model","step":4,"cam":"desk","html":"输入给模块的“对象”也不一定是人已经分好的一只杯子、一把椅子。论文处理图片时，可以利用卷积网络产生的图像区域表示，并加入位置信息。研究者希望后续计算从这些表示中学出有用关系。\u003cspan class=\"cite\">〔1〕\u003c/span>","kind":"text","chars":90,"section":3},{"scene":"model","step":5,"cam":"desk","html":"两步缺一不可：先从图中取得信息，再组合不同位置的信息回答问题。如果第一步就漏掉了蓝方，后面的比较也可能失效。","kind":"text","chars":54,"section":3},{"scene":"model","step":6,"cam":"desk","html":"关系网络只是处理关系的一种途径。“两两组合，再汇总”的结构，可以帮助我们理解关系计算；前面的手工图示没有复现论文模型。","kind":"text","chars":59,"section":3},{"scene":"evidence","step":0,"cam":"desk","html":"\u003cb class=\"no\">4\u003c/b>\u003cspan>答对一个关系题说明了多少\u003c/span>","kind":"h2","chars":12,"section":4},{"scene":"evidence","step":1,"cam":"desk","html":"论文在特定的视觉问答、文字问答和物理系统推理任务上检验了这种方法。它提供的是这些任务中的证据；不能由此断定模型已经具备人在生活中使用的全部关系理解。\u003cspan class=\"cite\">〔1〕\u003c/span>","kind":"text","chars":77,"section":4},{"scene":"evidence","step":2,"cam":"desk","html":"即使面对同一张桌面图，换个问题也可能需要新信息。“哪个离蓝方最近”要比较距离，左右顺序未必够用；“蓝方为什么被挪走”则需要有关动作和原因的证据，静止画面通常没有把它们都交代出来。","kind":"text","chars":89,"section":4},{"scene":"evidence","step":3,"cam":"desk","html":"因此，测试关系能力，不能只换一张看起来相似的图片。还要看物体数目、排列和问题怎样变化，以及变化之后答案是否仍有依据。把蓝方挪一次，就是一个很小却有针对性的检查。","kind":"text","chars":80,"section":4},{"scene":"evidence","step":4,"cam":"desk","html":"认出三个物体，是起点；留下并利用它们的位置关系，才能回答“蓝方左边有几个”。以后看到模型“看懂了图片”的说法，可以多问一步：它认对了对象，还是也处理对了对象之间的关系？","kind":"text","chars":84,"section":4},{"scene":"challenge","step":0,"cam":"desk","html":"\u003cb class=\"no\">5\u003c/b>\u003cspan>换个问题检查表示是否够用\u003c/span>","kind":"h2","chars":12,"section":5},{"scene":"challenge","step":1,"cam":"desk","html":"仍在第二种排列「红圆、绿三角、蓝方」里，问「绿三角右边有几个物体」，答案是 1。","kind":"text","chars":39,"section":5},{"scene":"challenge","step":2,"cam":"desk","html":"现在问「绿三角和蓝方相距几厘米」，仅靠这份左右顺序能回答吗？","kind":"text","chars":30,"section":5},{"scene":"exercise","step":0,"cam":"desk","html":"","kind":"text","chars":0,"section":5,"quiet":true},{"scene":"exercise","step":1,"cam":"desk","html":"不能。","kind":"text","chars":3,"section":5,"reveal":true},{"scene":"challenge","step":3,"cam":"desk","html":"顺序相同的三个物体可以摆得很近，也可以摆得很远。","kind":"text","chars":24,"section":5},{"scene":"challenge","step":4,"cam":"desk","html":"要回答厘米数，还得补充带单位的距离信息。自检时要同时说出缺了什么，不能把所有答不出的关系题都归为「数错了」。","kind":"text","chars":54,"section":5},{"scene":"refs","step":0,"cam":"desk","html":"","kind":"text","chars":0,"section":6,"quiet":true}]}</script>
+<script data-stage-source="stage.js">/* 互动版运行时：一次手势一拍的分镜阅读器。
+ * 经典脚本，无依赖，双击 file:// 也能运行。
+ * 不依赖浏览器的滚动：滚轮、触摸、键盘各自折算成「前进一拍 / 后退一拍」，画面固定不动，
+ * 所以触控板惯性、鼠标滚轮、手指轻划在各浏览器里表现一致。
+ * 纯函数在 Node 下经 module.exports 暴露，供单元测试。 */
+(function () {
+  'use strict';
+
+  /* ---------------- 纯函数 ---------------- */
+
+  /* 自动播放时每拍停留的秒数：按字数估读，已含 0.7s 的镜头移动。 */
+  function dwell(chars) {
+    return Math.min(12, Math.max(2.4, 1.4 + 0.14 * chars));
+  }
+
+  /* 把世界坐标里的矩形 rect=[x,y,w,h] 等比放进 area={x,y,w,h} 并居中。 */
+  function fitCamera(rect, area) {
+    var s = Math.min(area.w / rect[2], area.h / rect[3]);
+    return {
+      s: s,
+      x: area.x + (area.w - rect[2] * s) / 2 - rect[0] * s,
+      y: area.y + (area.h - rect[3] * s) / 2 - rect[1] * s
+    };
+  }
+
+  /* 元素在第 i 拍是否可见：at 起、until 前。 */
+  function visibleAt(at, until, i) {
+    return i >= at && (until == null || i < until);
+  }
+
+  /* 元素名 name 是否被聚焦列表点名：全等，或以 "<项>." 开头。 */
+  function focusHit(focus, name) {
+    for (var k = 0; k < focus.length; k++) {
+      if (name === focus[k] || name.indexOf(focus[k] + '.') === 0) return true;
+    }
+    return false;
+  }
+
+  /* '#b12' → 第 12 拍（下标 11）；无效返回 -1。 */
+  function parseBeatHash(hash, total) {
+    var m = /^#b(\d+)$/.exec(hash || '');
+    if (!m) return -1;
+    var n = Number(m[1]);
+    return n >= 1 && n <= total ? n - 1 : -1;
+  }
+  function formatBeatHash(i) { return '#b' + (i + 1); }
+
+  /* 滚轮手势限流：一次手势只前进一拍。feed(dy, t) 返回 +1 / -1 / 0；t 是毫秒时间戳，由调用方传入，
+   * 所以测试可以喂合成的事件序列。
+   * 触控板松手后还会有一两秒的惯性事件：翻页后锁住，直到事件流停顿 quiet 毫秒才解锁。
+   * 锁定期间有两种情况视为读者又发起了一次手势：
+   *   1) 锁定 minLock 毫秒后，增量突然比最近的平均值大得多（在惯性上又甩了一下）；
+   *   2) 锁定 restart 毫秒后，增量仍不小于本次手势峰值的 restartRatio（一直在匀速滚动的鼠标滚轮）。 */
+  function createWheelGate(options) {
+    var o = { threshold: 18, quiet: 130, minLock: 350, reaccel: 1.7, restart: 900, restartRatio: 0.7 };
+    for (var key in options) o[key] = options[key];
+    var sum = 0, locked = false, lastT = -1e9, lockedAt = 0, avg = 0, peak = 0;
+    return {
+      feed: function (dy, t) {
+        var a = Math.abs(dy);
+        if (!a) return 0;
+        if (t - lastT > o.quiet) { locked = false; sum = 0; avg = 0; peak = 0; }
+        lastT = t;
+        var prev = avg;
+        avg = prev ? prev * 0.6 + a * 0.4 : a;
+        if (locked) {
+          peak = Math.max(peak, a);
+          var since = t - lockedAt;
+          var surge = since > o.minLock && a > prev * o.reaccel + 8;
+          var steady = since > o.restart && a >= peak * o.restartRatio && a >= 20;
+          if (!surge && !steady) return 0;
+          locked = false; sum = 0;
+        }
+        sum += dy;
+        if (Math.abs(sum) < o.threshold) return 0;
+        var dir = sum > 0 ? 1 : -1;
+        sum = 0; locked = true; lockedAt = t; peak = a;
+        return dir;
+      }
+    };
+  }
+
+  /* 触摸滑动：手指上滑为前进。慢拖需要 48px，快速一划 24px 即可；斜着划不算。 */
+  function swipeStep(dx, dy, ms) {
+    var ay = Math.abs(dy), ax = Math.abs(dx);
+    if (ay < ax * 1.2) return 0;
+    if (ay >= 48 || (ay >= 24 && ms < 220)) return dy < 0 ? 1 : -1;
+    return 0;
+  }
+
+  /* 画面区：为顶栏和字幕卡留出位置。capH 是字幕卡实际占的高度（含它离底边的距离），
+   * 由页面量出，所以短句子给画面留更多地方；静默拍（封面）没有字幕卡，只留底栏。 */
+  function artArea(w, h, capH) {
+    var portrait = w / h < 0.85;
+    var top = portrait ? 56 : 64;
+    var bottom = capH ? capH + 14 : 64;
+    return { x: 0, y: top, w: w, h: Math.max(120, h - top - bottom), portrait: portrait };
+  }
+
+  var api = {
+    dwell: dwell, fitCamera: fitCamera, visibleAt: visibleAt, focusHit: focusHit,
+    parseBeatHash: parseBeatHash, formatBeatHash: formatBeatHash,
+    createWheelGate: createWheelGate, swipeStep: swipeStep, artArea: artArea
+  };
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  if (typeof document === 'undefined') return;
+
+  /* ---------------- 页面 ---------------- */
+
+  var dataEl = document.getElementById('stage-data');
+  if (!dataEl) return;
+  var data = JSON.parse(dataEl.textContent);
+  var beats = data.beats;
+  var total = beats.length;
+  var root = document.documentElement;
+  var $ = function (sel, scope) { return (scope || document).querySelector(sel); };
+  var $$ = function (sel, scope) { return Array.prototype.slice.call((scope || document).querySelectorAll(sel)); };
+
+  var stage = $('#stage');
+  var capText = $('#cap');
+  var capCard = $('#capcard');
+  var count = $('#count');
+  var hint = $('#hint');
+  var secNum = $('#sec-num');
+  var secName = $('#sec-name');
+  var secPill = $('#sec');
+  var bar = $('#bar');
+  var btnPrev = $('#btn-prev');
+  var btnNext = $('#btn-next');
+  var btnPlay = $('#btn-play');
+  var btnToc = $('#btn-toc');
+  var toc = $('#toc');
+  var readEl = $('#read');
+
+  var cur = -1;
+  var playing = false;
+  var timer = 0;
+  var lastScene = null;
+  var urlTimer = 0;
+  var flipState = {};
+
+  /* 每个场景自己编步号（0 起）；每一拍在分镜里声明自己对应哪一步。 */
+  var scenes = {};
+  $$('.scene').forEach(function (svg) {
+    var timed = $$('[data-at]', svg);
+    timed.forEach(function (el) {
+      el._at = Number(el.getAttribute('data-at'));
+      var un = el.getAttribute('data-until');
+      el._until = un == null ? null : Number(un);
+    });
+    scenes[svg.getAttribute('data-scene')] = { el: svg, cam: $('.cam', svg), timed: timed };
+  });
+
+  function mode() { return root.getAttribute('data-mode'); }
+
+  /* ---- 渲染：状态只由（场景、步号、镜头）决定，所以跳转和逐拍走得到同样的画面 ---- */
+
+  function setOn(sc, step) {
+    for (var k = 0; k < sc.timed.length; k++) {
+      var on = visibleAt(sc.timed[k]._at, sc.timed[k]._until, step);
+      sc.timed[k].classList.toggle('on', on);
+      sc.timed[k].setAttribute('aria-hidden', String(!on));
+    }
+  }
+
+  /* 聚焦：这一拍点名的元素保持原样，其余压暗（solo 时整个藏起来）。镜头放大时用，
+   * 免得露出一半的邻居显得像出错。名字用 data-n。 */
+  function setFocus(sc, focus, solo) {
+    var has = !!(focus && focus.length);
+    sc.el.classList.toggle('has-focus', has);
+    sc.el.classList.toggle('solo', has && !!solo);
+    for (var k = 0; k < sc.timed.length; k++) {
+      var e = sc.timed[k];
+      e.classList.toggle('focus', has && focusHit(focus, e.getAttribute('data-n') || ''));
+    }
+  }
+
+  /* how：'instant' 直接到位；'enter' 刚切入场景，先复位再让元素依次出现；'diff' 同场景内只动变化的元素。 */
+  function applyElements(i, how) {
+    var b = beats[i];
+    var sc = scenes[b.scene];
+    if (!sc) return;
+    if (how === 'instant') {
+      sc.el.classList.add('snap');
+      setOn(sc, b.step);
+      setFocus(sc, b.focus, b.solo);
+      void sc.el.getBoundingClientRect();
+      sc.el.classList.remove('snap');
+    } else if (how === 'enter') {
+      sc.el.classList.add('snap');
+      sc.timed.forEach(function (e) { e.classList.remove('on'); });
+      setFocus(sc, b.focus, b.solo);
+      void sc.el.getBoundingClientRect();
+      sc.el.classList.remove('snap');
+      setOn(sc, b.step);
+    } else {
+      setOn(sc, b.step);
+      setFocus(sc, b.focus, b.solo);
+    }
+  }
+
+  function applyCamera(i, instant) {
+    var b = beats[i];
+    var sc = scenes[b.scene];
+    if (!sc) return;
+    var cam = data.scenes[b.scene].cams[b.cam];
+    var area = artArea(innerWidth, innerHeight, b.quiet ? 0 : innerHeight - capCard.getBoundingClientRect().top);
+    var rect = area.portrait ? cam.p : cam.l;
+    var t = fitCamera(rect, area);
+    var g = sc.cam;
+    if (instant) g.style.transition = 'none';
+    g.style.transform = 'translate(' + t.x.toFixed(2) + 'px,' + t.y.toFixed(2) + 'px) scale(' + t.s.toFixed(4) + ')';
+    if (instant) { void g.getBoundingClientRect(); g.style.transition = ''; }
+  }
+
+  function applyScene(i) {
+    var id = beats[i].scene;
+    if (id === lastScene) return false;
+    Object.keys(scenes).forEach(function (key) {
+      scenes[key].el.classList.toggle('is-active', key === id);
+      scenes[key].el.setAttribute('aria-hidden', String(key !== id));
+    });
+    lastScene = id;
+    return true;
+  }
+
+  /* 静默拍（封面）：字幕卡不显示，但文字仍写进状态区，读屏照样播报。 */
+  function applyCaption(i) {
+    var b = beats[i];
+    capText.innerHTML = b.html || '';
+    capText.setAttribute('data-kind', b.kind || 'text');
+    capCard.classList.toggle('quiet', !!b.quiet);
+    capText.classList.remove('in');
+    void capText.offsetWidth;
+    capText.classList.add('in');
+  }
+
+  function applyHud(i) {
+    var b = beats[i];
+    var sec = data.sections[b.section];
+    secNum.textContent = sec.num ? sec.num + '/' + data.sectionCount : '';
+    secName.textContent = sec.label;
+    secPill.hidden = !sec.label;
+    bar.style.transform = 'scaleX(' + ((i + 1) / total).toFixed(4) + ')';
+    count.textContent = (i + 1) + ' / ' + total;
+    btnPrev.disabled = i <= 0;
+    btnNext.disabled = i >= total - 1;
+  }
+
+  function syncUrl(i) {
+    clearTimeout(urlTimer);
+    urlTimer = setTimeout(function () {
+      if (mode() !== 'stage') return;
+      try { history.replaceState(null, '', location.pathname + location.search + formatBeatHash(i)); } catch (e) { /* Safari 限频时忽略 */ }
+    }, 200);
+  }
+
+  function render(i, opts) {
+    opts = opts || {};
+    i = Math.max(0, Math.min(total - 1, i));
+    if (i === cur && !opts.force) return;
+    stage.setAttribute('data-orient', artArea(innerWidth, innerHeight).portrait ? 'portrait' : 'landscape');
+    var changed = applyScene(i);
+    cur = i;
+    applyCaption(i);   // 先排字幕：镜头要按字幕卡的实际高度留白
+    applyElements(i, opts.instant ? 'instant' : changed ? 'enter' : 'diff');
+    syncInteractions();
+    applyCamera(i, opts.instant || changed);
+    applyHud(i);
+    syncUrl(i);
+    if (i > 0 && hint) hint.hidden = true;
+    schedule();
+  }
+
+  function go(i, fromAuto) {
+    if (!fromAuto) stopPlay();
+    render(i);
+  }
+  function step(dir, fromAuto) { go(cur + dir, fromAuto); }
+
+  /* ---- 自动播放：读者一操作就停 ---- */
+
+  function stopPlay() {
+    if (!playing) return;
+    playing = false;
+    clearTimeout(timer);
+    btnPlay.setAttribute('data-playing', 'false');
+    btnPlay.textContent = '播放';
+  }
+  function startPlay() {
+    if (cur >= total - 1) render(0);
+    playing = true;
+    btnPlay.setAttribute('data-playing', 'true');
+    btnPlay.textContent = '暂停';
+    schedule();
+  }
+  function schedule() {
+    clearTimeout(timer);
+    if (!playing || document.hidden || mode() !== 'stage') return;
+    timer = setTimeout(function () {
+      if (cur >= total - 1) { stopPlay(); return; }
+      step(1, true);
+    }, dwell(beats[cur].chars || 0) * 1000);
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) clearTimeout(timer); else schedule();
+  });
+
+  /* ---- 输入：滚轮、触摸、键盘各自折算成一拍 ---- */
+
+  var gate = createWheelGate();
+  function inDialog(t) { return !!(t && t.closest && t.closest('dialog')); }
+
+  /* 挂在 document 上：光标停在顶栏按钮上时滚轮也要接管。 */
+  document.addEventListener('wheel', function (e) {
+    if (mode() !== 'stage' || e.ctrlKey || toc.open || inDialog(e.target)) return;
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY) * 1.5) return;   // 横向手势留给浏览器（后退/前进）
+    e.preventDefault();
+    if (e.deltaY) stopPlay();   // 自动播放中读者一动滚轮就接管，哪怕这一下没够翻页
+    var unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? innerHeight : 1;
+    var dir = gate.feed(e.deltaY * unit, e.timeStamp);
+    if (dir) step(dir);
+  }, { passive: false });
+
+  var touch = null;
+  document.addEventListener('touchstart', function (e) {
+    if (mode() !== 'stage' || inDialog(e.target) || e.touches.length !== 1) { touch = null; return; }
+    var p = e.touches[0];
+    touch = { x: p.clientX, y: p.clientY, t: e.timeStamp };
+  }, { passive: true });
+  document.addEventListener('touchmove', function (e) {
+    if (touch && e.cancelable) e.preventDefault();   // 不让页面跟着手指橡皮筋
+  }, { passive: false });
+  document.addEventListener('touchend', function (e) {
+    if (!touch) return;
+    var p = e.changedTouches[0], t0 = touch;
+    touch = null;
+    var dir = swipeStep(p.clientX - t0.x, p.clientY - t0.y, e.timeStamp - t0.t);
+    if (dir) step(dir);
+  });
+  document.addEventListener('touchcancel', function () { touch = null; });
+
+  /* 键盘：焦点在按钮或链接上时，空格和回车留给它们自己。 */
+  document.addEventListener('keydown', function (e) {
+    if (mode() !== 'stage' || e.ctrlKey || e.metaKey || e.altKey || toc.open) return;
+    var t = e.target;
+    if (t && t.closest && t.closest('input,textarea,select,[contenteditable]')) return;
+    var key = e.key;
+    var onControl = t && t.closest && t.closest('button,a,.hit');
+    if ((key === ' ' || key === 'Enter') && onControl) return;
+    var dir = 0, to = -1;
+    if (key === 'ArrowDown' || key === 'ArrowRight' || key === 'PageDown' || (key === ' ' && !e.shiftKey)) dir = 1;
+    else if (key === 'ArrowUp' || key === 'ArrowLeft' || key === 'PageUp' || (key === ' ' && e.shiftKey)) dir = -1;
+    else if (key === 'Home') to = 0;
+    else if (key === 'End') to = total - 1;
+    else return;
+    e.preventDefault();
+    if (e.repeat) return;
+    if (to >= 0) go(to); else step(dir);
+  });
+
+  btnPrev.addEventListener('click', function () { step(-1); });
+  btnNext.addEventListener('click', function () { step(1); });
+  btnPlay.addEventListener('click', function () { if (playing) stopPlay(); else startPlay(); });
+
+  /* 翻面是独立的阅读动作，不推动拍号；横竖屏共用同一张卡的状态。 */
+  function syncInteractions() {
+    Object.keys(scenes).forEach(function (id) {
+      var sc = scenes[id];
+      $$('.hit', sc.el).forEach(function (hit) {
+        var host = hit.closest('.s');
+        var shown = id === lastScene && host.classList.contains('on') && getComputedStyle(host).display !== 'none' &&
+          !(sc.el.classList.contains('solo') && !host.classList.contains('focus'));
+        hit.setAttribute('tabindex', shown ? '0' : '-1');
+        var key = hit.getAttribute('data-flip');
+        if (!key) return;
+        var reveal = !!(beats[cur] && beats[cur].reveal);
+        var stateKey = (reveal ? cur + ':' : '') + key;
+        var flipped = flipState[stateKey] == null ? reveal : flipState[stateKey];
+        hit.classList.toggle('is-flipped', flipped);
+        hit.setAttribute('aria-pressed', String(flipped));
+        hit.setAttribute('aria-label', hit.getAttribute(flipped ? 'data-back-label' : 'data-front-label'));
+      });
+    });
+    var focused = document.activeElement;
+    if (focused && focused.matches('.hit') && focused.getAttribute('tabindex') !== '0') {
+      stage.setAttribute('tabindex', '-1');
+      stage.focus({ preventScroll: true });
+    }
+  }
+  function flip(hit) {
+    if (!hit || hit.getAttribute('tabindex') !== '0') return;
+    stopPlay();
+    var key = (beats[cur].reveal ? cur + ':' : '') + hit.getAttribute('data-flip');
+    flipState[key] = !hit.classList.contains('is-flipped');
+    syncInteractions();
+  }
+  stage.addEventListener('click', function (e) {
+    var hit = e.target.closest && e.target.closest('[data-flip]');
+    if (hit) { e.preventDefault(); flip(hit); }
+  });
+  stage.addEventListener('keydown', function (e) {
+    var hit = e.target.closest && e.target.closest('[data-flip]');
+    if (!hit || (e.key !== 'Enter' && e.key !== ' ')) return;
+    e.preventDefault(); e.stopPropagation();
+    if (!e.repeat) flip(hit);
+  });
+
+  /* ---- 目录 ---- */
+
+  function buildToc() {
+    var list = $('#toc-list');
+    list.innerHTML = '';
+    data.sections.forEach(function (sec) {
+      var li = document.createElement('li');
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'toc-card';
+      b.innerHTML = '<span class="toc-no"></span><span class="toc-name"></span>';
+      if (sec.thumbnail) b.insertAdjacentHTML('afterbegin', sec.thumbnail);
+      $('.toc-no', b).textContent = sec.num || sec.mark || '';
+      $('.toc-name', b).textContent = sec.label;
+      b.addEventListener('click', function () { closeToc(); go(sec.first); });
+      li.appendChild(b);
+      list.appendChild(li);
+    });
+  }
+  function openToc() {
+    stopPlay();
+    if (toc.showModal) toc.showModal(); else toc.setAttribute('open', '');
+  }
+  function closeToc() {
+    if (toc.close) toc.close(); else toc.removeAttribute('open');
+  }
+  btnToc.addEventListener('click', openToc);
+  toc.addEventListener('click', function (e) { if (e.target === toc) closeToc(); });
+  toc.addEventListener('close', function () { btnToc.focus(); });
+  $('#toc-close').addEventListener('click', closeToc);
+
+  /* ---- 模式：分镜 / 全文 ---- */
+
+  /* 改查询参数：?read 与 ?stage 互斥；空值写成无等号的形式。 */
+  function queryWith(changes) {
+    var p = new URLSearchParams(location.search);
+    Object.keys(changes).forEach(function (name) {
+      if (changes[name]) p.set(name, ''); else p.delete(name);
+    });
+    var qs = p.toString().replace(/=(?=&|$)/g, '');
+    return location.pathname + (qs ? '?' + qs : '');
+  }
+  var startBeat = parseBeatHash(location.hash, total);
+
+  function setMode(next) {
+    root.setAttribute('data-mode', next);
+    if (next === 'read') {
+      stopPlay();
+      history.replaceState(null, '', queryWith({ read: true, stage: false }));
+      window.scrollTo(0, 0);
+      readEl.setAttribute('tabindex', '-1');
+      readEl.focus({ preventScroll: true });
+    } else {
+      /* 系统开了「减少动态效果」时，要用 ?stage 才能留在分镜版。 */
+      var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      history.replaceState(null, '', queryWith({ read: false, stage: reduced }));
+      render(cur < 0 ? Math.max(startBeat, 0) : cur, { force: true, instant: true });
+    }
+  }
+  $$('[data-action="read"]').forEach(function (el) {
+    el.addEventListener('click', function (e) { e.preventDefault(); setMode('read'); });
+  });
+  $$('[data-action="stage"]').forEach(function (el) {
+    el.addEventListener('click', function (e) { e.preventDefault(); setMode('stage'); });
+  });
+
+  window.addEventListener('hashchange', function () {
+    var i = parseBeatHash(location.hash, total);
+    if (i >= 0 && mode() === 'stage') go(i);
+  });
+  var resizeTimer = 0;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      if (mode() === 'stage' && cur >= 0) render(cur, { force: true, instant: true });
+    }, 80);
+  });
+
+  /* ---- 启动 ---- */
+
+  buildToc();
+  if (hint) hint.textContent = matchMedia('(pointer: coarse)').matches ? '上滑翻页' : '滚动或按 ↓ 翻页';
+  var begin = function () {
+    if (mode() === 'stage') render(Math.max(startBeat, 0), { force: true, instant: true });
+    requestAnimationFrame(function () { requestAnimationFrame(function () { stage.classList.add('ready'); }); });
+  };
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(begin, begin); else begin();
+})();
+</script>
+</body>
+</html>

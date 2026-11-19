@@ -1,0 +1,288 @@
+{
+  "complete": true,
+  "beats": [
+    {
+      "take": 1,
+      "scene": "cover",
+      "step": 0,
+      "cam": "all",
+      "quiet": true,
+      "from": "认出物体，就理解它们的关系了吗？"
+    },
+    {
+      "take": 3,
+      "scene": "open",
+      "step": 0,
+      "cam": "desk",
+      "from": "红圆、蓝方、绿三角，程序都认出来了，颜色也没认错"
+    },
+    {
+      "take": 2,
+      "scene": "open",
+      "step": 1,
+      "cam": "desk",
+      "from": "上一期用短规则记录字母，要求展开后能还原原串。"
+    },
+    {
+      "take": 2,
+      "scene": "open",
+      "step": 2,
+      "cam": "desk",
+      "from": "只记下“画面里有谁”，还不够；还要记得它们摆在哪"
+    },
+    {
+      "take": 1,
+      "scene": "arrange",
+      "step": 0,
+      "cam": "desk",
+      "from": "同一份清单可以摆出不同答案"
+    },
+    {
+      "take": 2,
+      "scene": "arrange",
+      "step": 1,
+      "cam": "desk",
+      "from": "先约定按图上的左右判断，不改变观察视角。"
+    },
+    {
+      "take": 2,
+      "scene": "arrange",
+      "step": 2,
+      "cam": "desk",
+      "from": "“哪个物体是蓝色的？”"
+    },
+    {
+      "take": 2,
+      "scene": "arrange",
+      "step": 3,
+      "cam": "desk",
+      "from": "这个问题主要询问单个物体的属性。"
+    },
+    {
+      "take": 3,
+      "scene": "arrange",
+      "step": 4,
+      "cam": "desk",
+      "from": "“蓝方左边有几个物体？”"
+    },
+    {
+      "take": 2,
+      "scene": "arrange",
+      "step": 5,
+      "cam": "desk",
+      "from": "现在交换蓝方和绿三角，排列变成红圆、绿三角、蓝方"
+    },
+    {
+      "take": 2,
+      "scene": "arrange",
+      "step": 6,
+      "cam": "desk",
+      "from": "图1  交换前后，颜色和形状不变；蓝方左侧的对象"
+    },
+    {
+      "take": 2,
+      "scene": "arrange",
+      "step": 7,
+      "cam": "desk",
+      "from": "看图1，交换前后的对象清单完全相同：一个红圆、一"
+    },
+    {
+      "take": 3,
+      "scene": "arrange",
+      "step": 8,
+      "cam": "desk",
+      "from": "这份清单仍能回答“有没有蓝方”，却回答不了“蓝方"
+    },
+    {
+      "take": 1,
+      "scene": "graph",
+      "step": 0,
+      "cam": "desk",
+      "from": "给物体之间画上箭头"
+    },
+    {
+      "take": 4,
+      "scene": "graph",
+      "step": 1,
+      "cam": "desk",
+      "from": "怎样记下关系？"
+    },
+    {
+      "take": 2,
+      "scene": "graph",
+      "step": 2,
+      "cam": "desk",
+      "from": "在第一种排列中，红圆指向蓝方，蓝方指向绿三角，红"
+    },
+    {
+      "take": 3,
+      "scene": "graph",
+      "step": 3,
+      "cam": "desk",
+      "from": "第二种排列里，红圆指向蓝方、绿三角也指向蓝方。"
+    },
+    {
+      "take": 2,
+      "scene": "graph",
+      "step": 4,
+      "cam": "desk",
+      "from": "关系常常有方向。"
+    },
+    {
+      "take": 2,
+      "scene": "graph",
+      "step": 5,
+      "cam": "desk",
+      "from": "如果问题改问右边，计数也得跟着改。"
+    },
+    {
+      "take": 2,
+      "scene": "graph",
+      "step": 6,
+      "cam": "desk",
+      "from": "也可以不用箭头，给每个物体保存横向坐标，再比较坐"
+    },
+    {
+      "take": 1,
+      "scene": "model",
+      "step": 0,
+      "cam": "desk",
+      "from": "模型怎样把关系纳入计算"
+    },
+    {
+      "take": 2,
+      "scene": "model",
+      "step": 1,
+      "cam": "desk",
+      "from": "2017年，Santoro等研究者提出关系网络模"
+    },
+    {
+      "take": 1,
+      "scene": "model",
+      "step": 2,
+      "cam": "desk",
+      "from": "套回蓝方的例子，这条路线可以理解为：取得各个对象"
+    },
+    {
+      "take": 1,
+      "scene": "model",
+      "step": 3,
+      "cam": "desk",
+      "from": "论文模块学习的是数值运算，中间结果未必会写成“左"
+    },
+    {
+      "take": 3,
+      "scene": "model",
+      "step": 4,
+      "cam": "desk",
+      "from": "输入给模块的“对象”也不一定是人已经分好的一只杯"
+    },
+    {
+      "take": 2,
+      "scene": "model",
+      "step": 5,
+      "cam": "desk",
+      "from": "两步缺一不可：先从图中取得信息，再组合不同位置的"
+    },
+    {
+      "take": 2,
+      "scene": "model",
+      "step": 6,
+      "cam": "desk",
+      "from": "关系网络只是处理关系的一种途径。"
+    },
+    {
+      "take": 1,
+      "scene": "evidence",
+      "step": 0,
+      "cam": "desk",
+      "from": "答对一个关系题说明了多少"
+    },
+    {
+      "take": 2,
+      "scene": "evidence",
+      "step": 1,
+      "cam": "desk",
+      "from": "论文在特定的视觉问答、文字问答和物理系统推理任务"
+    },
+    {
+      "take": 2,
+      "scene": "evidence",
+      "step": 2,
+      "cam": "desk",
+      "from": "即使面对同一张桌面图，换个问题也可能需要新信息。"
+    },
+    {
+      "take": 3,
+      "scene": "evidence",
+      "step": 3,
+      "cam": "desk",
+      "from": "因此，测试关系能力，不能只换一张看起来相似的图片"
+    },
+    {
+      "take": 2,
+      "scene": "evidence",
+      "step": 4,
+      "cam": "desk",
+      "from": "认出三个物体，是起点；留下并利用它们的位置关系，"
+    },
+    {
+      "take": 1,
+      "scene": "challenge",
+      "step": 0,
+      "cam": "desk",
+      "from": "换个问题检查表示是否够用"
+    },
+    {
+      "take": 1,
+      "scene": "challenge",
+      "step": 1,
+      "cam": "desk",
+      "from": "仍在第二种排列「红圆、绿三角、蓝方」里，问「绿三"
+    },
+    {
+      "take": 1,
+      "scene": "challenge",
+      "step": 2,
+      "cam": "desk",
+      "from": "现在问「绿三角和蓝方相距几厘米」，仅靠这份左右顺"
+    },
+    {
+      "take": 0,
+      "scene": "exercise",
+      "step": 0,
+      "cam": "desk",
+      "quiet": true
+    },
+    {
+      "take": 1,
+      "scene": "exercise",
+      "step": 1,
+      "cam": "desk",
+      "reveal": true,
+      "from": "不能。"
+    },
+    {
+      "take": 1,
+      "scene": "challenge",
+      "step": 3,
+      "cam": "desk",
+      "from": "顺序相同的三个物体可以摆得很近，也可以摆得很远。"
+    },
+    {
+      "take": 2,
+      "scene": "challenge",
+      "step": 4,
+      "cam": "desk",
+      "from": "要回答厘米数，还得补充带单位的距离信息。"
+    },
+    {
+      "take": 0,
+      "scene": "refs",
+      "step": 0,
+      "cam": "desk",
+      "quiet": true,
+      "refs": true
+    }
+  ]
+}
