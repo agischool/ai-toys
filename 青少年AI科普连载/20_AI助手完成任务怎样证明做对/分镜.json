@@ -1,0 +1,323 @@
+{
+  "complete": true,
+  "beats": [
+    {
+      "take": 1,
+      "scene": "cover",
+      "step": 0,
+      "cam": "all",
+      "quiet": true,
+      "from": "AI 助手完成了任务，怎样证明它做对了？"
+    },
+    {
+      "take": 1,
+      "scene": "open",
+      "step": 0,
+      "cam": "desk",
+      "from": "「已经找好了，建议去阅览活动室。」"
+    },
+    {
+      "take": 3,
+      "scene": "open",
+      "step": 1,
+      "cam": "desk",
+      "from": "助手查过场地，也读过设备表，执行记录一条没少。"
+    },
+    {
+      "take": 2,
+      "scene": "open",
+      "step": 2,
+      "cam": "desk",
+      "from": "前几期，我们追过请求，查过下一步用了什么资料，也检"
+    },
+    {
+      "take": 1,
+      "scene": "task",
+      "step": 0,
+      "cam": "desk",
+      "from": "先写清楚什么算完成"
+    },
+    {
+      "take": 2,
+      "scene": "task",
+      "step": 1,
+      "cam": "desk",
+      "from": "任务仍在那所虚构学校里：推荐一间本学期周二 15—"
+    },
+    {
+      "take": 1,
+      "scene": "task",
+      "step": 2,
+      "cam": "desk",
+      "from": "资料中，科学活动室 V1 与阅览活动室 V2 都在"
+    },
+    {
+      "take": 2,
+      "scene": "task",
+      "step": 3,
+      "cam": "desk",
+      "from": "设备表 E1 写明 V1 有投影仪和坡道；E2 写"
+    },
+    {
+      "take": 3,
+      "scene": "task",
+      "step": 4,
+      "cam": "desk",
+      "from": "把要求逐项列出来，就得到一份验收清单：安排适用于本"
+    },
+    {
+      "take": 1,
+      "scene": "task",
+      "step": 4,
+      "cam": "desk",
+      "from": "图 1　验收把要求与证据逐项对应；「调用成功」不能"
+    },
+    {
+      "take": 1,
+      "scene": "task",
+      "step": 5,
+      "cam": "desk",
+      "from": "科学活动室的两份资料覆盖全部要求，因此可以推荐 V"
+    },
+    {
+      "take": 1,
+      "scene": "task",
+      "step": 6,
+      "cam": "desk",
+      "from": "如果回答还写「已预约成功」，就额外声称做过一次没有"
+    },
+    {
+      "take": 1,
+      "scene": "plan",
+      "step": 0,
+      "cam": "desk",
+      "from": "把检查办法也提前写好"
+    },
+    {
+      "take": 3,
+      "scene": "plan",
+      "step": 1,
+      "cam": "desk",
+      "from": "如果让另一个人帮忙检查，只交给他一句「看看它做对没"
+    },
+    {
+      "take": 3,
+      "scene": "plan",
+      "step": 2,
+      "cam": "desk",
+      "from": "在校园例子里，就要把场地要求、允许查阅的时间表和设"
+    },
+    {
+      "take": 3,
+      "scene": "plan",
+      "step": 3,
+      "cam": "desk",
+      "from": "三个部分应在测试前写清。"
+    },
+    {
+      "take": 2,
+      "scene": "plan",
+      "step": 4,
+      "cam": "desk",
+      "from": "检查办法本身也值得试一试。"
+    },
+    {
+      "take": 2,
+      "scene": "plan",
+      "step": 5,
+      "cam": "desk",
+      "from": "反过来，「可以考虑科学活动室」与「建议科学活动室」"
+    },
+    {
+      "take": 1,
+      "scene": "outcomes",
+      "step": 0,
+      "cam": "desk",
+      "from": "把三种结果分开记"
+    },
+    {
+      "take": 3,
+      "scene": "outcomes",
+      "step": 1,
+      "cam": "desk",
+      "from": "第一种是任务成功。"
+    },
+    {
+      "take": 4,
+      "scene": "outcomes",
+      "step": 2,
+      "cam": "desk",
+      "from": "第二种是恰当停止。"
+    },
+    {
+      "take": 3,
+      "scene": "outcomes",
+      "step": 3,
+      "cam": "desk",
+      "from": "第三种是错误完成。"
+    },
+    {
+      "take": 1,
+      "scene": "outcomes",
+      "step": 4,
+      "cam": "desk",
+      "from": "因此，记录结果时要把成功、合理停止和错误完成分开，"
+    },
+    {
+      "take": 3,
+      "scene": "outcomes",
+      "step": 5,
+      "cam": "desk",
+      "from": "至于查了几次、等了多久，可以另外记一笔，帮助比较效"
+    },
+    {
+      "take": 1,
+      "scene": "sets",
+      "step": 0,
+      "cam": "desk",
+      "from": "换一批题，才能问新的问题"
+    },
+    {
+      "take": 3,
+      "scene": "sets",
+      "step": 1,
+      "cam": "desk",
+      "from": "在改进这套助手时，可以先用完整资料走一遍，再换几张"
+    },
+    {
+      "take": 3,
+      "scene": "sets",
+      "step": 2,
+      "cam": "desk",
+      "from": "还有一个不同的问题：换一批没用来修改方案的题，助手"
+    },
+    {
+      "take": 1,
+      "scene": "sets",
+      "step": 3,
+      "cam": "desk",
+      "from": "若看过结果又据此改规则，这批题也就成了练习的一部分"
+    },
+    {
+      "take": 1,
+      "scene": "sets",
+      "step": 3,
+      "cam": "desk",
+      "from": "图 2　同一批题修改后重跑属于回归检查；公开的教学"
+    },
+    {
+      "take": 3,
+      "scene": "sets",
+      "step": 4,
+      "cam": "desk",
+      "from": "这个系列也准备了 6 个开发案例与另编的 6 个保"
+    },
+    {
+      "take": 2,
+      "scene": "sets",
+      "step": 5,
+      "cam": "desk",
+      "from": "以后若接入真实模型，就要另外准备合适的检查题，说明"
+    },
+    {
+      "take": 1,
+      "scene": "trace",
+      "step": 0,
+      "cam": "desk",
+      "from": "找到第一次偏离要求的位置"
+    },
+    {
+      "take": 1,
+      "scene": "trace",
+      "step": 1,
+      "cam": "desk",
+      "from": "现在审阅一段纸面记录：任务要求包含坡道；查询返回 "
+    },
+    {
+      "take": 1,
+      "scene": "trace",
+      "step": 2,
+      "cam": "desk",
+      "from": "哪一步第一次明确违背了任务？"
+    },
+    {
+      "take": 0,
+      "scene": "exercise",
+      "step": 0,
+      "cam": "desk",
+      "quiet": true
+    },
+    {
+      "take": 3,
+      "scene": "exercise",
+      "step": 1,
+      "cam": "desk",
+      "reveal": true,
+      "from": "选择读取 V2 并不算错，它可以是在排查候选。"
+    },
+    {
+      "take": 1,
+      "scene": "trace",
+      "step": 3,
+      "cam": "desk",
+      "from": "回看科学社团的场地清单，你现在可以指出这条建议错在"
+    },
+    {
+      "take": 2,
+      "scene": "trace",
+      "step": 4,
+      "cam": "desk",
+      "from": "这几期的小程序按人写好的规则办事。"
+    },
+    {
+      "take": 1,
+      "scene": "lab",
+      "step": 0,
+      "cam": "desk",
+      "from": "想自己核对每一道题"
+    },
+    {
+      "take": 1,
+      "scene": "lab",
+      "step": 1,
+      "cam": "desk",
+      "from": "选读：本地实验说明 与 本系列第 4 篇输出 保存"
+    },
+    {
+      "take": 2,
+      "scene": "lab",
+      "step": 2,
+      "cam": "desk",
+      "from": "每组都是 1 次任务成功、5 次恰当停止：后五次没"
+    },
+    {
+      "take": 2,
+      "scene": "lab",
+      "step": 3,
+      "cam": "desk",
+      "from": "程序还单独安排了一条漏掉坡道的错误建议。"
+    },
+    {
+      "take": 1,
+      "scene": "lab",
+      "step": 4,
+      "cam": "desk",
+      "from": "这条错误是为检查验收办法故意设计的，不是真实模型犯"
+    },
+    {
+      "take": 0,
+      "scene": "lab",
+      "step": 5,
+      "cam": "desk",
+      "quiet": true
+    },
+    {
+      "take": 0,
+      "scene": "refs",
+      "step": 0,
+      "cam": "desk",
+      "refs": true,
+      "quiet": true
+    }
+  ]
+}

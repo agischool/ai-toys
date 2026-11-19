@@ -1,0 +1,862 @@
+<!doctype html>
+<html lang="zh-CN" data-mode="read">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#fffdf6">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='8.25' fill='none' stroke='%23185b46' stroke-width='1.5'/%3E%3Ccircle cx='10' cy='10' r='3.4' fill='%23185b46'/%3E%3C/svg%3E">
+<title>AI 助手完成了任务，怎样证明它做对了？ · 互动版 · 看得见的 AI</title>
+<meta name="description" content="查过时间，也读过设备表，为什么场地仍会选错？把原来的活动要求放在建议旁边，一项项找依据，分清真正完成、说明原因后停止，以及漏掉条件的错误建议。">
+<style data-stage-source="stage.css">/* 互动版样式。
+ * 控件沿用 library.css 的纸色、墨绿、焦点色与 250ms ease-out；
+ * 画面沿用连载图解的 #fffdf6 底与 #203845 描边。不加阴影、发光和渐变。 */
+
+:root {
+  color-scheme: light;
+  --paper: #f6f5ef;
+  --ink: #22352d;
+  --muted: #5c6d63;
+  --line: #d8ded5;
+  --accent: #185b46;
+  --focus: #ba651f;
+  --white: #fffef9;
+  --serif: "Songti SC", "Noto Serif CJK SC", serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+
+  --art-paper: #fffdf6;
+  --art-ink: #203845;
+  --art-muted: #586e79;
+  --art-teal: #168f94;
+  --art-mint: #def3ee;
+  --art-coral: #ee6a58;
+  --art-peach: #ffe7df;
+  --art-yellow: #ffcf62;
+  --art-cream: #fff1d2;
+  --art-blue: #e3efff;
+  /* 文字或白字底用的深色变体：原色青 / 珊瑚与白字、纸色分别只有 3.9 / 3.1 比 1，压深后 5.0 比 1。 */
+  --art-teal-ink: #137a7f;
+  --art-coral-ink: #d42c16;
+
+  --move: 700ms cubic-bezier(.22, 1, .36, 1);
+}
+
+* { box-sizing: border-box }
+html, body { margin: 0; height: 100% }
+body {
+  background: var(--art-paper);
+  color: var(--art-ink);
+  font: 16px/1.75 var(--sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+}
+button { font: inherit; color: inherit }
+a { color: inherit }
+:lang(zh) { text-autospace: normal; text-spacing-trim: trim-start }
+p, li { text-wrap: pretty }
+h1, h2, h3 { text-wrap: balance }
+[hidden] { display: none !important }
+
+a:focus-visible, button:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.skip {
+  position: fixed; left: 12px; top: -64px; z-index: 20;
+  padding: 9px 16px; background: var(--white); border: 1px solid var(--line); border-radius: 9px;
+  font-size: 14px; font-weight: 600; text-decoration: none;
+  transition: top 250ms ease-out;
+}
+.skip:focus { top: 12px }
+
+/* ---------------- 模式 ---------------- */
+
+html[data-mode="stage"], html[data-mode="stage"] body { overflow: hidden }
+html[data-mode="read"] #stage, html[data-mode="read"] #toc { display: none }
+html[data-mode="stage"] #readwrap { display: none }
+html[data-mode="read"] body { background: var(--paper); color: var(--ink) }
+.hit { pointer-events: auto; cursor: pointer }
+.scene:not(.is-active) .hit, .s:not(.on) .hit, .solo .s:not(.focus) .hit { pointer-events: none }
+.hit:focus-visible { outline: 4px solid var(--art-coral-ink); outline-offset: 6px }
+
+/* ---------------- 舞台 ---------------- */
+
+/* 翻页由脚本接管：禁掉浏览器自己的拖动、缩放和橡皮筋，滚轮与滑动才不会同时触发两套行为。 */
+html[data-mode="stage"], html[data-mode="stage"] body { overscroll-behavior: none }
+#stage { position: fixed; inset: 0; background: var(--art-paper); overflow: hidden; touch-action: none }
+#stage button, #stage a, #stage .hit { touch-action: manipulation }
+#stage:not(.ready) * { transition: none !important; animation: none !important }
+
+.scene {
+  position: absolute; inset: 0; width: 100%; height: 100%; display: block;
+  pointer-events: none;
+  opacity: 0; visibility: hidden;
+  transition: opacity 250ms ease-out, visibility 0s linear 250ms;
+}
+.scene.is-active { opacity: 1; visibility: visible; transition-delay: 0s }
+.cam { transition: transform var(--move) }
+
+/* 画面元素：外层 .s 只管出现动画，内层 .pos 只管摆位（横屏用 --l*，竖屏用 --p*）。 */
+.s {
+  opacity: 0; transform: translateY(14px);
+  transition: opacity 250ms ease-out var(--d, 0ms), transform 250ms ease-out var(--d, 0ms);
+}
+.s.on { opacity: 1; transform: none }
+.s.pop { transform: scale(.86); transform-box: fill-box; transform-origin: center }
+.s.pop.on { transform: none }
+.s.fade, .s.fade.on { transform: none }
+.snap .s { transition: none !important }
+.has-focus .s.on:not(.focus) { opacity: .22 }
+.solo .s.on:not(.focus) { opacity: 0 }
+
+.pos { transform: translate(var(--lx, 0), var(--ly, 0)) rotate(var(--lr, 0deg)) scale(var(--ls, 1)) }
+#stage[data-orient="portrait"] .pos { transform: translate(var(--px, 0), var(--py, 0)) rotate(var(--pr, 0deg)) scale(var(--ps, 1)) }
+#stage[data-orient="portrait"] .only-l, #stage[data-orient="landscape"] .only-p { display: none }
+
+/* 可翻转的卡：翻面时正反两层交换。 */
+.flip .front, .flip .back { transition: opacity 250ms ease-out }
+.flip .back { opacity: 0 }
+.flip.is-flipped .front { opacity: 0 }
+.flip.is-flipped .back { opacity: 1 }
+
+.cap.quiet {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+
+/* ---------------- 顶栏 ---------------- */
+
+.hud {
+  position: absolute; z-index: 3; left: 0; right: 0; top: 0;
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+  padding: calc(12px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) 0 calc(14px + env(safe-area-inset-left));
+  pointer-events: none;
+}
+.hud-l, .hud-r { display: flex; gap: 8px; min-width: 0; pointer-events: auto }
+.hud-l { flex: 0 1 auto }
+
+.pill {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 34px; padding: 0 14px;
+  border: 1px solid var(--line); border-radius: 12px;
+  background: rgba(255, 254, 249, .94); color: var(--ink);
+  font: 600 13px/1 var(--sans); text-decoration: none; white-space: nowrap; cursor: pointer;
+  touch-action: manipulation;
+  transition: border-color 250ms ease-out, background 250ms ease-out, color 250ms ease-out;
+}
+.pill:hover { border-color: var(--accent); color: var(--accent) }
+.pill:active { transform: translateY(1px) }
+.pill:disabled { opacity: .4; cursor: default; border-color: var(--line); color: var(--ink) }
+.pill[data-playing="true"] { background: var(--accent); border-color: var(--accent); color: #fff }
+.pill svg { width: 14px; height: 14px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round }
+.pill.icon { width: 34px; padding: 0 }
+
+.sec { cursor: default; min-width: 0 }
+.sec:hover { border-color: var(--line); color: var(--ink) }
+#sec-num { color: var(--art-teal-ink); font-variant-numeric: tabular-nums }
+#sec-num:empty { display: none }
+#sec-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; max-width: min(46vw, 380px) }
+
+/* ---------------- 字幕与底栏 ---------------- */
+
+.cap {
+  position: absolute; z-index: 2; left: 50%; transform: translateX(-50%);
+  bottom: calc(56px + env(safe-area-inset-bottom));
+  width: min(calc(100% - 28px), 900px);
+  padding: 16px 22px;
+  background: var(--art-paper); border: 3px solid var(--art-ink); border-radius: 22px;
+  pointer-events: none;
+}
+.cap p { margin: 0; font-size: clamp(18px, 2.3vw, 24px); line-height: 1.65; font-weight: 600 }
+.cap p[data-kind="caption"] { font-weight: 500 }
+.cap p[data-kind="title"] { font-size: clamp(20px, 2.8vw, 30px); text-align: center }
+.cap p[data-kind="h2"] {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  font-size: clamp(22px, 3vw, 32px); font-weight: 800; line-height: 1.4;
+}
+.cap .no {
+  flex: none; display: inline-grid; place-items: center; min-width: 36px; height: 36px; padding: 0 8px;
+  border-radius: 18px; background: var(--art-coral-ink); color: #fff; font: 800 20px/1 var(--sans);
+}
+.cap .fig { color: var(--art-teal-ink); font-weight: 800 }
+.cap p.in { animation: cap-in 250ms ease-out both }
+@keyframes cap-in { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
+.cite { color: #b15b21; font-weight: 600 }
+
+.foot {
+  position: absolute; z-index: 3; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 0 calc(14px + env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left));
+  pointer-events: none;
+}
+.foot > * { pointer-events: auto }
+#bar { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--art-teal); transform-origin: left; transform: scaleX(0); transition: transform 250ms ease-out; pointer-events: none }
+#hint { margin: 0; font-size: 13px; color: var(--art-muted); pointer-events: none }
+#count { font-size: 12px; color: var(--art-muted); font-variant-numeric: tabular-nums; min-width: 4.6em; text-align: center }
+.steps { display: flex; align-items: center; gap: 8px; margin-left: auto }
+
+/* ---------------- 目录 ---------------- */
+
+#toc {
+  width: min(960px, calc(100% - 28px)); max-height: calc(100% - 28px);
+  padding: 0; border: 3px solid var(--art-ink); border-radius: 24px;
+  background: var(--art-paper); color: var(--art-ink);
+}
+#toc[open] { display: flex; flex-direction: column }
+#toc::backdrop { background: rgba(32, 56, 69, .5) }
+.toc-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--line) }
+.toc-head h2 { margin: 0; font-size: 16px; line-height: 1.5 }
+#toc-list { list-style: none; margin: 0; padding: 20px; overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px }
+.toc-foot { margin: 0; padding: 12px 20px 16px; border-top: 1px solid var(--line); font-size: 13px; line-height: 1.7; color: var(--art-muted) }
+.toc-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+  width: 100%; height: 100%; padding: 14px; text-align: left;
+  background: var(--white); border: 1px solid var(--line); border-radius: 18px; cursor: pointer;
+  transition: border-color 250ms ease-out, transform 250ms ease-out;
+}
+.toc-card:hover { border-color: var(--accent) }
+.toc-card:active { transform: translateY(1px) }
+.toc-thumb { display: block; width: 100%; height: 115px; flex: none }
+.toc-no {
+  display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding: 0 8px;
+  border-radius: 15px; background: var(--art-coral-ink); color: #fff; font: 700 14px/1 var(--sans);
+}
+.toc-name { font-size: 15px; font-weight: 600; line-height: 1.5 }
+
+/* ---------------- 全文 ---------------- */
+
+.read-bar {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 20px; background: var(--paper); border-bottom: 1px solid var(--line);
+}
+#read { max-width: 680px; margin: 0 auto; padding: 8px 20px 96px; font-size: 17px; line-height: 1.9; color: var(--ink) }
+#read:focus { outline: none }
+#read h1 { margin: 32px 0 24px; font: 650 28px/1.4 var(--serif); letter-spacing: -.01em }
+#read h1 .tl { display: inline-block }
+#read h2 { margin: 40px 0 16px; font-size: 20px; line-height: 1.5 }
+#read p { margin: 0 0 18px }
+#read .pic { margin: 24px 0 8px }
+#read img { display: block; max-width: 100%; height: auto; margin: 0 auto; border: 1px solid var(--line); border-radius: 12px; background: #fff }
+#read .figcap { margin: 0 0 24px; font-size: 14px; line-height: 1.7; color: var(--muted) }
+#read .figcap em { font-style: normal }
+.read-note { margin: 24px 0 0; font-size: 14px; line-height: 1.7; color: var(--muted) }
+#read .refs p { font-size: 14px; line-height: 1.75; overflow-wrap: anywhere }
+#read a { color: var(--accent); text-underline-offset: 3px }
+.read-end { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 40px }
+
+/* ---------------- 小屏与矮屏 ---------------- */
+
+@media (max-width: 560px) {
+  .hud { gap: 8px }
+  .lbl { display: none }
+  .cap { padding: 12px 16px; border-radius: 18px }
+  .cap p { font-size: 18px }
+}
+@media (max-width: 420px) {
+  #sec-name { max-width: 34vw }
+  .pill { padding: 0 11px }
+}
+@media (max-height: 560px) {
+  .cap { padding: 8px 16px }
+  .cap p { font-size: 17px; line-height: 1.55 }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene, .cam, .s, .flip .front, .flip .back, .pill, .toc-card, #bar, .skip { transition: none }
+  .cap p.in { animation: none }
+}
+</style>
+<script>(function(){var q=new URLSearchParams(location.search),r=matchMedia('(prefers-reduced-motion: reduce)').matches;if(!(q.has('read')||(r&&!q.has('stage'))))document.documentElement.setAttribute('data-mode','stage')})()</script>
+</head>
+<body>
+<a class="skip" href="?read" data-action="read">跳到全文</a>
+<main id="stage" data-orient="landscape">
+<svg class="scene" data-scene="cover" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s fade bleed" data-at="0" data-n="wash"><g class="pos" style="--lx:1300px;--ly:500px;--ls:1;--lr:0deg;--px:700px;--py:1180px;--ps:1;--pr:0deg"><ellipse cx="0" cy="0" rx="470" ry="520" fill="#def3ee"/></g></g><g class="s rise" data-at="0" data-n="series"><g class="pos" style="--lx:350px;--ly:155px;--ls:1;--lr:0deg;--px:310px;--py:170px;--ps:1;--pr:0deg"><rect x="-240" y="-33" width="480" height="66" rx="33" fill="#137a7f" stroke="#203845" stroke-width="5" stroke-linejoin="round"/><text x="0" y="2" font-size="36" fill="#ffffff" text-anchor="middle" font-weight="800" dominant-baseline="central"><tspan x="0" dy="0">校园 AI 助手怎样做事</tspan></text></g></g><g class="s rise" data-at="0" data-n="nth"><g class="pos" style="--lx:110px;--ly:235px;--ls:1;--lr:0deg;--px:70px;--py:270px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="32" fill="#586e79" text-anchor="start" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">第 4 篇 / 共 4 篇</tspan></text></g></g><g class="s rise only-l" data-at="0" data-n="title"><g class="pos" style="--lx:110px;--ly:400px;--ls:1;--lr:0deg;--px:110px;--py:400px;--ps:1;--pr:0deg"><text x="0" y="-51.3" font-size="76" fill="#203845" text-anchor="start" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">AI 助手完成了任务，</tspan><tspan x="0" dy="102.6">怎样证明它做对了？</tspan></text></g></g><g class="s rise only-p" data-at="0" data-n="title"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:70px;--py:470px;--ps:1;--pr:0deg"><text x="0" y="-46.2" font-size="66" fill="#203845" text-anchor="start" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">AI 助手完成了任务，</tspan><tspan x="0" dy="92.4">怎样证明它做对了？</tspan></text></g></g><g class="s rise" data-at="0" data-n="rule"><g class="pos" style="--lx:114px;--ly:555px;--ls:1;--lr:0deg;--px:74px;--py:625px;--ps:1;--pr:0deg"><path d="M0 0 L145 0" fill="none" stroke="#ee6a58" stroke-width="10" stroke-linecap="round"/></g></g><g class="s rise" data-at="0" data-n="mechanism"><g class="pos" style="--lx:1240px;--ly:445px;--ls:0.85;--lr:0deg;--px:450px;--py:990px;--ps:1;--pr:0deg"><g transform="translate(0 0) rotate(0) scale(0.85)"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">原始任务</tspan></text><text x="0" y="-15.72" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本学期 · 周二</tspan><tspan x="0" dy="60.72">15—16 点 · 投影仪</tspan><tspan x="0" dy="60.72">必须有坡道</tspan></text></g></g></g><g class="s rise" data-at="0" data-n="robot"><g class="pos" style="--lx:105px;--ly:625px;--ls:1;--lr:0deg;--px:70px;--py:1160px;--ps:1;--pr:0deg"><image href="../../.site/assets/serial-robot-480.png" x="0" y="0" width="240" height="219.5" preserveAspectRatio="xMidYMid meet"/></g></g><g class="s rise" data-at="0" data-n="question"><g class="pos" style="--lx:1230px;--ly:800px;--ls:1;--lr:0deg;--px:620px;--py:1350px;--ps:0.85;--pr:0deg"><rect x="-220" y="-38" width="440" height="76" rx="38" fill="#137a7f" stroke="#203845" stroke-width="5" stroke-linejoin="round"/><text x="0" y="2" font-size="40" fill="#ffffff" text-anchor="middle" font-weight="800" dominant-baseline="central"><tspan x="0" dy="0">完成的证据，逐项核对</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="open" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">最终建议</tspan></text><text x="0" y="45" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">阅览活动室 V2</tspan></text></g></g><g class="s pop" data-at="0" data-until="1" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><circle cx="0" cy="0" r="100" fill="#d42c16" stroke="#203845" stroke-width="5"/><g transform="translate(0 0.66) rotate(0) scale(2.63)"><path d="M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="0" cy="16" r="3.5" fill="#ffffff"/></g></g></g><g class="s pop" data-at="0" data-until="1" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:940px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">说完成了，用什么证明？</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">原始要求</tspan></text><text x="0" y="45" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">必须有坡道</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-285" y="-125" width="570" height="250" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-29.04" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E2 · V2 坡道：无</tspan><tspan x="0" dy="58.08">调用正常，任务仍做错</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">原始任务</tspan></text><text x="0" y="-15.72" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本学期 · 周二</tspan><tspan x="0" dy="60.72">15—16 点 · 投影仪</tspan><tspan x="0" dy="60.72">必须有坡道</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">把记录连起来</tspan></text><text x="0" y="45" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">要求 → 资料 → 建议</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="task" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="chapter.art"><g class="pos" style="--lx:600px;--ly:275px;--ls:1;--lr:0deg;--px:400px;--py:370px;--ps:1;--pr:0deg"><g transform="translate(0 0) rotate(0) scale(0.8)"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">原始任务</tspan></text><text x="0" y="-15.72" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本学期 · 周二</tspan><tspan x="0" dy="60.72">15—16 点 · 投影仪</tspan><tspan x="0" dy="60.72">必须有坡道</tspan></text></g></g></g><g class="s pop" data-at="0" data-until="1" data-n="chapter.note" style="--d:140ms"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:880px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="54" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">先写清楚什么算完成</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">原始任务</tspan></text><text x="0" y="-15.72" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本学期 · 周二</tspan><tspan x="0" dy="60.72">15—16 点 · 投影仪</tspan><tspan x="0" dy="60.72">必须有坡道</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-270" y="-120" width="540" height="240" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-31.68" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">只给建议</tspan><tspan x="0" dy="63.36">不要预约</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">V1 · 科学活动室</tspan></text><text x="0" y="45" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">S1 · 周二 15—17 点</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">V2 · 阅览活动室</tspan></text><text x="0" y="45" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">S2 · 周二 15—17 点</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:940px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">两张时间表适用于本学期</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E1 · V1 设备表</tspan></text><text x="0" y="14.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">投影仪：有</tspan><tspan x="0" dy="60.72">坡道：有</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E2 · V2 设备表</tspan></text><text x="0" y="14.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">投影仪：有</tspan><tspan x="0" dy="60.72">坡道：无</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:940px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">编号是本例的构造标签</tspan></text></g></g><g class="s pop only-l" data-at="4" data-until="5" data-n="conditions"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(240 40) rotate(0) scale(1)"><text x="0" y="0" font-size="42" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">验收项目</tspan></text></g><g transform="translate(600 40) rotate(0) scale(1)"><text x="0" y="0" font-size="42" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">V1</tspan></text></g><g transform="translate(950 40) rotate(0) scale(1)"><text x="0" y="0" font-size="42" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">V2</tspan></text></g><g transform="translate(600 140) rotate(0) scale(1)"><rect x="-540" y="-42" width="1080" height="84" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-360 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">适用期</tspan></text></g><g transform="translate(0 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本学期</tspan></text></g><g transform="translate(350 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本学期</tspan></text></g></g><g transform="translate(600 250) rotate(0) scale(1)"><rect x="-540" y="-42" width="1080" height="84" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-360 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">周二 15—16</tspan></text></g><g transform="translate(0 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">S1 · 覆盖</tspan></text></g><g transform="translate(350 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">S2 · 覆盖</tspan></text></g></g><g transform="translate(600 360) rotate(0) scale(1)"><rect x="-540" y="-42" width="1080" height="84" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-360 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">投影仪</tspan></text></g><g transform="translate(0 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E1 · 有</tspan></text></g><g transform="translate(350 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E2 · 有</tspan></text></g></g><g transform="translate(600 470) rotate(0) scale(1)"><rect x="-540" y="-42" width="1080" height="84" rx="12" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-360 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">坡道</tspan></text></g><g transform="translate(0 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E1 · 有</tspan></text></g><g transform="translate(350 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#d42c16" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E2 · 无</tspan></text></g></g><g transform="translate(600 580) rotate(0) scale(1)"><rect x="-540" y="-42" width="1080" height="84" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-360 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">同场地来源</tspan></text></g><g transform="translate(0 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">S1 / E1</tspan></text></g><g transform="translate(350 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">S2 / E2</tspan></text></g></g></g></g><g class="s pop only-p" data-at="4" data-until="5" data-n="conditions"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(155 45) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">验收项目</tspan></text></g><g transform="translate(430 45) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">V1</tspan></text></g><g transform="translate(660 45) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">V2</tspan></text></g><g transform="translate(400 170) rotate(0) scale(1)"><rect x="-375" y="-66" width="750" height="132" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-245 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">适用期</tspan></text></g><g transform="translate(30 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本学期</tspan></text></g><g transform="translate(260 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本学期</tspan></text></g></g><g transform="translate(400 340) rotate(0) scale(1)"><rect x="-375" y="-66" width="750" height="132" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-245 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">周二 15—16</tspan></text></g><g transform="translate(30 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">S1 · 覆盖</tspan></text></g><g transform="translate(260 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">S2 · 覆盖</tspan></text></g></g><g transform="translate(400 510) rotate(0) scale(1)"><rect x="-375" y="-66" width="750" height="132" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-245 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">投影仪</tspan></text></g><g transform="translate(30 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E1 · 有</tspan></text></g><g transform="translate(260 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E2 · 有</tspan></text></g></g><g transform="translate(400 680) rotate(0) scale(1)"><rect x="-375" y="-66" width="750" height="132" rx="12" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-245 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">坡道</tspan></text></g><g transform="translate(30 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E1 · 有</tspan></text></g><g transform="translate(260 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#d42c16" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E2 · 无</tspan></text></g></g><g transform="translate(400 850) rotate(0) scale(1)"><rect x="-375" y="-66" width="750" height="132" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-245 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">同场地来源</tspan></text></g><g transform="translate(30 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">S1 / E1</tspan></text></g><g transform="translate(260 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">S2 / E2</tspan></text></g></g></g></g><g class="s pop" data-at="5" data-until="6" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">可以推荐 V1</tspan></text><text x="0" y="14.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">S1 支持时期与时段</tspan><tspan x="0" dy="60.72">E1 支持设备与坡道</tspan></text></g></g><g class="s pop" data-at="5" data-until="6" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-275" y="-125" width="550" height="250" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">建议 + 对应依据</tspan><tspan x="0" dy="60.72">没有预约</tspan></text></g></g><g class="s pop" data-at="6" data-until="7" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">回答又写：</tspan></text><text x="0" y="45" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">“已预约成功”</tspan></text></g></g><g class="s pop" data-at="6" data-until="7" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-285" y="-125" width="570" height="250" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-29.04" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">超出只建议的边界</tspan><tspan x="0" dy="58.08">也没有预约操作证据</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="plan" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="chapter.art"><g class="pos" style="--lx:600px;--ly:275px;--ls:1;--lr:0deg;--px:400px;--py:370px;--ps:1;--pr:0deg"><path d="M79.2 79.2 L178.2 178.2" fill="none" stroke="#203845" stroke-width="16" stroke-linecap="round"/><path d="M79.2 79.2 L178.2 178.2" fill="none" stroke="#ee6a58" stroke-width="8" stroke-linecap="round"/><circle cx="0" cy="0" r="110" fill="rgba(222,243,238,.7)" stroke="#203845" stroke-width="7"/><path d="M-60.50000000000001 -11 C-49.5 -55 -16.5 -77 16.5 -74.80000000000001" fill="none" stroke="#ffffff" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/></g></g><g class="s pop" data-at="0" data-until="1" data-n="chapter.note" style="--d:140ms"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:880px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="54" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">把检查办法也提前写好</tspan></text></g></g><g class="s pop only-l" data-at="1" data-until="2" data-n="parts"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(210 300) rotate(0) scale(1)"><rect x="-175" y="-175" width="350" height="350" rx="12" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-100" font-size="40" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">原始任务</tspan></text><text x="0" y="19.92" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">推荐的条件</tspan><tspan x="0" dy="50.16">只建议不预约</tspan></text></g><g transform="translate(600 300) rotate(0) scale(1)"><rect x="-175" y="-175" width="350" height="350" rx="12" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-100" font-size="40" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">环境与权限</tspan></text><text x="0" y="19.92" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">可查的资料</tspan><tspan x="0" dy="50.16">可做的操作</tspan></text></g><g transform="translate(990 300) rotate(0) scale(1)"><rect x="-175" y="-175" width="350" height="350" rx="12" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-100" font-size="40" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">验收条件</tspan></text><text x="0" y="19.92" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">逐项对证据</tspan><tspan x="0" dy="50.16">核对最终结果</tspan></text></g></g></g><g class="s pop only-p" data-at="1" data-until="2" data-n="parts"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(400 150) rotate(0) scale(1)"><rect x="-350" y="-125" width="700" height="250" rx="12" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-65" font-size="48" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">原始任务</tspan></text><text x="0" y="0.96" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">推荐的条件</tspan><tspan x="0" dy="58.08">只建议不预约</tspan></text></g><g transform="translate(400 485) rotate(0) scale(1)"><rect x="-350" y="-125" width="700" height="250" rx="12" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-65" font-size="48" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">环境与权限</tspan></text><text x="0" y="0.96" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">可查的资料</tspan><tspan x="0" dy="58.08">可做的操作</tspan></text></g><g transform="translate(400 820) rotate(0) scale(1)"><rect x="-350" y="-125" width="700" height="250" rx="12" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-65" font-size="48" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">验收条件</tspan></text><text x="0" y="0.96" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">逐项对证据</tspan><tspan x="0" dy="58.08">核对最终结果</tspan></text></g></g></g><g class="s pop" data-at="2" data-until="3" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">原始任务</tspan></text><text x="0" y="-15.72" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本学期 · 周二</tspan><tspan x="0" dy="60.72">15—16 点 · 投影仪</tspan><tspan x="0" dy="60.72">必须有坡道</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">检查者拿到</tspan></text><text x="0" y="14.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">时间表与设备表</tspan><tspan x="0" dy="60.72">逐项验收 · 只建议</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">测试之前写清</tspan></text><text x="0" y="45" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">任务、环境、验收条件</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-285" y="-125" width="570" height="250" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-29.04" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">看过答案再改要求</tspan><tspan x="0" dy="58.08">会让成绩失去意义</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:940px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">资料缺失时，不能要求凭空猜中</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">拿错例试检查办法</tspan></text><text x="0" y="45" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">V2 无坡道仍被推荐</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-275" y="-120" width="550" height="240" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">出现“完成”两字</tspan><tspan x="0" dy="60.72">不能直接放行</tspan></text></g></g><g class="s pop" data-at="5" data-until="6" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">两种相同的建议</tspan></text><text x="0" y="14.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">“可以考虑科学活动室”</tspan><tspan x="0" dy="60.72">“建议科学活动室”</tspan></text></g></g><g class="s pop" data-at="5" data-until="6" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-275" y="-120" width="550" height="240" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">核对内容和依据</tspan><tspan x="0" dy="60.72">说法不同不应判错</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="outcomes" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="chapter.art"><g class="pos" style="--lx:600px;--ly:275px;--ls:1;--lr:0deg;--px:400px;--py:370px;--ps:1;--pr:0deg"><circle cx="0" cy="0" r="110" fill="#d42c16" stroke="#203845" stroke-width="5"/><g transform="translate(0 0.72) rotate(0) scale(2.89)"><path d="M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="0" cy="16" r="3.5" fill="#ffffff"/></g></g></g><g class="s pop" data-at="0" data-until="1" data-n="chapter.note" style="--d:140ms"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:880px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="54" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">把三种结果分开记</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">任务成功 · D01</tspan></text><text x="0" y="14.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">V1 的 S1 + E1</tspan><tspan x="0" dy="60.72">所有条件逐项通过</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-270" y="-120" width="540" height="240" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-31.68" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">完成推荐</tspan><tspan x="0" dy="63.36">查了几次另记</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">假设材料不足</tspan></text><text x="0" y="14.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E1 坡道：未知</tspan><tspan x="0" dy="60.72">V2 坡道：无</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-275" y="-125" width="550" height="250" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">说明缺口后停止</tspan><tspan x="0" dy="60.72">没有完成推荐</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">错误完成 · 故障演示</tspan></text><text x="0" y="14.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E2 坡道：无</tspan><tspan x="0" dy="60.72">却把 V2 判为合格</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-275" y="-125" width="550" height="250" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">工具正常返回</tspan><tspan x="0" dy="60.72">仍然用错了证据</tspan></text></g></g><g class="s pop only-l" data-at="4" data-until="5" data-n="outcomes"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(210 300) rotate(0) scale(1)"><rect x="-175" y="-175" width="350" height="350" rx="12" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-100" font-size="40" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">任务成功</tspan></text><text x="0" y="19.92" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">条件有证据</tspan><tspan x="0" dy="50.16">完成推荐</tspan></text></g><g transform="translate(600 300) rotate(0) scale(1)"><rect x="-175" y="-175" width="350" height="350" rx="12" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-100" font-size="40" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">恰当停止</tspan></text><text x="0" y="19.92" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">说明缺口</tspan><tspan x="0" dy="50.16">未完成推荐</tspan></text></g><g transform="translate(990 300) rotate(0) scale(1)"><rect x="-175" y="-175" width="350" height="350" rx="12" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-100" font-size="40" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">错误完成</tspan></text><text x="0" y="19.92" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">条件不符</tspan><tspan x="0" dy="50.16">仍宣称完成</tspan></text></g></g></g><g class="s pop only-p" data-at="4" data-until="5" data-n="outcomes"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(400 150) rotate(0) scale(1)"><rect x="-350" y="-125" width="700" height="250" rx="12" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-65" font-size="48" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">任务成功</tspan></text><text x="0" y="0.96" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">条件有证据</tspan><tspan x="0" dy="58.08">完成推荐</tspan></text></g><g transform="translate(400 485) rotate(0) scale(1)"><rect x="-350" y="-125" width="700" height="250" rx="12" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-65" font-size="48" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">恰当停止</tspan></text><text x="0" y="0.96" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">说明缺口</tspan><tspan x="0" dy="58.08">未完成推荐</tspan></text></g><g transform="translate(400 820) rotate(0) scale(1)"><rect x="-350" y="-125" width="700" height="250" rx="12" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-65" font-size="48" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">错误完成</tspan></text><text x="0" y="0.96" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">条件不符</tspan><tspan x="0" dy="58.08">仍宣称完成</tspan></text></g></g></g><g class="s pop" data-at="5" data-until="6" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">D01 · 成功推荐</tspan></text><text x="0" y="14.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2 次工具调用</tspan><tspan x="0" dy="60.72">V1 · S1 / E1</tspan></text></g></g><g class="s pop" data-at="5" data-until="6" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">另设故障 · 错误完成</tspan></text><text x="0" y="14.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2 次工具调用</tspan><tspan x="0" dy="60.72">V2 · 坡道不符</tspan></text></g></g><g class="s pop" data-at="5" data-until="6" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:940px;--ps:1;--pr:0deg"><text x="0" y="-29.04" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">过程、结果与花费分开看</tspan><tspan x="0" dy="58.08">本记录未提供耗时测量</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="sets" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="chapter.art"><g class="pos" style="--lx:600px;--ly:275px;--ls:1;--lr:0deg;--px:400px;--py:370px;--ps:1;--pr:0deg"><path d="M79.2 79.2 L178.2 178.2" fill="none" stroke="#203845" stroke-width="16" stroke-linecap="round"/><path d="M79.2 79.2 L178.2 178.2" fill="none" stroke="#ee6a58" stroke-width="8" stroke-linecap="round"/><circle cx="0" cy="0" r="110" fill="rgba(222,243,238,.7)" stroke="#203845" stroke-width="7"/><path d="M-60.50000000000001 -11 C-49.5 -55 -16.5 -77 16.5 -74.80000000000001" fill="none" stroke="#ffffff" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/></g></g><g class="s pop" data-at="0" data-until="1" data-n="chapter.note" style="--d:140ms"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:880px;--ps:1;--pr:0deg"><text x="0" y="-35.64" font-size="54" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">换一批题</tspan><tspan x="0" dy="71.28">才能问新的问题</tspan></text></g></g><g class="s pop only-l" data-at="1" data-until="2" data-n="regression"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(210 300) rotate(0) scale(1)"><rect x="-175" y="-175" width="350" height="350" rx="12" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-100" font-size="40" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">发现错误</tspan></text><text x="0" y="45" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">改规则</tspan></text></g><g transform="translate(600 300) rotate(0) scale(1)"><rect x="-175" y="-175" width="350" height="350" rx="12" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-100" font-size="40" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">原题再跑</tspan></text><text x="0" y="45" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">回归检查</tspan></text></g><g transform="translate(990 300) rotate(0) scale(1)"><rect x="-175" y="-175" width="350" height="350" rx="12" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-100" font-size="40" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">核对过程</tspan></text><text x="0" y="45" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">保留结果</tspan></text></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M390 300 L412 300"/><path d="M405.96 292.33 L420 300 L405.96 307.67"/></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M780 300 L802 300"/><path d="M795.96 292.33 L810 300 L795.96 307.67"/></g></g></g><g class="s pop only-p" data-at="1" data-until="2" data-n="regression"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(400 150) rotate(0) scale(1)"><rect x="-350" y="-125" width="700" height="250" rx="12" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-65" font-size="48" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">发现错误</tspan></text><text x="0" y="30" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">改规则</tspan></text></g><g transform="translate(400 485) rotate(0) scale(1)"><rect x="-350" y="-125" width="700" height="250" rx="12" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-65" font-size="48" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">原题再跑</tspan></text><text x="0" y="30" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">回归检查</tspan></text></g><g transform="translate(400 820) rotate(0) scale(1)"><rect x="-350" y="-125" width="700" height="250" rx="12" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-65" font-size="48" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">核对过程</tspan></text><text x="0" y="30" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">保留结果</tspan></text></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M400 285 L400 337"/><path d="M407.67 330.96 L400 345 L392.33 330.96"/></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M400 620 L400 672"/><path d="M407.67 665.96 L400 680 L392.33 665.96"/></g></g></g><g class="s pop" data-at="2" data-until="3" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">开发时用的题</tspan></text><text x="0" y="45" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">发现错误、修改规则</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-285" y="-125" width="570" height="250" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">事先留出另一批</tspan><tspan x="0" dy="60.72">定下方案后再打开</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">原先留出的题</tspan></text><text x="0" y="45" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">看过后又据此改规则</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-285" y="-125" width="570" height="250" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-29.04" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">也进入了练习过程</tspan><tspan x="0" dy="58.08">需重新说明使用边界</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">6 个开发案例</tspan></text><text x="0" y="45" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">现已公开</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">6 个保留案例</tspan></text><text x="0" y="45" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">现已公开</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:940px;--ps:1;--pr:0deg"><text x="0" y="-29.04" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">两组共同用于代码回归</tspan><tspan x="0" dy="58.08">不是未见盲测或独立模型评估</tspan></text></g></g><g class="s pop" data-at="5" data-until="6" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">若以后接入真实模型</tspan></text><text x="0" y="14.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">版本 · 材料 · 工具</tspan><tspan x="0" dy="60.72">另备合适的检查题</tspan></text></g></g><g class="s pop" data-at="5" data-until="6" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-285" y="-125" width="570" height="250" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-29.04" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">保留每一次尝试</tspan><tspan x="0" dy="58.08">只选最好一次会漏结果</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="trace" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="chapter.art"><g class="pos" style="--lx:600px;--ly:275px;--ls:1;--lr:0deg;--px:400px;--py:370px;--ps:1;--pr:0deg"><circle cx="0" cy="0" r="110" fill="#d42c16" stroke="#203845" stroke-width="5"/><g transform="translate(0 0.72) rotate(0) scale(2.89)"><path d="M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="0" cy="16" r="3.5" fill="#ffffff"/></g></g></g><g class="s pop" data-at="0" data-until="1" data-n="chapter.note" style="--d:140ms"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:880px;--ps:1;--pr:0deg"><text x="0" y="-35.64" font-size="54" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">找到第一次</tspan><tspan x="0" dy="71.28">偏离要求的位置</tspan></text></g></g><g class="s pop only-l" data-at="1" data-until="2" data-n="route"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(150 300) rotate(0) scale(1)"><rect x="-130" y="-125" width="260" height="250" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-25.08" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">原始任务</tspan><tspan x="0" dy="50.16">必须有坡道</tspan></text></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M290 300 L304 300"/><path d="M299.47 294.25 L310 300 L299.47 305.75"/></g><g transform="translate(450 300) rotate(0) scale(1)"><rect x="-130" y="-125" width="260" height="250" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-25.08" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">Q1 返回</tspan><tspan x="0" dy="50.16">S1 / S2 时段</tspan></text></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M590 300 L604 300"/><path d="M599.47 294.25 L610 300 L599.47 305.75"/></g><g transform="translate(750 300) rotate(0) scale(1)"><rect x="-130" y="-125" width="260" height="250" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-25.08" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">Q2 读 V2</tspan><tspan x="0" dy="50.16">E2 坡道：无</tspan></text></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M890 300 L904 300"/><path d="M899.47 294.25 L910 300 L899.47 305.75"/></g><g transform="translate(1050 300) rotate(0) scale(1)"><rect x="-130" y="-125" width="260" height="250" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-25.08" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">仍判 V2 合格</tspan><tspan x="0" dy="50.16">首次明确偏离</tspan></text></g></g></g><g class="s pop only-p" data-at="1" data-until="2" data-n="route"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(400 110) rotate(0) scale(1)"><rect x="-350" y="-100" width="700" height="200" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">原始任务</tspan><tspan x="0" dy="60.72">必须有坡道</tspan></text></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M400 220 L400 241"/><path d="M408.63 234.2 L400 250 L391.37 234.2"/></g><g transform="translate(400 360) rotate(0) scale(1)"><rect x="-350" y="-100" width="700" height="200" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">Q1 返回</tspan><tspan x="0" dy="60.72">S1 / S2 时段</tspan></text></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M400 470 L400 491"/><path d="M408.63 484.2 L400 500 L391.37 484.2"/></g><g transform="translate(400 610) rotate(0) scale(1)"><rect x="-350" y="-100" width="700" height="200" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">Q2 读 V2</tspan><tspan x="0" dy="60.72">E2 坡道：无</tspan></text></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M400 720 L400 741"/><path d="M408.63 734.2 L400 750 L391.37 734.2"/></g><g transform="translate(400 860) rotate(0) scale(1)"><rect x="-350" y="-100" width="700" height="200" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">仍判 V2 合格</tspan><tspan x="0" dy="60.72">首次明确偏离</tspan></text></g></g></g><g class="s pop" data-at="2" data-until="3" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">哪一步第一次偏离？</tspan></text><text x="0" y="14.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">读 V2？收到 E2？</tspan><tspan x="0" dy="60.72">还是把 V2 判为合格？</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><circle cx="0" cy="0" r="100" fill="#d42c16" stroke="#203845" stroke-width="5"/><g transform="translate(0 0.66) rotate(0) scale(2.63)"><path d="M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="0" cy="16" r="3.5" fill="#ffffff"/></g></g></g><g class="s pop" data-at="3" data-until="4" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">拿得出的依据</tspan></text><text x="0" y="14.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">原始要求：必须有坡道</tspan><tspan x="0" dy="60.72">E2：V2 没有坡道</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-275" y="-120" width="550" height="240" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">条件与证据冲突</tspan><tspan x="0" dy="60.72">不能宣称合格</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本地规则程序</tspan></text><text x="0" y="45" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">人预先写好步骤</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-285" y="-125" width="570" height="250" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-29.04" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">换一条建议也照样核对</tspan><tspan x="0" dy="58.08">原要求 → 资料 → 结论</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="exercise" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="1" data-until="2" data-n="answer-note"><g class="pos" style="--lx:600px;--ly:50px;--ls:1;--lr:0deg;--px:400px;--py:22px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击卡片可翻回题目</tspan></text></g></g><g class="s rise only-l" data-at="0" data-until="2" data-n="quiz.read"><g class="pos" style="--lx:210px;--ly:350px;--ls:1;--lr:0deg;--px:210px;--py:350px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="read" role="button" tabindex="-1" aria-pressed="false" aria-label="选择读 V2，是否已经偏离任务？，点击翻面" data-front-label="选择读 V2，是否已经偏离任务？，点击翻面" data-back-label="仍可排查候选，点击翻回"><g class="front" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-40" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">选择读 V2</tspan></text><text x="0" y="165" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击核对</tspan></text></g><g class="back" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-40" font-size="38" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">仍可排查候选</tspan></text><text x="0" y="110" font-size="28" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">读取本身没有违背任务</tspan></text></g></g></g></g><g class="s rise only-p" data-at="0" data-until="2" data-n="quiz.read"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:185px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="read" role="button" tabindex="-1" aria-pressed="false" aria-label="选择读 V2，是否已经偏离任务？，点击翻面" data-front-label="选择读 V2，是否已经偏离任务？，点击翻面" data-back-label="仍可排查候选，点击翻回"><g class="front" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-25" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">选择读 V2</tspan></text><text x="0" y="90" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击核对</tspan></text></g><g class="back" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-25" font-size="48" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">仍可排查候选</tspan></text><text x="0" y="65" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">读取本身没有违背任务</tspan></text></g></g></g></g><g class="s rise only-l" data-at="0" data-until="2" data-n="quiz.evidence"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:600px;--py:350px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="evidence" role="button" tabindex="-1" aria-pressed="false" aria-label="E2 写坡道无，是否已经偏离任务？，点击翻面" data-front-label="E2 写坡道无，是否已经偏离任务？，点击翻面" data-back-label="拿到了不符证据，点击翻回"><g class="front" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-40" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E2 写坡道无</tspan></text><text x="0" y="165" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击核对</tspan></text></g><g class="back" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-40" font-size="38" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">拿到了不符证据</tspan></text><text x="0" y="110" font-size="28" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">下一步应依此核对条件</tspan></text></g></g></g></g><g class="s rise only-p" data-at="0" data-until="2" data-n="quiz.evidence"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:510px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="evidence" role="button" tabindex="-1" aria-pressed="false" aria-label="E2 写坡道无，是否已经偏离任务？，点击翻面" data-front-label="E2 写坡道无，是否已经偏离任务？，点击翻面" data-back-label="拿到了不符证据，点击翻回"><g class="front" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-25" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E2 写坡道无</tspan></text><text x="0" y="90" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击核对</tspan></text></g><g class="back" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-25" font-size="48" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">拿到了不符证据</tspan></text><text x="0" y="65" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">下一步应依此核对条件</tspan></text></g></g></g></g><g class="s rise only-l" data-at="0" data-until="2" data-n="quiz.decision"><g class="pos" style="--lx:990px;--ly:350px;--ls:1;--lr:0deg;--px:990px;--py:350px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="decision" role="button" tabindex="-1" aria-pressed="false" aria-label="仍把 V2 判合格，是否已经偏离任务？，点击翻面" data-front-label="仍把 V2 判合格，是否已经偏离任务？，点击翻面" data-back-label="首次明确偏离，点击翻回"><g class="front" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-40" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">仍把 V2 判合格</tspan></text><text x="0" y="165" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击核对</tspan></text></g><g class="back" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-40" font-size="38" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">首次明确偏离</tspan></text><text x="0" y="110" font-size="28" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">与必须有坡道直接冲突</tspan></text></g></g></g></g><g class="s rise only-p" data-at="0" data-until="2" data-n="quiz.decision"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:835px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="decision" role="button" tabindex="-1" aria-pressed="false" aria-label="仍把 V2 判合格，是否已经偏离任务？，点击翻面" data-front-label="仍把 V2 判合格，是否已经偏离任务？，点击翻面" data-back-label="首次明确偏离，点击翻回"><g class="front" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-25" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">仍把 V2 判合格</tspan></text><text x="0" y="90" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击核对</tspan></text></g><g class="back" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-25" font-size="48" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">首次明确偏离</tspan></text><text x="0" y="65" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">与必须有坡道直接冲突</tspan></text></g></g></g></g></g></svg>
+<svg class="scene" data-scene="lab" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="chapter.art"><g class="pos" style="--lx:600px;--ly:275px;--ls:1;--lr:0deg;--px:400px;--py:370px;--ps:1;--pr:0deg"><path d="M79.2 79.2 L178.2 178.2" fill="none" stroke="#203845" stroke-width="16" stroke-linecap="round"/><path d="M79.2 79.2 L178.2 178.2" fill="none" stroke="#ee6a58" stroke-width="8" stroke-linecap="round"/><circle cx="0" cy="0" r="110" fill="rgba(222,243,238,.7)" stroke="#203845" stroke-width="7"/><path d="M-60.50000000000001 -11 C-49.5 -55 -16.5 -77 16.5 -74.80000000000001" fill="none" stroke="#ffffff" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/></g></g><g class="s pop" data-at="0" data-until="1" data-n="chapter.note" style="--d:140ms"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:880px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="54" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">想自己核对每一道题</tspan></text></g></g><g class="s pop only-l" data-at="1" data-until="2" data-n="development"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(600 20) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">开发案例 · 现已公开</tspan></text></g><g transform="translate(600 110) rotate(0) scale(1)"><rect x="-540" y="-43" width="1080" height="86" rx="12" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-300 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">D01 · 资料完整</tspan></text></g><g transform="translate(140 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">任务成功</tspan></text></g><g transform="translate(430 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2 次</tspan></text></g></g><g transform="translate(600 215) rotate(0) scale(1)"><rect x="-540" y="-43" width="1080" height="86" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-300 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">D02 · 缺设备表</tspan></text></g><g transform="translate(140 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">恰当停止</tspan></text></g><g transform="translate(430 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2 次</tspan></text></g></g><g transform="translate(600 320) rotate(0) scale(1)"><rect x="-540" y="-43" width="1080" height="86" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-300 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">D03 · 均无坡道</tspan></text></g><g transform="translate(140 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">恰当停止</tspan></text></g><g transform="translate(430 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">3 次</tspan></text></g></g><g transform="translate(600 425) rotate(0) scale(1)"><rect x="-540" y="-43" width="1080" height="86" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-300 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">D04 · 缺明年资料</tspan></text></g><g transform="translate(140 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">恰当停止</tspan></text></g><g transform="translate(430 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">1 次</tspan></text></g></g><g transform="translate(600 530) rotate(0) scale(1)"><rect x="-540" y="-43" width="1080" height="86" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-300 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">D05 · 详情冲突</tspan></text></g><g transform="translate(140 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">恰当停止</tspan></text></g><g transform="translate(430 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2 次</tspan></text></g></g><g transform="translate(600 635) rotate(0) scale(1)"><rect x="-540" y="-43" width="1080" height="86" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-300 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">D06 · 读取故障</tspan></text></g><g transform="translate(140 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">恰当停止</tspan></text></g><g transform="translate(430 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2 次</tspan></text></g></g></g></g><g class="s pop only-p" data-at="1" data-until="2" data-n="development"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(400 35) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">开发案例 · 现已公开</tspan></text></g><g transform="translate(400 145) rotate(0) scale(1)"><rect x="-375" y="-52" width="750" height="104" rx="12" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-180 0) rotate(0) scale(1)"><text x="0" y="0" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">D01 · 资料完整</tspan></text></g><g transform="translate(100 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">任务成功</tspan></text></g><g transform="translate(290 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2 次</tspan></text></g></g><g transform="translate(400 287) rotate(0) scale(1)"><rect x="-375" y="-52" width="750" height="104" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-180 0) rotate(0) scale(1)"><text x="0" y="0" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">D02 · 缺设备表</tspan></text></g><g transform="translate(100 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">恰当停止</tspan></text></g><g transform="translate(290 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2 次</tspan></text></g></g><g transform="translate(400 429) rotate(0) scale(1)"><rect x="-375" y="-52" width="750" height="104" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-180 0) rotate(0) scale(1)"><text x="0" y="0" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">D03 · 均无坡道</tspan></text></g><g transform="translate(100 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">恰当停止</tspan></text></g><g transform="translate(290 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">3 次</tspan></text></g></g><g transform="translate(400 571) rotate(0) scale(1)"><rect x="-375" y="-52" width="750" height="104" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-180 0) rotate(0) scale(1)"><text x="0" y="0" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">D04 · 缺明年资料</tspan></text></g><g transform="translate(100 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">恰当停止</tspan></text></g><g transform="translate(290 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">1 次</tspan></text></g></g><g transform="translate(400 713) rotate(0) scale(1)"><rect x="-375" y="-52" width="750" height="104" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-180 0) rotate(0) scale(1)"><text x="0" y="0" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">D05 · 详情冲突</tspan></text></g><g transform="translate(100 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">恰当停止</tspan></text></g><g transform="translate(290 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2 次</tspan></text></g></g><g transform="translate(400 855) rotate(0) scale(1)"><rect x="-375" y="-52" width="750" height="104" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-180 0) rotate(0) scale(1)"><text x="0" y="0" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">D06 · 读取故障</tspan></text></g><g transform="translate(100 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">恰当停止</tspan></text></g><g transform="translate(290 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2 次</tspan></text></g></g></g></g><g class="s pop only-l" data-at="2" data-until="3" data-n="reserved"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(600 20) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">保留案例 · 现已公开</tspan></text></g><g transform="translate(600 110) rotate(0) scale(1)"><rect x="-540" y="-43" width="1080" height="86" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-300 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">H01 · 时段不足</tspan></text></g><g transform="translate(140 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">恰当停止</tspan></text></g><g transform="translate(430 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2 次</tspan></text></g></g><g transform="translate(600 215) rotate(0) scale(1)"><rect x="-540" y="-43" width="1080" height="86" rx="12" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-300 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">H02 · V2补齐坡道</tspan></text></g><g transform="translate(140 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">任务成功</tspan></text></g><g transform="translate(430 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">3 次</tspan></text></g></g><g transform="translate(600 320) rotate(0) scale(1)"><rect x="-540" y="-43" width="1080" height="86" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-300 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">H03 · 坡道未知</tspan></text></g><g transform="translate(140 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">恰当停止</tspan></text></g><g transform="translate(430 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2 次</tspan></text></g></g><g transform="translate(600 425) rotate(0) scale(1)"><rect x="-540" y="-43" width="1080" height="86" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-300 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">H04 · 缺周一资料</tspan></text></g><g transform="translate(140 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">恰当停止</tspan></text></g><g transform="translate(430 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">1 次</tspan></text></g></g><g transform="translate(600 530) rotate(0) scale(1)"><rect x="-540" y="-43" width="1080" height="86" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-300 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">H05 · 查询故障</tspan></text></g><g transform="translate(140 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">恰当停止</tspan></text></g><g transform="translate(430 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">1 次</tspan></text></g></g><g transform="translate(600 635) rotate(0) scale(1)"><rect x="-540" y="-43" width="1080" height="86" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-300 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">H06 · 资料过期</tspan></text></g><g transform="translate(140 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">恰当停止</tspan></text></g><g transform="translate(430 0) rotate(0) scale(1)"><text x="0" y="0" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2 次</tspan></text></g></g></g></g><g class="s pop only-p" data-at="2" data-until="3" data-n="reserved"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(400 35) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">保留案例 · 现已公开</tspan></text></g><g transform="translate(400 145) rotate(0) scale(1)"><rect x="-375" y="-52" width="750" height="104" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-180 0) rotate(0) scale(1)"><text x="0" y="0" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">H01 · 时段不足</tspan></text></g><g transform="translate(100 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">恰当停止</tspan></text></g><g transform="translate(290 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2 次</tspan></text></g></g><g transform="translate(400 287) rotate(0) scale(1)"><rect x="-375" y="-52" width="750" height="104" rx="12" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-180 0) rotate(0) scale(1)"><text x="0" y="0" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">H02 · V2补齐坡道</tspan></text></g><g transform="translate(100 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">任务成功</tspan></text></g><g transform="translate(290 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">3 次</tspan></text></g></g><g transform="translate(400 429) rotate(0) scale(1)"><rect x="-375" y="-52" width="750" height="104" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-180 0) rotate(0) scale(1)"><text x="0" y="0" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">H03 · 坡道未知</tspan></text></g><g transform="translate(100 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">恰当停止</tspan></text></g><g transform="translate(290 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2 次</tspan></text></g></g><g transform="translate(400 571) rotate(0) scale(1)"><rect x="-375" y="-52" width="750" height="104" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-180 0) rotate(0) scale(1)"><text x="0" y="0" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">H04 · 缺周一资料</tspan></text></g><g transform="translate(100 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">恰当停止</tspan></text></g><g transform="translate(290 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">1 次</tspan></text></g></g><g transform="translate(400 713) rotate(0) scale(1)"><rect x="-375" y="-52" width="750" height="104" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-180 0) rotate(0) scale(1)"><text x="0" y="0" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">H05 · 查询故障</tspan></text></g><g transform="translate(100 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">恰当停止</tspan></text></g><g transform="translate(290 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">1 次</tspan></text></g></g><g transform="translate(400 855) rotate(0) scale(1)"><rect x="-375" y="-52" width="750" height="104" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-180 0) rotate(0) scale(1)"><text x="0" y="0" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">H06 · 资料过期</tspan></text></g><g transform="translate(100 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">恰当停止</tspan></text></g><g transform="translate(290 0) rotate(0) scale(1)"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2 次</tspan></text></g></g></g></g><g class="s pop" data-at="3" data-until="4" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">另设故障 · 逐项重算</tspan></text><text x="0" y="14.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">10 项通过 · 坡道不通过</tspan><tspan x="0" dy="60.72">不信“合格”的自报标志</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-285" y="-125" width="570" height="250" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-29.04" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">判为错误完成</tspan><tspan x="0" dy="58.08">不计入两组六题分母</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">每组分别记录</tspan></text><text x="0" y="14.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">开发：1 成功 / 5 停止</tspan><tspan x="0" dy="60.72">保留：1 成功 / 5 停止</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-285" y="-125" width="570" height="250" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-29.04" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">公开构造题 · 固定规则</tspan><tspan x="0" dy="58.08">没有真实模型参与</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:940px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">停止不是成功推荐，故障例另计</tspan></text></g></g><g class="s pop" data-at="5" data-until="6" data-n="experiment.0"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><a class="hit" href="../../Python实现/source/campus_agent_lab/README.md" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-label="本地实验说明，打开本地文件"><rect x="-285" y="-125" width="570" height="250" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本地实验说明</tspan><tspan x="0" dy="60.72">点击打开</tspan></text></a></g></g><g class="s pop" data-at="5" data-until="6" data-n="experiment.1"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><a class="hit" href="../../Python实现/source/campus_agent_lab/outputs/reference/episode20/result.json" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-label="两组题与故障记录，打开本地文件"><rect x="-285" y="-125" width="570" height="250" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">两组题与故障记录</tspan><tspan x="0" dy="60.72">点击打开</tspan></text></a></g></g><g class="s pop" data-at="5" data-until="6" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:940px;--ps:1;--pr:0deg"><text x="0" y="-29.04" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">固定结构核对，不解析任意回答</tspan><tspan x="0" dy="58.08">停止原因对照预先案例标签</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="refs" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="title"><g class="pos" style="--lx:600px;--ly:75px;--ls:1;--lr:0deg;--px:400px;--py:100px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="62" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">资料来源</tspan></text></g></g><g class="s pop" data-at="0" data-until="1" data-n="scope"><g class="pos" style="--lx:600px;--ly:155px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><text x="0" y="-25.08" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">公开教学案例 · 规则执行</tspan><tspan x="0" dy="50.16">不代表真实模型能力测评</tspan></text></g></g><g class="s pop only-l" data-at="0" data-until="1" data-n="source0"><g class="pos" style="--lx:600px;--ly:255px;--ls:1;--lr:0deg;--px:400px;--py:360px;--ps:1;--pr:0deg"><a class="hit" href="https://github.com/cs329z/assignment2-evals/blob/3a649d8da0dc6cb0422e6ce7ce7068c3b98be1db/cs329z_assignment2_evaluation.pdf" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-label="〔1〕评测任务与检查办法，打开原始资料"><rect x="-475" y="-42" width="950" height="84" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">〔1〕评测任务与检查办法</tspan></text></a></g></g><g class="s pop only-p" data-at="0" data-until="1" data-n="source0"><g class="pos" style="--lx:600px;--ly:255px;--ls:1;--lr:0deg;--px:400px;--py:360px;--ps:1;--pr:0deg"><a class="hit" href="https://github.com/cs329z/assignment2-evals/blob/3a649d8da0dc6cb0422e6ce7ce7068c3b98be1db/cs329z_assignment2_evaluation.pdf" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-label="〔1〕评测任务与检查办法，打开原始资料"><rect x="-375" y="-42" width="750" height="84" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">〔1〕评测任务与检查办法</tspan></text></a></g></g><g class="s pop only-l" data-at="0" data-until="1" data-n="source1"><g class="pos" style="--lx:600px;--ly:355px;--ls:1;--lr:0deg;--px:400px;--py:490px;--ps:1;--pr:0deg"><a class="hit" href="https://github.com/cs329z/assignment1-harness/blob/95f4cb7bfe28a27a7cf5bcb1eccb1aaaf1385eb3/cs329z_hw1/adapters.py" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-label="〔2〕轨迹、状态与预算，打开原始资料"><rect x="-475" y="-42" width="950" height="84" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">〔2〕轨迹、状态与预算</tspan></text></a></g></g><g class="s pop only-p" data-at="0" data-until="1" data-n="source1"><g class="pos" style="--lx:600px;--ly:355px;--ls:1;--lr:0deg;--px:400px;--py:490px;--ps:1;--pr:0deg"><a class="hit" href="https://github.com/cs329z/assignment1-harness/blob/95f4cb7bfe28a27a7cf5bcb1eccb1aaaf1385eb3/cs329z_hw1/adapters.py" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-label="〔2〕轨迹、状态与预算，打开原始资料"><rect x="-375" y="-42" width="750" height="84" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">〔2〕轨迹、状态与预算</tspan></text></a></g></g><g class="s pop" data-at="0" data-until="1" data-n="read"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:950px;--ps:1;--pr:0deg"><a class="hit" href="?read" data-action="read" tabindex="-1" aria-label="阅读全文与完整资料说明"><rect x="-310" y="-40" width="620" height="80" rx="40" fill="#137a7f" stroke="#203845" stroke-width="5" stroke-linejoin="round"/><text x="0" y="2" font-size="42" fill="#ffffff" text-anchor="middle" font-weight="800" dominant-baseline="central"><tspan x="0" dy="0">阅读全文与完整资料说明</tspan></text></a></g></g></g></svg>
+<header class="hud">
+<div class="hud-l">
+<button class="pill" id="btn-toc" type="button" aria-haspopup="dialog" aria-label="目录"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01"/></svg><span class="lbl" aria-hidden="true">目录</span></button>
+<span class="pill sec" id="sec"><span id="sec-num"></span><span id="sec-name"></span></span>
+</div>
+<div class="hud-r">
+<button class="pill" id="btn-play" type="button" data-playing="false">播放</button>
+<a class="pill" href="?read" data-action="read">全文</a>
+</div>
+</header>
+<div class="cap" id="capcard" role="status" aria-live="polite" aria-atomic="true"><p id="cap"></p></div>
+<footer class="foot">
+<p id="hint"></p>
+<div class="steps">
+<button class="pill icon" id="btn-prev" type="button" aria-label="上一拍"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 10.5 8 5.5l5 5"/></svg></button>
+<span id="count"></span>
+<button class="pill icon" id="btn-next" type="button" aria-label="下一拍"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 5.5 8 10.5l5-5"/></svg></button>
+</div>
+<div id="bar"></div>
+</footer>
+</main>
+<dialog id="toc" aria-labelledby="toc-title">
+<div class="toc-head"><h2 id="toc-title">AI 助手完成了任务，怎样证明它做对了？</h2><button class="pill" id="toc-close" type="button">关闭</button></div>
+<ol id="toc-list"></ol>
+<p class="toc-foot">校园 AI 助手怎样做事，第 4 篇 / 共 4 篇。机器人角色为 AI 辅助制作，场景与图解由代码绘制。</p>
+</dialog>
+<div id="readwrap">
+<div class="read-bar"><a class="pill" href="?stage" data-action="stage">看分镜版</a><a class="pill" href="index.html">返回本篇页面</a></div>
+<article id="read" lang="zh-CN">
+<h1><span class="tl">AI 助手完成了任务，</span> <span class="tl">怎样证明它做对了？</span></h1>
+<p>「已经找好了，建议去阅览活动室。」</p>
+<p>助手查过场地，也读过设备表，执行记录一条没少。可是，科学社团要求场地必须有坡道，而这间活动室没有。工具都正常返回，任务还是做错了。</p>
+<p>前几期，我们追过请求，查过下一步用了什么资料，也检查了最初的要求有没有留下。这一期把它们放回那张场地清单：助手说「完成了」，我们该拿什么来核对？</p>
+<h2>先写清楚什么算完成</h2>
+<p>任务仍在那所虚构学校里：推荐一间本学期周二 15—16 点可用、有投影仪、有坡道的场地，并给出依据。只要建议，不要预约。</p>
+<p>资料中，科学活动室 V1 与阅览活动室 V2 都在周二 15—17 点开放，时间来源分别为 S1、S2。设备表 E1 写明 V1 有投影仪和坡道；E2 写明 V2 有投影仪，但没有坡道。这些编号都是本例的构造标签。</p>
+<p>把要求逐项列出来，就得到一份验收清单：安排适用于本学期吗，开放时间覆盖整个活动吗，投影仪和坡道是否都有依据？还要看看资料是不是说的同一间场地。只给时间一项打了勾，整张清单仍没有核对完。</p>
+<p class="pic"><img alt="任务要求逐项对应时间表、设备表与最终建议，V1 满足条件而 V2 缺少坡道" src="20_%E4%BB%BB%E5%8A%A1%E8%AF%81%E6%8D%AE%E4%B8%8E%E9%AA%8C%E6%94%B6%E6%9D%A1%E4%BB%B6.png" loading="lazy"></p>
+<p class="figcap"><em>图 1　验收把要求与证据逐项对应；「调用成功」不能替代「结果满足条件」。</em></p>
+<p>科学活动室的两份资料覆盖全部要求，因此可以推荐 V1，并列出 S1 和 E1。如果回答还写「已预约成功」，就额外声称做过一次没有证据的操作，即使场地选对，也要指出这个错误。</p>
+<h2>把检查办法也提前写好</h2>
+<p>如果让另一个人帮忙检查，只交给他一句「看看它做对没有」，他可能也无从下手。需要交代三件事：原来要做什么，助手能查哪些资料、做哪些操作，最后按什么条件判定结果。CS329Z 的一份评测作业，也把任务按这样的三部分组织。<span class="cite">〔1〕</span></p>
+<p>在校园例子里，就要把场地要求、允许查阅的时间表和设备表，以及验收清单交给检查的人。还要告诉他：助手只能查询和建议，不能预约。有了这些，他就能逐项核对，不必凭回答听起来是否顺利来判断。</p>
+<p>三个部分应在测试前写清。如果先看助手推荐了哪一间，再把要求改成那一间恰好满足的条件，分数就失去了意义。若设备表根本缺了坡道信息，也不能要求助手凭空猜中。</p>
+<p>检查办法本身也值得试一试。把开头那条错选阅览活动室的建议交进去，如果因为出现了「完成」两字就放行，检查就失效了。反过来，「可以考虑科学活动室」与「建议科学活动室」意思相同，也不该仅因说法不同而被判成一对一错。需要对照的是建议的内容及其依据。<span class="cite">〔1〕</span></p>
+<h2>把三种结果分开记</h2>
+<p>第一种是任务成功。助手找到 V1 的适用资料，确认时间、投影仪和坡道，给出有依据的建议。完成的证据是条件确实满足，不是查了几次。</p>
+<p>第二种是恰当停止。假设 E1 的坡道信息缺失，V2 又明确没有坡道，现有材料不足以确认合适场地。助手说明缺口，结束建议，是合理处理。但原来的推荐任务尚未完成，不能把它算成一次成功推荐。</p>
+<p>第三种是错误完成。例如助手读到 V2 没有坡道，仍推荐它并宣布满足全部条件。工具没出故障，错在没有按要求使用证据。因此，记录结果时要把成功、合理停止和错误完成分开，才能看清实际完成了多少任务。</p>
+<p>至于查了几次、等了多久，可以另外记一笔，帮助比较效率。两次查询找齐依据，与反复查询后漏掉坡道，看起来都「做了不少事」，对任务的帮助却不同。把过程、最后结果和花费分开看，才容易发现真正需要改的地方。<span class="cite">〔2〕</span></p>
+<h2>换一批题，才能问新的问题</h2>
+<p>在改进这套助手时，可以先用完整资料走一遍，再换几张卡：删掉设备信息，把时间表换成过期安排，或者故意让读取失败。每换一种情况，都看看助手是否说清了做到哪里。发现错误、修改、再用原题核对，这叫回归检查。</p>
+<p>还有一个不同的问题：换一批没用来修改方案的题，助手会怎样处理？为此，可以事先留出另一批案例，等方案确定后再打开。就像练熟一张卷子之后，再拿一张新卷子看看学得怎样。若看过结果又据此改规则，这批题也就成了练习的一部分。</p>
+<p class="pic"><img alt="开发案例用于找错和修改，未参与修改的保留案例用于后续检查，使用后需重新说明边界" src="20_%E5%BC%80%E5%8F%91%E6%A3%80%E6%9F%A5%E5%92%8C%E4%BF%9D%E7%95%99%E6%A1%88%E4%BE%8B.png" loading="lazy"></p>
+<p class="figcap"><em>图 2　同一批题修改后重跑属于回归检查；公开的教学用例不等于独立模型评估。</em></p>
+<p>这个系列也准备了 6 个开发案例与另编的 6 个保留案例，把每题的资料、结果和工具次数列出来，供大家沿着过程检查。现在这些例子都已经公开，并共同用于核对规则程序。它们是可查看的教学题，不再是一份未打开的新卷子。</p>
+<p>以后若接入真实模型，就要另外准备合适的检查题，说明用了哪个版本、给了哪些材料、允许哪些工具，并保留每次尝试。只展示最好的一次，别人就看不到同一任务还有多少种结果。</p>
+<h2>找到第一次偏离要求的位置</h2>
+<p>现在审阅一段纸面记录：任务要求包含坡道；查询返回 V1、V2 的时间表；助手选择读 V2 的设备表；E2 返回「投影仪：有，坡道：无」；最终回答「V2 符合全部条件」。</p>
+<p>哪一步第一次明确违背了任务？选择读取 V2 并不算错，它可以是在排查候选。真正的问题出现在拿到「坡道：无」之后，仍把 V2 判为合格。只看最终语气，找不到这个原因；对照条件和证据，才知道该修什么。</p>
+<p>回看科学社团的场地清单，你现在可以指出这条建议错在哪儿，也能拿出设备表上的那一行，让别人照着查一遍。</p>
+<p>这几期的小程序按人写好的规则办事。换一条建议来，你也可以照这样查一遍：找出原来的要求，翻到对应的资料，看看哪一步有了依据，哪一步还欠一句交代。</p>
+<h2>想自己核对每一道题</h2>
+<p>选读：<a href="../../Python%E5%AE%9E%E7%8E%B0/source/campus_agent_lab/README.md" rel="noopener noreferrer">本地实验说明</a> 与 <a href="../../Python%E5%AE%9E%E7%8E%B0/source/campus_agent_lab/outputs/reference/episode20/result.json" rel="noopener noreferrer">本系列第 4 篇输出</a> 保存了两组六题。每组都是 1 次任务成功、5 次恰当停止：后五次没有完成推荐，只是按情形说明原因后停下。两类结果分开记录，才能看清真正完成了多少任务。</p>
+<p>程序还单独安排了一条漏掉坡道的错误建议。验收逐项读取原始要求、场地资料和本次查询记录，坡道一项不符，便把它判为错误完成。这条错误是为检查验收办法故意设计的，不是真实模型犯错的记录。</p>
+<h2>资料来源</h2><div class="refs">
+<p>校园、场地、资料编号与执行情形均为原创构造案例。配套规则程序已经运行这些教学题，没有真实模型参与。这里的检查支持对照这套规则的过程与结果；模型在新任务中能做多好，需要另行评估。</p>
+<p><span class="cite">〔1〕</span> Stanford CS329Z，Assignment 2: Building an Evaluation Task，版本 26.1.0，§1.1、§4.1—4.3。参考评测的三部分、验证器检查与保留全部运行结果的要求。</p>
+<p><a href="https://github.com/cs329z/assignment2-evals/blob/3a649d8da0dc6cb0422e6ce7ce7068c3b98be1db/cs329z_assignment2_evaluation.pdf" rel="noopener noreferrer">https://github.com/cs329z/assignment2-evals/blob/3a649d8da0dc6cb0422e6ce7ce7068c3b98be1db/cs329z_assignment2_evaluation.pdf</a></p>
+<p><span class="cite">〔2〕</span> Stanford CS329Z，Assignment 1: Building an Agent Harness，adapters.py 中 run_agent_session 的 agent_loop 接口说明。参考轨迹、停止状态及预算的区分；原仓库为作业骨架。</p>
+<p><a href="https://github.com/cs329z/assignment1-harness/blob/95f4cb7bfe28a27a7cf5bcb1eccb1aaaf1385eb3/cs329z_hw1/adapters.py" rel="noopener noreferrer">https://github.com/cs329z/assignment1-harness/blob/95f4cb7bfe28a27a7cf5bcb1eccb1aaaf1385eb3/cs329z_hw1/adapters.py</a></p>
+</div>
+<div class="read-end"><a class="pill" href="?stage" data-action="stage">看分镜版</a><a class="pill" href="正文.md">查看正文 Markdown</a></div>
+<p class="read-note">校园 AI 助手怎样做事，第 4 篇 / 共 4 篇。机器人角色为 AI 辅助制作，场景与图解由代码绘制。</p>
+</article>
+</div>
+<script type="application/json" id="stage-data">{"total":45,"sectionCount":6,"sections":[{"num":0,"label":"导读","mark":"导","first":0,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003ccircle cx=\"0\" cy=\"0\" r=\"110\" fill=\"#d42c16\" stroke=\"#203845\" stroke-width=\"5\"/>\u003cg transform=\"translate(0 0.72) rotate(0) scale(2.89)\">\u003cpath d=\"M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\u003ccircle cx=\"0\" cy=\"16\" r=\"3.5\" fill=\"#ffffff\"/>\u003c/g>\u003c/svg>"},{"num":1,"label":"先写清楚什么算完成","first":4,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003cg transform=\"translate(0 0) rotate(0) scale(0.65)\">\u003crect x=\"-275\" y=\"-165\" width=\"550\" height=\"330\" rx=\"12\" fill=\"#ffffff\" stroke=\"#203845\" stroke-width=\"6\" stroke-linejoin=\"round\"/>\u003cpath d=\"M-240 -65 L240 -65\" fill=\"none\" stroke=\"#203845\" stroke-width=\"3\" stroke-linecap=\"round\"/>\u003ctext x=\"0\" y=\"-115\" font-size=\"44\" fill=\"#137a7f\" text-anchor=\"middle\" font-weight=\"700\" dominant-baseline=\"central\">\u003ctspan x=\"0\" dy=\"0\">原始任务\u003c/tspan>\u003c/text>\u003ctext x=\"0\" y=\"-15.72\" font-size=\"46\" fill=\"#203845\" text-anchor=\"middle\" font-weight=\"700\" dominant-baseline=\"central\">\u003ctspan x=\"0\" dy=\"0\">本学期 · 周二\u003c/tspan>\u003ctspan x=\"0\" dy=\"60.72\">15—16 点 · 投影仪\u003c/tspan>\u003ctspan x=\"0\" dy=\"60.72\">必须有坡道\u003c/tspan>\u003c/text>\u003c/g>\u003c/svg>"},{"num":2,"label":"把检查办法也提前写好","first":12,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003cpath d=\"M79.2 79.2 L178.2 178.2\" fill=\"none\" stroke=\"#203845\" stroke-width=\"16\" stroke-linecap=\"round\"/>\u003cpath d=\"M79.2 79.2 L178.2 178.2\" fill=\"none\" stroke=\"#ee6a58\" stroke-width=\"8\" stroke-linecap=\"round\"/>\u003ccircle cx=\"0\" cy=\"0\" r=\"110\" fill=\"rgba(222,243,238,.7)\" stroke=\"#203845\" stroke-width=\"7\"/>\u003cpath d=\"M-60.50000000000001 -11 C-49.5 -55 -16.5 -77 16.5 -74.80000000000001\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\u003c/svg>"},{"num":3,"label":"把三种结果分开记","first":18,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003ccircle cx=\"0\" cy=\"0\" r=\"110\" fill=\"#d42c16\" stroke=\"#203845\" stroke-width=\"5\"/>\u003cg transform=\"translate(0 0.72) rotate(0) scale(2.89)\">\u003cpath d=\"M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\u003ccircle cx=\"0\" cy=\"16\" r=\"3.5\" fill=\"#ffffff\"/>\u003c/g>\u003c/svg>"},{"num":4,"label":"换一批题，才能问新的问题","first":24,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003cpath d=\"M79.2 79.2 L178.2 178.2\" fill=\"none\" stroke=\"#203845\" stroke-width=\"16\" stroke-linecap=\"round\"/>\u003cpath d=\"M79.2 79.2 L178.2 178.2\" fill=\"none\" stroke=\"#ee6a58\" stroke-width=\"8\" stroke-linecap=\"round\"/>\u003ccircle cx=\"0\" cy=\"0\" r=\"110\" fill=\"rgba(222,243,238,.7)\" stroke=\"#203845\" stroke-width=\"7\"/>\u003cpath d=\"M-60.50000000000001 -11 C-49.5 -55 -16.5 -77 16.5 -74.80000000000001\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\u003c/svg>"},{"num":5,"label":"找到第一次偏离要求的位置","first":31,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003ccircle cx=\"0\" cy=\"0\" r=\"110\" fill=\"#d42c16\" stroke=\"#203845\" stroke-width=\"5\"/>\u003cg transform=\"translate(0 0.72) rotate(0) scale(2.89)\">\u003cpath d=\"M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\u003ccircle cx=\"0\" cy=\"16\" r=\"3.5\" fill=\"#ffffff\"/>\u003c/g>\u003c/svg>"},{"num":6,"label":"想自己核对每一道题","first":38,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003cpath d=\"M79.2 79.2 L178.2 178.2\" fill=\"none\" stroke=\"#203845\" stroke-width=\"16\" stroke-linecap=\"round\"/>\u003cpath d=\"M79.2 79.2 L178.2 178.2\" fill=\"none\" stroke=\"#ee6a58\" stroke-width=\"8\" stroke-linecap=\"round\"/>\u003ccircle cx=\"0\" cy=\"0\" r=\"110\" fill=\"rgba(222,243,238,.7)\" stroke=\"#203845\" stroke-width=\"7\"/>\u003cpath d=\"M-60.50000000000001 -11 C-49.5 -55 -16.5 -77 16.5 -74.80000000000001\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\u003c/svg>"},{"num":0,"mark":"源","label":"资料来源","first":44,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003cpath d=\"M79.2 79.2 L178.2 178.2\" fill=\"none\" stroke=\"#203845\" stroke-width=\"16\" stroke-linecap=\"round\"/>\u003cpath d=\"M79.2 79.2 L178.2 178.2\" fill=\"none\" stroke=\"#ee6a58\" stroke-width=\"8\" stroke-linecap=\"round\"/>\u003ccircle cx=\"0\" cy=\"0\" r=\"110\" fill=\"rgba(222,243,238,.7)\" stroke=\"#203845\" stroke-width=\"7\"/>\u003cpath d=\"M-60.50000000000001 -11 C-49.5 -55 -16.5 -77 16.5 -74.80000000000001\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\u003c/svg>"}],"scenes":{"cover":{"cams":{"all":{"l":[0,0,1600,900],"p":[0,0,900,1500]}}},"open":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"task":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"plan":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"outcomes":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"sets":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"trace":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"exercise":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"lab":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"refs":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}}},"beats":[{"scene":"cover","step":0,"cam":"all","html":"AI 助手完成了任务，怎样证明它做对了？","kind":"title","chars":19,"section":0,"quiet":true},{"scene":"open","step":0,"cam":"desk","html":"「已经找好了，建议去阅览活动室。」","kind":"text","chars":17,"section":0},{"scene":"open","step":1,"cam":"desk","html":"助手查过场地，也读过设备表，执行记录一条没少。可是，科学社团要求场地必须有坡道，而这间活动室没有。工具都正常返回，任务还是做错了。","kind":"text","chars":65,"section":0},{"scene":"open","step":2,"cam":"desk","html":"前几期，我们追过请求，查过下一步用了什么资料，也检查了最初的要求有没有留下。这一期把它们放回那张场地清单：助手说「完成了」，我们该拿什么来核对？","kind":"text","chars":72,"section":0},{"scene":"task","step":0,"cam":"desk","html":"\u003cb class=\"no\">1\u003c/b>\u003cspan>先写清楚什么算完成\u003c/span>","kind":"h2","chars":9,"section":1},{"scene":"task","step":1,"cam":"desk","html":"任务仍在那所虚构学校里：推荐一间本学期周二 15—16 点可用、有投影仪、有坡道的场地，并给出依据。只要建议，不要预约。","kind":"text","chars":58,"section":1},{"scene":"task","step":2,"cam":"desk","html":"资料中，科学活动室 V1 与阅览活动室 V2 都在周二 15—17 点开放，时间来源分别为 S1、S2。","kind":"text","chars":45,"section":1},{"scene":"task","step":3,"cam":"desk","html":"设备表 E1 写明 V1 有投影仪和坡道；E2 写明 V2 有投影仪，但没有坡道。这些编号都是本例的构造标签。","kind":"text","chars":48,"section":1},{"scene":"task","step":4,"cam":"desk","html":"把要求逐项列出来，就得到一份验收清单：安排适用于本学期吗，开放时间覆盖整个活动吗，投影仪和坡道是否都有依据？还要看看资料是不是说的同一间场地。只给时间一项打了勾，整张清单仍没有核对完。","kind":"text","chars":92,"section":1},{"scene":"task","step":4,"cam":"desk","html":"图 1　验收把要求与证据逐项对应；「调用成功」不能替代「结果满足条件」。","kind":"caption","chars":34,"section":1},{"scene":"task","step":5,"cam":"desk","html":"科学活动室的两份资料覆盖全部要求，因此可以推荐 V1，并列出 S1 和 E1。","kind":"text","chars":35,"section":1},{"scene":"task","step":6,"cam":"desk","html":"如果回答还写「已预约成功」，就额外声称做过一次没有证据的操作，即使场地选对，也要指出这个错误。","kind":"text","chars":47,"section":1},{"scene":"plan","step":0,"cam":"desk","html":"\u003cb class=\"no\">2\u003c/b>\u003cspan>把检查办法也提前写好\u003c/span>","kind":"h2","chars":10,"section":2},{"scene":"plan","step":1,"cam":"desk","html":"如果让另一个人帮忙检查，只交给他一句「看看它做对没有」，他可能也无从下手。需要交代三件事：原来要做什么，助手能查哪些资料、做哪些操作，最后按什么条件判定结果。CS329Z 的一份评测作业，也把任务按这样的三部分组织。\u003cspan class=\"cite\">〔1〕\u003c/span>","kind":"text","chars":110,"section":2},{"scene":"plan","step":2,"cam":"desk","html":"在校园例子里，就要把场地要求、允许查阅的时间表和设备表，以及验收清单交给检查的人。还要告诉他：助手只能查询和建议，不能预约。有了这些，他就能逐项核对，不必凭回答听起来是否顺利来判断。","kind":"text","chars":91,"section":2},{"scene":"plan","step":3,"cam":"desk","html":"三个部分应在测试前写清。如果先看助手推荐了哪一间，再把要求改成那一间恰好满足的条件，分数就失去了意义。若设备表根本缺了坡道信息，也不能要求助手凭空猜中。","kind":"text","chars":76,"section":2},{"scene":"plan","step":4,"cam":"desk","html":"检查办法本身也值得试一试。把开头那条错选阅览活动室的建议交进去，如果因为出现了「完成」两字就放行，检查就失效了。","kind":"text","chars":56,"section":2},{"scene":"plan","step":5,"cam":"desk","html":"反过来，「可以考虑科学活动室」与「建议科学活动室」意思相同，也不该仅因说法不同而被判成一对一错。需要对照的是建议的内容及其依据。\u003cspan class=\"cite\">〔1〕\u003c/span>","kind":"text","chars":67,"section":2},{"scene":"outcomes","step":0,"cam":"desk","html":"\u003cb class=\"no\">3\u003c/b>\u003cspan>把三种结果分开记\u003c/span>","kind":"h2","chars":8,"section":3},{"scene":"outcomes","step":1,"cam":"desk","html":"第一种是任务成功。助手找到 V1 的适用资料，确认时间、投影仪和坡道，给出有依据的建议。完成的证据是条件确实满足，不是查了几次。","kind":"text","chars":62,"section":3},{"scene":"outcomes","step":2,"cam":"desk","html":"第二种是恰当停止。假设 E1 的坡道信息缺失，V2 又明确没有坡道，现有材料不足以确认合适场地。助手说明缺口，结束建议，是合理处理。但原来的推荐任务尚未完成，不能把它算成一次成功推荐。","kind":"text","chars":89,"section":3},{"scene":"outcomes","step":3,"cam":"desk","html":"第三种是错误完成。例如助手读到 V2 没有坡道，仍推荐它并宣布满足全部条件。工具没出故障，错在没有按要求使用证据。","kind":"text","chars":55,"section":3},{"scene":"outcomes","step":4,"cam":"desk","html":"因此，记录结果时要把成功、合理停止和错误完成分开，才能看清实际完成了多少任务。","kind":"text","chars":39,"section":3},{"scene":"outcomes","step":5,"cam":"desk","html":"至于查了几次、等了多久，可以另外记一笔，帮助比较效率。两次查询找齐依据，与反复查询后漏掉坡道，看起来都「做了不少事」，对任务的帮助却不同。把过程、最后结果和花费分开看，才容易发现真正需要改的地方。\u003cspan class=\"cite\">〔2〕\u003c/span>","kind":"text","chars":101,"section":3},{"scene":"sets","step":0,"cam":"desk","html":"\u003cb class=\"no\">4\u003c/b>\u003cspan>换一批题，才能问新的问题\u003c/span>","kind":"h2","chars":12,"section":4},{"scene":"sets","step":1,"cam":"desk","html":"在改进这套助手时，可以先用完整资料走一遍，再换几张卡：删掉设备信息，把时间表换成过期安排，或者故意让读取失败。每换一种情况，都看看助手是否说清了做到哪里。发现错误、修改、再用原题核对，这叫回归检查。","kind":"text","chars":99,"section":4},{"scene":"sets","step":2,"cam":"desk","html":"还有一个不同的问题：换一批没用来修改方案的题，助手会怎样处理？为此，可以事先留出另一批案例，等方案确定后再打开。就像练熟一张卷子之后，再拿一张新卷子看看学得怎样。","kind":"text","chars":81,"section":4},{"scene":"sets","step":3,"cam":"desk","html":"若看过结果又据此改规则，这批题也就成了练习的一部分。","kind":"text","chars":26,"section":4},{"scene":"sets","step":3,"cam":"desk","html":"图 2　同一批题修改后重跑属于回归检查；公开的教学用例不等于独立模型评估。","kind":"caption","chars":35,"section":4},{"scene":"sets","step":4,"cam":"desk","html":"这个系列也准备了 6 个开发案例与另编的 6 个保留案例，把每题的资料、结果和工具次数列出来，供大家沿着过程检查。现在这些例子都已经公开，并共同用于核对规则程序。它们是可查看的教学题，不再是一份未打开的新卷子。","kind":"text","chars":101,"section":4},{"scene":"sets","step":5,"cam":"desk","html":"以后若接入真实模型，就要另外准备合适的检查题，说明用了哪个版本、给了哪些材料、允许哪些工具，并保留每次尝试。只展示最好的一次，别人就看不到同一任务还有多少种结果。","kind":"text","chars":81,"section":4},{"scene":"trace","step":0,"cam":"desk","html":"\u003cb class=\"no\">5\u003c/b>\u003cspan>找到第一次偏离要求的位置\u003c/span>","kind":"h2","chars":12,"section":5},{"scene":"trace","step":1,"cam":"desk","html":"现在审阅一段纸面记录：任务要求包含坡道；查询返回 V1、V2 的时间表；助手选择读 V2 的设备表；E2 返回「投影仪：有，坡道：无」；最终回答「V2 符合全部条件」。","kind":"text","chars":78,"section":5},{"scene":"trace","step":2,"cam":"desk","html":"哪一步第一次明确违背了任务？","kind":"text","chars":14,"section":5},{"scene":"exercise","step":0,"cam":"desk","html":"","kind":"text","chars":0,"section":5,"quiet":true},{"scene":"exercise","step":1,"cam":"desk","html":"选择读取 V2 并不算错，它可以是在排查候选。真正的问题出现在拿到「坡道：无」之后，仍把 V2 判为合格。只看最终语气，找不到这个原因；对照条件和证据，才知道该修什么。","kind":"text","chars":80,"section":5,"reveal":true},{"scene":"trace","step":3,"cam":"desk","html":"回看科学社团的场地清单，你现在可以指出这条建议错在哪儿，也能拿出设备表上的那一行，让别人照着查一遍。","kind":"text","chars":50,"section":5},{"scene":"trace","step":4,"cam":"desk","html":"这几期的小程序按人写好的规则办事。换一条建议来，你也可以照这样查一遍：找出原来的要求，翻到对应的资料，看看哪一步有了依据，哪一步还欠一句交代。","kind":"text","chars":71,"section":5},{"scene":"lab","step":0,"cam":"desk","html":"\u003cb class=\"no\">6\u003c/b>\u003cspan>想自己核对每一道题\u003c/span>","kind":"h2","chars":9,"section":6},{"scene":"lab","step":1,"cam":"desk","html":"选读：本地实验说明 与 本系列第 4 篇输出 保存了两组六题。","kind":"text","chars":26,"section":6},{"scene":"lab","step":2,"cam":"desk","html":"每组都是 1 次任务成功、5 次恰当停止：后五次没有完成推荐，只是按情形说明原因后停下。两类结果分开记录，才能看清真正完成了多少任务。","kind":"text","chars":64,"section":6},{"scene":"lab","step":3,"cam":"desk","html":"程序还单独安排了一条漏掉坡道的错误建议。验收逐项读取原始要求、场地资料和本次查询记录，坡道一项不符，便把它判为错误完成。","kind":"text","chars":60,"section":6},{"scene":"lab","step":4,"cam":"desk","html":"这条错误是为检查验收办法故意设计的，不是真实模型犯错的记录。","kind":"text","chars":30,"section":6},{"scene":"lab","step":5,"cam":"desk","html":"","kind":"text","chars":0,"section":6,"quiet":true},{"scene":"refs","step":0,"cam":"desk","html":"","kind":"text","chars":0,"section":7,"quiet":true}]}</script>
+<script data-stage-source="stage.js">/* 互动版运行时：一次手势一拍的分镜阅读器。
+ * 经典脚本，无依赖，双击 file:// 也能运行。
+ * 不依赖浏览器的滚动：滚轮、触摸、键盘各自折算成「前进一拍 / 后退一拍」，画面固定不动，
+ * 所以触控板惯性、鼠标滚轮、手指轻划在各浏览器里表现一致。
+ * 纯函数在 Node 下经 module.exports 暴露，供单元测试。 */
+(function () {
+  'use strict';
+
+  /* ---------------- 纯函数 ---------------- */
+
+  /* 自动播放时每拍停留的秒数：按字数估读，已含 0.7s 的镜头移动。 */
+  function dwell(chars) {
+    return Math.min(12, Math.max(2.4, 1.4 + 0.14 * chars));
+  }
+
+  /* 把世界坐标里的矩形 rect=[x,y,w,h] 等比放进 area={x,y,w,h} 并居中。 */
+  function fitCamera(rect, area) {
+    var s = Math.min(area.w / rect[2], area.h / rect[3]);
+    return {
+      s: s,
+      x: area.x + (area.w - rect[2] * s) / 2 - rect[0] * s,
+      y: area.y + (area.h - rect[3] * s) / 2 - rect[1] * s
+    };
+  }
+
+  /* 元素在第 i 拍是否可见：at 起、until 前。 */
+  function visibleAt(at, until, i) {
+    return i >= at && (until == null || i < until);
+  }
+
+  /* 元素名 name 是否被聚焦列表点名：全等，或以 "<项>." 开头。 */
+  function focusHit(focus, name) {
+    for (var k = 0; k < focus.length; k++) {
+      if (name === focus[k] || name.indexOf(focus[k] + '.') === 0) return true;
+    }
+    return false;
+  }
+
+  /* '#b12' → 第 12 拍（下标 11）；无效返回 -1。 */
+  function parseBeatHash(hash, total) {
+    var m = /^#b(\d+)$/.exec(hash || '');
+    if (!m) return -1;
+    var n = Number(m[1]);
+    return n >= 1 && n <= total ? n - 1 : -1;
+  }
+  function formatBeatHash(i) { return '#b' + (i + 1); }
+
+  /* 滚轮手势限流：一次手势只前进一拍。feed(dy, t) 返回 +1 / -1 / 0；t 是毫秒时间戳，由调用方传入，
+   * 所以测试可以喂合成的事件序列。
+   * 触控板松手后还会有一两秒的惯性事件：翻页后锁住，直到事件流停顿 quiet 毫秒才解锁。
+   * 锁定期间有两种情况视为读者又发起了一次手势：
+   *   1) 锁定 minLock 毫秒后，增量突然比最近的平均值大得多（在惯性上又甩了一下）；
+   *   2) 锁定 restart 毫秒后，增量仍不小于本次手势峰值的 restartRatio（一直在匀速滚动的鼠标滚轮）。 */
+  function createWheelGate(options) {
+    var o = { threshold: 18, quiet: 130, minLock: 350, reaccel: 1.7, restart: 900, restartRatio: 0.7 };
+    for (var key in options) o[key] = options[key];
+    var sum = 0, locked = false, lastT = -1e9, lockedAt = 0, avg = 0, peak = 0;
+    return {
+      feed: function (dy, t) {
+        var a = Math.abs(dy);
+        if (!a) return 0;
+        if (t - lastT > o.quiet) { locked = false; sum = 0; avg = 0; peak = 0; }
+        lastT = t;
+        var prev = avg;
+        avg = prev ? prev * 0.6 + a * 0.4 : a;
+        if (locked) {
+          peak = Math.max(peak, a);
+          var since = t - lockedAt;
+          var surge = since > o.minLock && a > prev * o.reaccel + 8;
+          var steady = since > o.restart && a >= peak * o.restartRatio && a >= 20;
+          if (!surge && !steady) return 0;
+          locked = false; sum = 0;
+        }
+        sum += dy;
+        if (Math.abs(sum) < o.threshold) return 0;
+        var dir = sum > 0 ? 1 : -1;
+        sum = 0; locked = true; lockedAt = t; peak = a;
+        return dir;
+      }
+    };
+  }
+
+  /* 触摸滑动：手指上滑为前进。慢拖需要 48px，快速一划 24px 即可；斜着划不算。 */
+  function swipeStep(dx, dy, ms) {
+    var ay = Math.abs(dy), ax = Math.abs(dx);
+    if (ay < ax * 1.2) return 0;
+    if (ay >= 48 || (ay >= 24 && ms < 220)) return dy < 0 ? 1 : -1;
+    return 0;
+  }
+
+  /* 画面区：为顶栏和字幕卡留出位置。capH 是字幕卡实际占的高度（含它离底边的距离），
+   * 由页面量出，所以短句子给画面留更多地方；静默拍（封面）没有字幕卡，只留底栏。 */
+  function artArea(w, h, capH) {
+    var portrait = w / h < 0.85;
+    var top = portrait ? 56 : 64;
+    var bottom = capH ? capH + 14 : 64;
+    return { x: 0, y: top, w: w, h: Math.max(120, h - top - bottom), portrait: portrait };
+  }
+
+  var api = {
+    dwell: dwell, fitCamera: fitCamera, visibleAt: visibleAt, focusHit: focusHit,
+    parseBeatHash: parseBeatHash, formatBeatHash: formatBeatHash,
+    createWheelGate: createWheelGate, swipeStep: swipeStep, artArea: artArea
+  };
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  if (typeof document === 'undefined') return;
+
+  /* ---------------- 页面 ---------------- */
+
+  var dataEl = document.getElementById('stage-data');
+  if (!dataEl) return;
+  var data = JSON.parse(dataEl.textContent);
+  var beats = data.beats;
+  var total = beats.length;
+  var root = document.documentElement;
+  var $ = function (sel, scope) { return (scope || document).querySelector(sel); };
+  var $$ = function (sel, scope) { return Array.prototype.slice.call((scope || document).querySelectorAll(sel)); };
+
+  var stage = $('#stage');
+  var capText = $('#cap');
+  var capCard = $('#capcard');
+  var count = $('#count');
+  var hint = $('#hint');
+  var secNum = $('#sec-num');
+  var secName = $('#sec-name');
+  var secPill = $('#sec');
+  var bar = $('#bar');
+  var btnPrev = $('#btn-prev');
+  var btnNext = $('#btn-next');
+  var btnPlay = $('#btn-play');
+  var btnToc = $('#btn-toc');
+  var toc = $('#toc');
+  var readEl = $('#read');
+
+  var cur = -1;
+  var playing = false;
+  var timer = 0;
+  var lastScene = null;
+  var urlTimer = 0;
+  var flipState = {};
+
+  /* 每个场景自己编步号（0 起）；每一拍在分镜里声明自己对应哪一步。 */
+  var scenes = {};
+  $$('.scene').forEach(function (svg) {
+    var timed = $$('[data-at]', svg);
+    timed.forEach(function (el) {
+      el._at = Number(el.getAttribute('data-at'));
+      var un = el.getAttribute('data-until');
+      el._until = un == null ? null : Number(un);
+    });
+    scenes[svg.getAttribute('data-scene')] = { el: svg, cam: $('.cam', svg), timed: timed };
+  });
+
+  function mode() { return root.getAttribute('data-mode'); }
+
+  /* ---- 渲染：状态只由（场景、步号、镜头）决定，所以跳转和逐拍走得到同样的画面 ---- */
+
+  function setOn(sc, step) {
+    for (var k = 0; k < sc.timed.length; k++) {
+      var on = visibleAt(sc.timed[k]._at, sc.timed[k]._until, step);
+      sc.timed[k].classList.toggle('on', on);
+      sc.timed[k].setAttribute('aria-hidden', String(!on));
+    }
+  }
+
+  /* 聚焦：这一拍点名的元素保持原样，其余压暗（solo 时整个藏起来）。镜头放大时用，
+   * 免得露出一半的邻居显得像出错。名字用 data-n。 */
+  function setFocus(sc, focus, solo) {
+    var has = !!(focus && focus.length);
+    sc.el.classList.toggle('has-focus', has);
+    sc.el.classList.toggle('solo', has && !!solo);
+    for (var k = 0; k < sc.timed.length; k++) {
+      var e = sc.timed[k];
+      e.classList.toggle('focus', has && focusHit(focus, e.getAttribute('data-n') || ''));
+    }
+  }
+
+  /* how：'instant' 直接到位；'enter' 刚切入场景，先复位再让元素依次出现；'diff' 同场景内只动变化的元素。 */
+  function applyElements(i, how) {
+    var b = beats[i];
+    var sc = scenes[b.scene];
+    if (!sc) return;
+    if (how === 'instant') {
+      sc.el.classList.add('snap');
+      setOn(sc, b.step);
+      setFocus(sc, b.focus, b.solo);
+      void sc.el.getBoundingClientRect();
+      sc.el.classList.remove('snap');
+    } else if (how === 'enter') {
+      sc.el.classList.add('snap');
+      sc.timed.forEach(function (e) { e.classList.remove('on'); });
+      setFocus(sc, b.focus, b.solo);
+      void sc.el.getBoundingClientRect();
+      sc.el.classList.remove('snap');
+      setOn(sc, b.step);
+    } else {
+      setOn(sc, b.step);
+      setFocus(sc, b.focus, b.solo);
+    }
+  }
+
+  function applyCamera(i, instant) {
+    var b = beats[i];
+    var sc = scenes[b.scene];
+    if (!sc) return;
+    var cam = data.scenes[b.scene].cams[b.cam];
+    var area = artArea(innerWidth, innerHeight, b.quiet ? 0 : innerHeight - capCard.getBoundingClientRect().top);
+    var rect = area.portrait ? cam.p : cam.l;
+    var t = fitCamera(rect, area);
+    var g = sc.cam;
+    if (instant) g.style.transition = 'none';
+    g.style.transform = 'translate(' + t.x.toFixed(2) + 'px,' + t.y.toFixed(2) + 'px) scale(' + t.s.toFixed(4) + ')';
+    if (instant) { void g.getBoundingClientRect(); g.style.transition = ''; }
+  }
+
+  function applyScene(i) {
+    var id = beats[i].scene;
+    if (id === lastScene) return false;
+    Object.keys(scenes).forEach(function (key) {
+      scenes[key].el.classList.toggle('is-active', key === id);
+      scenes[key].el.setAttribute('aria-hidden', String(key !== id));
+    });
+    lastScene = id;
+    return true;
+  }
+
+  /* 静默拍（封面）：字幕卡不显示，但文字仍写进状态区，读屏照样播报。 */
+  function applyCaption(i) {
+    var b = beats[i];
+    capText.innerHTML = b.html || '';
+    capText.setAttribute('data-kind', b.kind || 'text');
+    capCard.classList.toggle('quiet', !!b.quiet);
+    capText.classList.remove('in');
+    void capText.offsetWidth;
+    capText.classList.add('in');
+  }
+
+  function applyHud(i) {
+    var b = beats[i];
+    var sec = data.sections[b.section];
+    secNum.textContent = sec.num ? sec.num + '/' + data.sectionCount : '';
+    secName.textContent = sec.label;
+    secPill.hidden = !sec.label;
+    bar.style.transform = 'scaleX(' + ((i + 1) / total).toFixed(4) + ')';
+    count.textContent = (i + 1) + ' / ' + total;
+    btnPrev.disabled = i <= 0;
+    btnNext.disabled = i >= total - 1;
+  }
+
+  function syncUrl(i) {
+    clearTimeout(urlTimer);
+    urlTimer = setTimeout(function () {
+      if (mode() !== 'stage') return;
+      try { history.replaceState(null, '', location.pathname + location.search + formatBeatHash(i)); } catch (e) { /* Safari 限频时忽略 */ }
+    }, 200);
+  }
+
+  function render(i, opts) {
+    opts = opts || {};
+    i = Math.max(0, Math.min(total - 1, i));
+    if (i === cur && !opts.force) return;
+    stage.setAttribute('data-orient', artArea(innerWidth, innerHeight).portrait ? 'portrait' : 'landscape');
+    var changed = applyScene(i);
+    cur = i;
+    applyCaption(i);   // 先排字幕：镜头要按字幕卡的实际高度留白
+    applyElements(i, opts.instant ? 'instant' : changed ? 'enter' : 'diff');
+    syncInteractions();
+    applyCamera(i, opts.instant || changed);
+    applyHud(i);
+    syncUrl(i);
+    if (i > 0 && hint) hint.hidden = true;
+    schedule();
+  }
+
+  function go(i, fromAuto) {
+    if (!fromAuto) stopPlay();
+    render(i);
+  }
+  function step(dir, fromAuto) { go(cur + dir, fromAuto); }
+
+  /* ---- 自动播放：读者一操作就停 ---- */
+
+  function stopPlay() {
+    if (!playing) return;
+    playing = false;
+    clearTimeout(timer);
+    btnPlay.setAttribute('data-playing', 'false');
+    btnPlay.textContent = '播放';
+  }
+  function startPlay() {
+    if (cur >= total - 1) render(0);
+    playing = true;
+    btnPlay.setAttribute('data-playing', 'true');
+    btnPlay.textContent = '暂停';
+    schedule();
+  }
+  function schedule() {
+    clearTimeout(timer);
+    if (!playing || document.hidden || mode() !== 'stage') return;
+    timer = setTimeout(function () {
+      if (cur >= total - 1) { stopPlay(); return; }
+      step(1, true);
+    }, dwell(beats[cur].chars || 0) * 1000);
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) clearTimeout(timer); else schedule();
+  });
+
+  /* ---- 输入：滚轮、触摸、键盘各自折算成一拍 ---- */
+
+  var gate = createWheelGate();
+  function inDialog(t) { return !!(t && t.closest && t.closest('dialog')); }
+
+  /* 挂在 document 上：光标停在顶栏按钮上时滚轮也要接管。 */
+  document.addEventListener('wheel', function (e) {
+    if (mode() !== 'stage' || e.ctrlKey || toc.open || inDialog(e.target)) return;
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY) * 1.5) return;   // 横向手势留给浏览器（后退/前进）
+    e.preventDefault();
+    if (e.deltaY) stopPlay();   // 自动播放中读者一动滚轮就接管，哪怕这一下没够翻页
+    var unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? innerHeight : 1;
+    var dir = gate.feed(e.deltaY * unit, e.timeStamp);
+    if (dir) step(dir);
+  }, { passive: false });
+
+  var touch = null;
+  document.addEventListener('touchstart', function (e) {
+    if (mode() !== 'stage' || inDialog(e.target) || e.touches.length !== 1) { touch = null; return; }
+    var p = e.touches[0];
+    touch = { x: p.clientX, y: p.clientY, t: e.timeStamp };
+  }, { passive: true });
+  document.addEventListener('touchmove', function (e) {
+    if (touch && e.cancelable) e.preventDefault();   // 不让页面跟着手指橡皮筋
+  }, { passive: false });
+  document.addEventListener('touchend', function (e) {
+    if (!touch) return;
+    var p = e.changedTouches[0], t0 = touch;
+    touch = null;
+    var dir = swipeStep(p.clientX - t0.x, p.clientY - t0.y, e.timeStamp - t0.t);
+    if (dir) step(dir);
+  });
+  document.addEventListener('touchcancel', function () { touch = null; });
+
+  /* 键盘：焦点在按钮或链接上时，空格和回车留给它们自己。 */
+  document.addEventListener('keydown', function (e) {
+    if (mode() !== 'stage' || e.ctrlKey || e.metaKey || e.altKey || toc.open) return;
+    var t = e.target;
+    if (t && t.closest && t.closest('input,textarea,select,[contenteditable]')) return;
+    var key = e.key;
+    var onControl = t && t.closest && t.closest('button,a,.hit');
+    if ((key === ' ' || key === 'Enter') && onControl) return;
+    var dir = 0, to = -1;
+    if (key === 'ArrowDown' || key === 'ArrowRight' || key === 'PageDown' || (key === ' ' && !e.shiftKey)) dir = 1;
+    else if (key === 'ArrowUp' || key === 'ArrowLeft' || key === 'PageUp' || (key === ' ' && e.shiftKey)) dir = -1;
+    else if (key === 'Home') to = 0;
+    else if (key === 'End') to = total - 1;
+    else return;
+    e.preventDefault();
+    if (e.repeat) return;
+    if (to >= 0) go(to); else step(dir);
+  });
+
+  btnPrev.addEventListener('click', function () { step(-1); });
+  btnNext.addEventListener('click', function () { step(1); });
+  btnPlay.addEventListener('click', function () { if (playing) stopPlay(); else startPlay(); });
+
+  /* 翻面是独立的阅读动作，不推动拍号；横竖屏共用同一张卡的状态。 */
+  function syncInteractions() {
+    Object.keys(scenes).forEach(function (id) {
+      var sc = scenes[id];
+      $$('.hit', sc.el).forEach(function (hit) {
+        var host = hit.closest('.s');
+        var shown = id === lastScene && host.classList.contains('on') && getComputedStyle(host).display !== 'none' &&
+          !(sc.el.classList.contains('solo') && !host.classList.contains('focus'));
+        hit.setAttribute('tabindex', shown ? '0' : '-1');
+        var key = hit.getAttribute('data-flip');
+        if (!key) return;
+        var reveal = !!(beats[cur] && beats[cur].reveal);
+        var stateKey = (reveal ? cur + ':' : '') + key;
+        var flipped = flipState[stateKey] == null ? reveal : flipState[stateKey];
+        hit.classList.toggle('is-flipped', flipped);
+        hit.setAttribute('aria-pressed', String(flipped));
+        hit.setAttribute('aria-label', hit.getAttribute(flipped ? 'data-back-label' : 'data-front-label'));
+      });
+    });
+    var focused = document.activeElement;
+    if (focused && focused.matches('.hit') && focused.getAttribute('tabindex') !== '0') {
+      stage.setAttribute('tabindex', '-1');
+      stage.focus({ preventScroll: true });
+    }
+  }
+  function flip(hit) {
+    if (!hit || hit.getAttribute('tabindex') !== '0') return;
+    stopPlay();
+    var key = (beats[cur].reveal ? cur + ':' : '') + hit.getAttribute('data-flip');
+    flipState[key] = !hit.classList.contains('is-flipped');
+    syncInteractions();
+  }
+  stage.addEventListener('click', function (e) {
+    var hit = e.target.closest && e.target.closest('[data-flip]');
+    if (hit) { e.preventDefault(); flip(hit); }
+  });
+  stage.addEventListener('keydown', function (e) {
+    var hit = e.target.closest && e.target.closest('[data-flip]');
+    if (!hit || (e.key !== 'Enter' && e.key !== ' ')) return;
+    e.preventDefault(); e.stopPropagation();
+    if (!e.repeat) flip(hit);
+  });
+
+  /* ---- 目录 ---- */
+
+  function buildToc() {
+    var list = $('#toc-list');
+    list.innerHTML = '';
+    data.sections.forEach(function (sec) {
+      var li = document.createElement('li');
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'toc-card';
+      b.innerHTML = '<span class="toc-no"></span><span class="toc-name"></span>';
+      if (sec.thumbnail) b.insertAdjacentHTML('afterbegin', sec.thumbnail);
+      $('.toc-no', b).textContent = sec.num || sec.mark || '';
+      $('.toc-name', b).textContent = sec.label;
+      b.addEventListener('click', function () { closeToc(); go(sec.first); });
+      li.appendChild(b);
+      list.appendChild(li);
+    });
+  }
+  function openToc() {
+    stopPlay();
+    if (toc.showModal) toc.showModal(); else toc.setAttribute('open', '');
+  }
+  function closeToc() {
+    if (toc.close) toc.close(); else toc.removeAttribute('open');
+  }
+  btnToc.addEventListener('click', openToc);
+  toc.addEventListener('click', function (e) { if (e.target === toc) closeToc(); });
+  toc.addEventListener('close', function () { btnToc.focus(); });
+  $('#toc-close').addEventListener('click', closeToc);
+
+  /* ---- 模式：分镜 / 全文 ---- */
+
+  /* 改查询参数：?read 与 ?stage 互斥；空值写成无等号的形式。 */
+  function queryWith(changes) {
+    var p = new URLSearchParams(location.search);
+    Object.keys(changes).forEach(function (name) {
+      if (changes[name]) p.set(name, ''); else p.delete(name);
+    });
+    var qs = p.toString().replace(/=(?=&|$)/g, '');
+    return location.pathname + (qs ? '?' + qs : '');
+  }
+  var startBeat = parseBeatHash(location.hash, total);
+
+  function setMode(next) {
+    root.setAttribute('data-mode', next);
+    if (next === 'read') {
+      stopPlay();
+      history.replaceState(null, '', queryWith({ read: true, stage: false }));
+      window.scrollTo(0, 0);
+      readEl.setAttribute('tabindex', '-1');
+      readEl.focus({ preventScroll: true });
+    } else {
+      /* 系统开了「减少动态效果」时，要用 ?stage 才能留在分镜版。 */
+      var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      history.replaceState(null, '', queryWith({ read: false, stage: reduced }));
+      render(cur < 0 ? Math.max(startBeat, 0) : cur, { force: true, instant: true });
+    }
+  }
+  $$('[data-action="read"]').forEach(function (el) {
+    el.addEventListener('click', function (e) { e.preventDefault(); setMode('read'); });
+  });
+  $$('[data-action="stage"]').forEach(function (el) {
+    el.addEventListener('click', function (e) { e.preventDefault(); setMode('stage'); });
+  });
+
+  window.addEventListener('hashchange', function () {
+    var i = parseBeatHash(location.hash, total);
+    if (i >= 0 && mode() === 'stage') go(i);
+  });
+  var resizeTimer = 0;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      if (mode() === 'stage' && cur >= 0) render(cur, { force: true, instant: true });
+    }, 80);
+  });
+
+  /* ---- 启动 ---- */
+
+  buildToc();
+  if (hint) hint.textContent = matchMedia('(pointer: coarse)').matches ? '上滑翻页' : '滚动或按 ↓ 翻页';
+  var begin = function () {
+    if (mode() === 'stage') render(Math.max(startBeat, 0), { force: true, instant: true });
+    requestAnimationFrame(function () { requestAnimationFrame(function () { stage.classList.add('ready'); }); });
+  };
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(begin, begin); else begin();
+})();
+</script>
+</body>
+</html>

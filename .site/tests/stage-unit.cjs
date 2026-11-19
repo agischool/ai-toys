@@ -975,4 +975,87 @@ test('不一致的卡片、拼接文字、字符数和保留标志会报错',()=
   for(const c of [null,[null],Array(1),[{id:'X',text:'内容'}],[{id:'X',text:'内容',kind:'other'}]])assert.throws(()=>contextRecords.select(c,'full'),/卡片/);
   assert.throws(()=>contextRecords.checkPhrases(null),/文本/);
 });
-console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权、解码、存储、方案筛选、编码、关系、证据核对、校园流程、工具记录、多步场地路线与上下文卡片算例）`);
+const acceptanceRecords=require('../stage/acceptance-records.cjs');
+const acceptanceClone=v=>JSON.parse(JSON.stringify(v));
+test('两组六题及另设故障的逐项验收与保存结果一致',()=>{
+  const saved=JSON.parse(fs.readFileSync(path.join(__dirname,'../../Python实现/source/campus_agent_lab/outputs/reference/episode20/result.json'),'utf8'));
+  assert.deepEqual(acceptanceRecords.groups,saved.groups);assert.deepEqual(acceptanceRecords.fault,saved.fault_demo);
+  for(const group of Object.values(acceptanceRecords.groups))for(const c of group.cases)assert.deepEqual(acceptanceRecords.audit(c),c.verification,c.case_id);
+  assert.deepEqual(acceptanceRecords.audit(acceptanceRecords.faultCase),saved.fault_demo.verification);
+});
+test('自报合格、调用正常、期望成功均不能掩盖原材料中的坡道不符',()=>{
+  const c=acceptanceClone(acceptanceRecords.faultCase);
+  assert.equal(c.run.candidate_checks[0].eligible,true);assert.equal(c.run.candidate_checks[0].ramp_satisfied,true);
+  assert.ok(c.run.trace.every(x=>x.executed&&x.status==='ok'));
+  const a=acceptanceRecords.audit(c);assert.equal(a.outcome,'incorrect_completion');assert.equal(a.task_completed,false);
+  assert.deepEqual(Object.entries(a.checks).filter(([,v])=>!v).map(([k])=>k),['ramp']);
+  c.run.candidate_checks=[];c.verification={outcome:'task_success'};c.expected_status='no_match';
+  assert.deepEqual(acceptanceRecords.audit(c),a);
+});
+test('适用期、日期、整个时段、设备、坡道及冲突各自检查',()=>{
+  const base=acceptanceRecords.groups.development.cases[0];
+  const changes=[['period',c=>c.environment.venues[0].period='上学期'],['day',c=>c.environment.venues[0].day='周一'],['time',c=>c.environment.venues[0].end=15],['equipment',c=>c.environment.details.V1.equipment=[]],['ramp',c=>c.environment.details.V1.ramp=null],['unconflicted',c=>c.environment.details.V1.conflict=true],['task_unchanged',c=>c.run.task.ramp=false]];
+  for(const [check,change] of changes){const c=acceptanceClone(base);change(c);const a=acceptanceRecords.audit(c);assert.equal(a.checks[check],false,check);assert.equal(a.task_completed,false,check);}
+});
+test('场地本身合格仍需此次查询的同场地材料及正确来源编号',()=>{
+  const base=acceptanceRecords.groups.development.cases[0];
+  for(const check of ['hours_evidence','details_evidence']){
+    const c=acceptanceClone(base),i=check==='hours_evidence'?0:1;
+    c.run.trace.splice(i,1);c.run.tool_calls--;
+    assert.equal(acceptanceRecords.audit(c).checks[check],false);assert.equal(acceptanceRecords.audit(c).task_completed,false);
+  }
+  const c=acceptanceClone(base);c.run.suggestion.details_source='E2';
+  assert.equal(acceptanceRecords.audit(c).checks.details_evidence,false);
+  c.run.suggestion.venue_id='V9';assert.equal(acceptanceRecords.audit(c).checks.known_venue,false);
+});
+test('每组1成功5恰当停止，故障另计；不恰当停止不能混入成功',()=>{
+  for(const g of Object.values(acceptanceRecords.groups)){
+    assert.equal(g.cases.length,6);assert.equal(g.sample_count,6);
+    assert.deepEqual(acceptanceRecords.tally(g.cases),g.counts);
+    assert.deepEqual(g.counts,{task_success:1,appropriate_stop:5,incorrect_completion:0,incorrect_result:0});
+    for(const c of g.cases.slice(0))if(!c.run.suggestion)assert.equal(acceptanceRecords.audit(c).task_completed,false);
+  }
+  const c=acceptanceClone(acceptanceRecords.groups.development.cases[0]);c.run.suggestion=null;c.run.status='no_match';
+  assert.equal(acceptanceRecords.audit(c).outcome,'incorrect_result');
+  c.expected_status='no_match';assert.equal(acceptanceRecords.audit(c).outcome,'appropriate_stop');
+  c.run.status='tool_error';assert.equal(acceptanceRecords.audit(c).outcome,'incorrect_result');
+});
+test('H02只按该题资料检查V2坡道，调用次数与题号各自保留',()=>{
+  const d=acceptanceRecords.groups.development.cases,h=acceptanceRecords.groups.reserved.cases;
+  assert.deepEqual(d.map(c=>c.run.tool_calls),[2,2,3,1,2,2]);assert.deepEqual(h.map(c=>c.run.tool_calls),[2,3,2,1,1,2]);
+  assert.equal(d[0].environment.details.V2.ramp,false);assert.equal(h[1].environment.details.V2.ramp,true);
+  assert.equal(h[1].run.suggestion.venue_id,'V2');assert.equal(acceptanceRecords.audit(h[1]).outcome,'task_success');
+  assert.equal(acceptanceRecords.fault.run.trace[1].result.ramp,false);
+});
+test('只建议标志只检查结构化工具轨迹，不冒充任意回答的语义判定',()=>{
+  const c=acceptanceClone(acceptanceRecords.groups.development.cases[0]);
+  c.run.trace.push({tool:'book_venue',args:{venue_id:'V1'},executed:true,status:'ok',result:{}});c.run.tool_calls++;
+  assert.equal(acceptanceRecords.audit(c).checks.only_advice,false);
+  const result=acceptanceRecords.audit(acceptanceRecords.groups.development.cases[0]);
+  assert.ok(!Object.hasOwn(result,'naturalLanguageChecked'));
+});
+test('验收记录深层冻结，计算不修改原记录，无效结构报错',()=>{
+  const c=acceptanceRecords.groups.development.cases[0],before=JSON.stringify(acceptanceRecords.groups);
+  assert.ok(Object.isFrozen(c.environment.details.V1)&&Object.isFrozen(acceptanceRecords.fault.run.trace));
+  const a=acceptanceRecords.audit(c);a.checks.ramp=false;
+  acceptanceRecords.tally(acceptanceRecords.groups.development.cases);
+  assert.equal(JSON.stringify(acceptanceRecords.groups),before);assert.equal(acceptanceRecords.audit(c).checks.ramp,true);
+  for(const bad of [null,{}, {...c,task:{...c.task,start:true}},{...c,run:{...c.run,tool_calls:1}},{...c,run:{...c.run,status:'other'}},{...c,run:{...c.run,suggestion:{venue_id:'V1'}}}])assert.throws(()=>acceptanceRecords.audit(bad),/记录|条件/);
+  assert.throws(()=>acceptanceRecords.tally(null),/列表/);
+});
+test('全文不把文件名猜成网址，保留显式资料链接与本地入口',()=>{
+  const name=fs.readdirSync(path.join(__dirname,'../../青少年AI科普连载')).find(n=>n.startsWith('20_'));
+  const html=require('../render_stage.cjs').compileOne(name).html;
+  assert.ok(!html.includes('href="http://adapters.py"'));
+  assert.ok(html.includes('adapters.py 中 run_agent_session'));
+  assert.ok(html.includes('href="https://github.com/cs329z/assignment1-harness/blob/95f4cb7bfe28a27a7cf5bcb1eccb1aaaf1385eb3/cs329z_hw1/adapters.py"'));
+  assert.ok(html.includes('href="../../Python实现/source/campus_agent_lab/README.md"'));
+});
+test('全文链接识别修正后前19篇互动版仍与已交付文件逐字节一致',()=>{
+  const serial=path.join(__dirname,'../../青少年AI科普连载');
+  for(const name of fs.readdirSync(serial).filter(n=>/^\d\d_/.test(n)&&Number(n.slice(0,2))<=19)){
+    const result=require('../render_stage.cjs').compileOne(name);
+    assert.equal(result.html,fs.readFileSync(path.join(serial,name,'互动版.html'),'utf8'),name);
+  }
+});
+console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权、解码、存储、方案筛选、编码、关系、证据核对、校园流程、工具记录、多步场地路线、上下文卡片与任务验收算例）`);

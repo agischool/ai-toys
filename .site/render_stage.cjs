@@ -119,6 +119,8 @@ function assemble(allUnits, board, file) {
  * 同名会让全文页的图说被画成悬在页面底部的字幕卡。 */
 function renderRead(source, title) {
   const md = new MarkdownIt({ html: false, linkify: true, typographer: false });
+  // 文件名（如 adapters.py）不是省略协议的网址；显式 URL 和 Markdown 链接照常保留。
+  md.linkify.set({ fuzzyLink: false });
   md.renderer.rules.paragraph_open = (tokens, i) => {
     const inline = tokens[i + 1];
     const kids = (inline && inline.children) || [];
