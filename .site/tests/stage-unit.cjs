@@ -494,4 +494,39 @@ test('手动试数支持有限小数，拒绝无效参数和目标', () => {
   for (const b of [NaN, Infinity, '2']) assert.throws(() => parameter.trial(b), /有限数/);
   for (const answers of [[3,4], [3,4,NaN]]) assert.throws(() => parameter.trial(2,answers), /目标/);
 });
-console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成与加权算例）`);
+const decoder=require('../stage/decoder.cjs');
+test('因果遮罩只允许自身和前文，拒绝非法尺寸',()=>{
+  assert.deepEqual(decoder.mask(),[[true,false,false],[true,true,false],[true,true,true]]);
+  for(const n of [0,17,1.5,NaN]) assert.throws(()=>decoder.mask(n),/尺寸/);
+});
+test('每行目标向后偏移一片，可读取前缀严格受限',()=>{
+  const rows=decoder.trainingRows();
+  assert.deepEqual(rows.map(r=>r.target),['下雨','了','。']);
+  assert.deepEqual(rows.map(r=>r.readable),[['今天'],['今天','下雨'],['今天','下雨','了']]);
+  rows.forEach((r,i)=>assert.deepEqual(r.allowed.map((v,j)=>v?j:-1).filter(j=>j>=0),Array.from({length:i+1},(_,j)=>j)));
+  assert.throws(()=>decoder.trainingRows(['今天']),/序列/);
+  assert.throws(()=>decoder.trainingRows(['今天','']),/序列/);
+});
+test('词向量与位置向量逐项相加，编号只作索引且原记录不变',()=>{
+  assert.deepEqual(decoder.representation(0).combined,[.2,.5]);
+  decoder.representation(1).combined.forEach((v,i)=>near(v,[.7,-.2][i]));
+  assert.deepEqual(decoder.entries[0].embedding,[.2,.4]);
+  assert.equal(decoder.representation(0).id,17);
+  assert.ok(Object.isFrozen(decoder.entries[0].embedding));
+  assert.throws(()=>decoder.representation(2),/位置/);
+});
+test('两轮人为分布均归一，贪心依次接了和句号再停止',()=>{
+  const trace=decoder.generation();
+  trace.forEach(r=>near(r.candidates.reduce((s,v)=>s+v.p,0),1));
+  assert.deepEqual(trace.map(r=>r.next),['了','。']);
+  assert.deepEqual(trace.map(r=>r.stop),[false,true]);
+  assert.deepEqual(trace[1].before,trace[0].after);
+  assert.deepEqual(trace[1].after,['今天','下雨','了','。']);
+});
+test('换选吗产生另一上下文，接回片段不修改原数组',()=>{
+  const before=['今天','下雨'];
+  assert.deepEqual(decoder.append(before,'吗'),['今天','下雨','吗']);
+  assert.deepEqual(before,['今天','下雨']);
+  for(const args of [[[],'了'],[before,''],[[1],'了']]) assert.throws(()=>decoder.append(...args),/文字/);
+});
+console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权与解码算例）`);

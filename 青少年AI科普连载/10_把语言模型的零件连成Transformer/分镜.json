@@ -1,0 +1,316 @@
+{
+  "complete": true,
+  "beats": [
+    {
+      "from": "AI 接出下一片文字前，里面发生了什么？",
+      "take": 1,
+      "scene": "cover",
+      "step": 0,
+      "cam": "all",
+      "quiet": true
+    },
+    {
+      "from": "输入“今天下雨”，屏幕上接着出现“了”，",
+      "take": 2,
+      "scene": "open",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "本系列第 2 篇看过怎样一片片接文字，本",
+      "take": 2,
+      "scene": "open",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "第一次读，可以在纸上写下“今天／下雨”，",
+      "take": 2,
+      "scene": "open",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "文字先取得数字表示",
+      "take": 1,
+      "scene": "representation",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "先人为约定，把输入分成“今天／下雨”两个",
+      "take": 2,
+      "scene": "representation",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "token 先对应一个编号，再由编号查到",
+      "take": 3,
+      "scene": "representation",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "顺序也必须进入计算。",
+      "take": 2,
+      "scene": "representation",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "本例把位置表示加到词的表示中；实际架构也",
+      "take": 1,
+      "scene": "representation",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "带着文字与位置信息的数字，接着进入多层 ",
+      "take": 2,
+      "scene": "representation",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "图1把这条路线放在了一起。",
+      "take": 3,
+      "scene": "representation",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "一块里面有几种分工",
+      "take": 1,
+      "scene": "block",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "第一项分工是联系上下文。",
+      "take": 2,
+      "scene": "block",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "“自”表示信息来自同一条序列，“因果”在",
+      "take": 2,
+      "scene": "block",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "第二项分工是加工当前位置。",
+      "take": 3,
+      "scene": "block",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "把一个位置上的计算缩成一个数来看。",
+      "take": 4,
+      "scene": "block",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "这里的层归一化会根据当前位置一组数的均值",
+      "take": 2,
+      "scene": "block",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "这里采用的顺序是：注意力计算→残差相加→",
+      "take": 2,
+      "scene": "block",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "这些名字不必一次背完。",
+      "take": 3,
+      "scene": "block",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "这条专门接着前文生成的路线，常称为“只用",
+      "take": 2,
+      "scene": "block",
+      "step": 8,
+      "cam": "desk"
+    },
+    {
+      "from": "为什么训练时也要遮住后文",
+      "take": 1,
+      "scene": "mask",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "训练时有个容易“作弊”的地方。",
+      "take": 3,
+      "scene": "mask",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "正确的限制是：预测“下雨”只用“今天”，",
+      "take": 1,
+      "scene": "mask",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "因果遮罩负责阻断未来位置的信息。",
+      "take": 3,
+      "scene": "mask",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "图2  每行只能读取自身及前面的输入，再",
+      "take": 2,
+      "scene": "mask",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "看图2的“下雨”这一行：它能读“今天”和",
+      "take": 2,
+      "scene": "mask",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "前面各层也要遵守同样限制，避免未来答案沿",
+      "take": 1,
+      "scene": "mask",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "训练时，正确句子已经给定，所以许多行可以",
+      "take": 2,
+      "scene": "mask",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "可以沿着图 2 自查：“预测『了』”对应",
+      "take": 2,
+      "scene": "exercise",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "答案是“下雨”这一行，它能读取“今天”和",
+      "take": 1,
+      "scene": "exercise",
+      "step": 1,
+      "cam": "desk",
+      "reveal": true
+    },
+    {
+      "from": "注意“这一行输入了什么”与“这一行要预测",
+      "take": 2,
+      "scene": "mask",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "走完一次生成",
+      "take": 1,
+      "scene": "generation",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "回到输入“今天／下雨”。",
+      "take": 3,
+      "scene": "generation",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "假设第一轮的候选是：“了”占0.60，“",
+      "take": 1,
+      "scene": "generation",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "选择最高概率，就接上“了”。",
+      "take": 2,
+      "scene": "generation",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "第二轮假设“。”",
+      "take": 2,
+      "scene": "generation",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "本例约定遇到句号停止，于是输出“今天下雨",
+      "take": 2,
+      "scene": "generation",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "第二轮能用到“了”，是因为第一轮已经把它",
+      "take": 1,
+      "scene": "generation",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "若先选“吗”，下一轮的上下文就不同；采用",
+      "take": 1,
+      "scene": "generation",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "这个过程一直使用已有参数，接回新 tok",
+      "take": 1,
+      "scene": "generation",
+      "step": 8,
+      "cam": "desk"
+    },
+    {
+      "from": "实际程序可以缓存已算好的部分结果，减少重",
+      "take": 2,
+      "scene": "generation",
+      "step": 9,
+      "cam": "desk"
+    },
+    {
+      "from": "生成开头的“了”和句号时，文字先变成表示",
+      "take": 1,
+      "scene": "generation",
+      "step": 10,
+      "cam": "desk"
+    },
+    {
+      "from": "这解释了文字怎样接出来；今天究竟下没下雨",
+      "take": 1,
+      "scene": "generation",
+      "step": 11,
+      "cam": "desk"
+    },
+    {
+      "take": 0,
+      "scene": "refs",
+      "step": 0,
+      "cam": "desk",
+      "refs": true,
+      "quiet": true
+    }
+  ]
+}
