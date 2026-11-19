@@ -1,0 +1,316 @@
+{
+  "complete": true,
+  "beats": [
+    {
+      "take": 1,
+      "scene": "cover",
+      "step": 0,
+      "cam": "all",
+      "quiet": true,
+      "from": "从续写到按要求回答，中间训练了什么？"
+    },
+    {
+      "take": 1,
+      "scene": "open",
+      "step": 0,
+      "cam": "desk",
+      "from": "「请把 abcd 原样抄写出来。」"
+    },
+    {
+      "take": 2,
+      "scene": "open",
+      "step": 1,
+      "cam": "desk",
+      "from": "假如 AI 接着写「抄写要保持字迹工整」，这句话读"
+    },
+    {
+      "take": 3,
+      "scene": "open",
+      "step": 2,
+      "cam": "desk",
+      "from": "这里用的语言模型会根据已有文字，一片一片往下接。"
+    },
+    {
+      "take": 1,
+      "scene": "predict",
+      "step": 0,
+      "cam": "desk",
+      "from": "从文本里取得下一片的目标"
+    },
+    {
+      "take": 3,
+      "scene": "predict",
+      "step": 1,
+      "cam": "desk",
+      "from": "出第一道题，只要一句现成的话。"
+    },
+    {
+      "take": 2,
+      "scene": "predict",
+      "step": 2,
+      "cam": "desk",
+      "from": "例如，文本是「今天／下雨／了／。」"
+    },
+    {
+      "take": 3,
+      "scene": "predict",
+      "step": 3,
+      "cam": "desk",
+      "from": "假如原文的下一片是「了」，模型却只给它很小的概率，"
+    },
+    {
+      "take": 1,
+      "scene": "predict",
+      "step": 4,
+      "cam": "desk",
+      "from": "在这条路线里，先用大量文本做这样的学习，叫作预训练"
+    },
+    {
+      "take": 4,
+      "scene": "predict",
+      "step": 5,
+      "cam": "desk",
+      "from": "练习材料里有问答，有故事，也有错误的说法。"
+    },
+    {
+      "take": 1,
+      "scene": "demos",
+      "step": 0,
+      "cam": "desk",
+      "from": "换成「要求＋示范回答」"
+    },
+    {
+      "take": 3,
+      "scene": "demos",
+      "step": 1,
+      "cam": "desk",
+      "from": "另一种数据组织方式，把指令与希望出现的回答配成一组"
+    },
+    {
+      "take": 3,
+      "scene": "demos",
+      "step": 2,
+      "cam": "desk",
+      "from": "在预训练模型上，用这样的示范继续训练，是监督微调的"
+    },
+    {
+      "take": 2,
+      "scene": "demos",
+      "step": 3,
+      "cam": "desk",
+      "from": "图 1  两种样本都能采用下一 token 预测。"
+    },
+    {
+      "take": 3,
+      "scene": "demos",
+      "step": 4,
+      "cam": "desk",
+      "from": "回答示范还需要质量检查。"
+    },
+    {
+      "take": 1,
+      "scene": "mask",
+      "step": 0,
+      "cam": "desk",
+      "from": "哪些位置直接计入损失"
+    },
+    {
+      "take": 3,
+      "scene": "mask",
+      "step": 1,
+      "cam": "desk",
+      "from": "一种常见设置，只给回答 token 的预测计损失。"
+    },
+    {
+      "take": 3,
+      "scene": "mask",
+      "step": 2,
+      "cam": "desk",
+      "from": "用配套程序的一条小序列看清位置：<abcd|abc"
+    },
+    {
+      "take": 1,
+      "scene": "mask",
+      "step": 3,
+      "cam": "desk",
+      "from": "如果把全部下一片预测都计分，一共有 10 个目标："
+    },
+    {
+      "take": 1,
+      "scene": "mask",
+      "step": 4,
+      "cam": "desk",
+      "from": "如果只计回答区间，则计后面的 a b c d >，"
+    },
+    {
+      "take": 2,
+      "scene": "mask",
+      "step": 5,
+      "cam": "desk",
+      "from": "用纸盖住竖线右边的 abcd>。"
+    },
+    {
+      "take": 1,
+      "scene": "mask",
+      "step": 6,
+      "cam": "desk",
+      "from": "揭开第一个 a，这时才有答案给刚才那一猜打分。"
+    },
+    {
+      "take": 1,
+      "scene": "mask",
+      "step": 7,
+      "cam": "desk",
+      "from": "等模型读到这个 a，它要猜的已经是 b 了。"
+    },
+    {
+      "take": 2,
+      "scene": "mask",
+      "step": 4,
+      "cam": "desk",
+      "from": "图 2  十个预测位置的计分开关为 0、0、0、0"
+    },
+    {
+      "take": 3,
+      "scene": "mask",
+      "step": 8,
+      "cam": "desk",
+      "from": "这些开关叫损失掩码，可以理解为「哪些预测列入这次成"
+    },
+    {
+      "take": 3,
+      "scene": "mask",
+      "step": 9,
+      "cam": "desk",
+      "from": "不为指令侧的预测计分，指令仍然要读。"
+    },
+    {
+      "take": 1,
+      "scene": "update",
+      "step": 0,
+      "cam": "desk",
+      "from": "用同一条练习，再算一次损失"
+    },
+    {
+      "take": 4,
+      "scene": "update",
+      "step": 1,
+      "cam": "desk",
+      "from": "现在用同一道抄写题做两遍。"
+    },
+    {
+      "take": 3,
+      "scene": "update",
+      "step": 2,
+      "cam": "desk",
+      "from": "配套小程序实际做了一次这样的更新。"
+    },
+    {
+      "take": 3,
+      "scene": "update",
+      "step": 3,
+      "cam": "desk",
+      "from": "这次更新只让同一条练习的计分结果改善了一点，还看不"
+    },
+    {
+      "take": 2,
+      "scene": "update",
+      "step": 4,
+      "cam": "desk",
+      "from": "与之相对，只把提问改得更清楚，或在输入里放几组示范"
+    },
+    {
+      "take": 1,
+      "scene": "challenge",
+      "step": 0,
+      "cam": "desk",
+      "from": "遮掉的是成绩，还是输入"
+    },
+    {
+      "take": 1,
+      "scene": "challenge",
+      "step": 1,
+      "cam": "desk",
+      "from": "请检查三个判断：「指令侧不计损失，所以可以把指令删"
+    },
+    {
+      "take": 0,
+      "scene": "exercise",
+      "step": 0,
+      "cam": "desk",
+      "quiet": true
+    },
+    {
+      "take": 3,
+      "scene": "exercise",
+      "step": 1,
+      "cam": "desk",
+      "reveal": true,
+      "from": "三个判断都越过了证据。"
+    },
+    {
+      "take": 3,
+      "scene": "challenge",
+      "step": 2,
+      "cam": "desk",
+      "from": "监督微调可以引导模型学习示范中的回答方式，却不会让"
+    },
+    {
+      "take": 2,
+      "scene": "challenge",
+      "step": 3,
+      "cam": "desk",
+      "from": "从续写到按要求回答，改变的是训练资料如何组织、目标"
+    },
+    {
+      "take": 1,
+      "scene": "lab",
+      "step": 0,
+      "cam": "desk",
+      "from": "选读：这次小实验怎样留下记录"
+    },
+    {
+      "take": 1,
+      "scene": "lab",
+      "step": 1,
+      "cam": "desk",
+      "from": "固定样本为 <abcd|abcd>，十个下一 to"
+    },
+    {
+      "take": 1,
+      "scene": "lab",
+      "step": 2,
+      "cam": "desk",
+      "from": "程序用学习率 0.01 更新一次参数，损失由 2."
+    },
+    {
+      "take": 1,
+      "scene": "lab",
+      "step": 3,
+      "cam": "desk",
+      "from": "被遮掉的预测分数没有直接损失梯度，输入仍可通过注意"
+    },
+    {
+      "take": 1,
+      "scene": "lab",
+      "step": 4,
+      "cam": "desk",
+      "from": "实现与固定结果见训练、缓存与专家路由实验说明。"
+    },
+    {
+      "take": 2,
+      "scene": "lab",
+      "step": 5,
+      "cam": "desk",
+      "from": "它不是完整大模型训练，也没有测新指令的完成率。"
+    },
+    {
+      "take": 0,
+      "scene": "refs",
+      "step": 0,
+      "cam": "desk",
+      "quiet": true,
+      "refs": true
+    }
+  ]
+}

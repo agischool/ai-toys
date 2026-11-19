@@ -1058,4 +1058,56 @@ test('全文链接识别修正后前19篇互动版仍与已交付文件逐字节
     assert.equal(result.html,fs.readFileSync(path.join(serial,name,'互动版.html'),'utf8'),name);
   }
 });
-console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权、解码、存储、方案筛选、编码、关系、证据核对、校园流程、工具记录、多步场地路线、上下文卡片与任务验收算例）`);
+const sftRecords=require('../stage/sft-records.cjs');
+test('复制样本11个教学token对应10个下一片预测，回答含结束符',()=>{
+  const a=sftRecords.summary();assert.equal(a.sample,'<abcd|abcd>');assert.equal(a.rows.length,10);
+  assert.equal(a.rows.map(r=>r.input).join(''),'<abcd|abcd');
+  assert.equal(a.rows.map(r=>r.target).join(''),'abcd|abcd>');
+  assert.deepEqual(a.selected,[5,6,7,8,9]);assert.deepEqual(a.rows.map(r=>r.score),[0,0,0,0,0,1,1,1,1,1]);
+  assert.equal(a.rows.filter(r=>r.score).map(r=>r.target).join(''),'abcd>');
+});
+test('首个回答a在竖线位置预测，读入a之后的目标才是b',()=>{
+  const rows=sftRecords.summary().rows;
+  assert.deepEqual(rows[5],{index:5,input:'|',target:'a',prefix:['<','a','b','c','d','|'],score:1});
+  assert.deepEqual(rows[6],{index:6,input:'a',target:'b',prefix:['<','a','b','c','d','|','a'],score:1});
+  for(const r of rows){assert.equal(r.prefix.length,r.index+1);assert.equal(r.prefix.at(-1),r.input);}
+});
+test('文本演示使用明确给定的片段，按前缀错开一个目标而不调用分词器',()=>{
+  const rows=sftRecords.align(['今天','下雨','了','。']);
+  assert.deepEqual(rows.map(r=>r.target),['下雨','了','。']);
+  assert.deepEqual(rows[1].prefix,['今天','下雨']);assert.equal(rows[1].target,'了');
+  assert.deepEqual(rows.map(r=>r.score),[1,1,1]);
+});
+test('全序列10项与回答5项的计分不同，损失开关不删除因果可见输入',()=>{
+  const full=sftRecords.align(Array.from(sftRecords.sample)),answer=sftRecords.summary().rows;
+  assert.equal(full.filter(r=>r.score).length,10);assert.equal(answer.filter(r=>r.score).length,5);
+  assert.deepEqual(full.map(r=>r.prefix),answer.map(r=>r.prefix));
+  assert.deepEqual(sftRecords.visible(5,10),[true,true,true,true,true,true,false,false,false,false]);
+  assert.equal(answer[0].score,0);assert.equal(sftRecords.visible(5,10)[0],true);
+  assert.deepEqual(sftRecords.visible(0,3),[true,false,false]);
+});
+test('损失与参数变化来自已有一次更新记录，不伪造训练或新任务成绩',()=>{
+  const saved=JSON.parse(fs.readFileSync(path.join(__dirname,'../../Python实现/source/continuation_mechanisms/outputs/reference/result.json'),'utf8')).sft_loss_mask;
+  assert.deepEqual(sftRecords.record,saved);const a=sftRecords.summary();
+  assert.equal(a.before,2.0167406472189926);assert.equal(a.after,2.010323355708571);
+  assert.ok(a.after<a.before);assert.equal(a.parameterDelta,0.008011493343270303);assert.equal(a.maskedLogitGradient,0);
+  assert.ok(!Object.hasOwn(a,'inputGradient'));assert.ok(!Object.hasOwn(a,'newTaskAccuracy'));
+});
+test('正文三位小数为同一记录的舍入，选读六位显示不替代原始数值',()=>{
+  const a=sftRecords.summary();assert.equal(a.before.toFixed(3),'2.017');assert.equal(a.after.toFixed(3),'2.010');
+  assert.equal(a.before.toFixed(6),'2.016741');assert.equal(a.after.toFixed(6),'2.010323');
+});
+test('教学对齐不修改输入，保存记录深层冻结，返回值可独立修改',()=>{
+  const tokens=Array.from(sftRecords.sample),before=tokens.join('');
+  const rows=sftRecords.align(tokens,5);rows[0].prefix.push('X');rows[0].target='X';
+  assert.equal(tokens.join(''),before);assert.ok(Object.isFrozen(sftRecords.record.selected_target_positions));
+  const a=sftRecords.summary();a.selected.pop();a.rows[5].prefix=[];
+  assert.equal(sftRecords.summary().selected.length,5);assert.equal(sftRecords.summary().rows[5].prefix.length,6);
+});
+test('无效token、计分起点、因果位置与保存数值会报错',()=>{
+  for(const tokens of [null,[],['a'],['a',''],Array(2),['a',null]])assert.throws(()=>sftRecords.align(tokens),/无效/);
+  for(const start of [-1,true,10,1.5])assert.throws(()=>sftRecords.align(Array.from(sftRecords.sample),start),/无效/);
+  for(const [p,n] of [[-1,10],[10,10],[true,10],[0,0],[0,1.5]])assert.throws(()=>sftRecords.visible(p,n),/无效/);
+  for(const saved of [null,{}, {...sftRecords.record,selected_target_positions:[6,7,8,9]},{...sftRecords.record,one_step_loss_before:NaN},{...sftRecords.record,masked_logit_gradient_max:-1}])assert.throws(()=>sftRecords.summary(saved),/不一致|无效/);
+});
+console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权、解码、存储、方案筛选、编码、关系、证据核对、校园流程、工具记录、多步场地路线、上下文卡片、任务验收与训练计分算例）`);
