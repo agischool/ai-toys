@@ -217,6 +217,10 @@ test('压字用的深色变体：白字压上去至少 4.5 比 1；青色字压�
 });
 
 const { parseUnits, assemble } = require('../render_stage.cjs');
+test('阅读提示去掉引用标记，文字与后续句子保持完整', () => {
+  const source = '# 标题\n\n> 阅读提示：先看原值。再看选读。';
+  assert.deepEqual(parseUnits(source,'test'), [{type:'h1',text:'标题'}, {type:'p',text:'阅读提示：先看原值。'}, {type:'p',text:'再看选读。'}]);
+});
 const sample = [{ type: 'h1', text: '标题' }, { type: 'p', text: '第一句。' }, { type: 'h2', text: '小节' }, { type: 'p', text: '第二句。' }];
 const titleBeat = { take: 1, from: '标题' };
 test('完整分镜不能遗漏正文', () => {
@@ -286,6 +290,40 @@ test('同样九个像素，单通道为 9 个值，RGB 为 27 个值', () => {
   assert.equal(pixels.channelCount(3,3,1), 9);
   assert.equal(pixels.channelCount(3,3,3), 27);
 });
+const residual = require('../stage/residual.cjs');
+test('修正为 1、0、负 1 时，同一组输入分别增加、保持和减少 1', () => {
+  for (const amount of [1,0,-1]) {
+    const rows = residual.constant(amount);
+    assert.deepEqual(rows.map(r=>r.input), [10,20,30]);
+    assert.deepEqual(rows.map(r=>r.correction), [amount,amount,amount]);
+    assert.deepEqual(rows.map(r=>r.output), [10+amount,20+amount,30+amount]);
+  }
+});
+test('F 为半倍输入时，两路变化 0.1 和 0.05 相加得到 0.15', () => {
+  assert.deepEqual(residual.point(2), {input:2,correction:1,output:3});
+  const result = residual.change(2,.1);
+  near(result.after.correction,1.05); near(result.after.output,3.15);
+  near(result.deltaInput,.1); near(result.deltaF,.05); near(result.deltaOutput,.15);
+  near(result.deltaInput+result.deltaF,result.deltaOutput);
+});
+test('两路线性变化率相加；负一倍分支使输出与变化率抵消为零', () => {
+  near(residual.change(2,.1,.5).rate,1.5);
+  for (const x of [-10,0,2,2.1,30]) assert.equal(residual.point(x,-1).output,0);
+  assert.equal(residual.change(2,.1,-1).deltaOutput,0);
+  assert.equal(residual.change(2,.1,-1).rate,0);
+});
+test('形状匹配才能逐位相加，不广播、不修改原向量', () => {
+  const input=[10,20,30], correction=[1,1,1];
+  assert.deepEqual(residual.addMatching(input,correction), [11,21,31]);
+  assert.deepEqual(input,[10,20,30]); assert.deepEqual(correction,[1,1,1]);
+  for (const bad of [[1,1],[1],[],[1,1,NaN],[[1],[1],[1]]]) assert.throws(()=>residual.addMatching(input,bad),/形状匹配/);
+});
+test('残差算例拒绝非有限数，固定输入保持不可变', () => {
+  for (const x of [Infinity,NaN,'2']) assert.throws(()=>residual.point(x),/有限数/);
+  assert.throws(()=>residual.point(2,Infinity),/有限数/);
+  assert.throws(()=>residual.change(2,NaN),/有限数/);
+  assert.ok(Object.isFrozen(residual.inputs));
+});
 const windows = require('../stage/window.cjs');
 test('同一竖线模板对竖线、黑点、横线、全黑分别响应 3、1、1、3', () => {
   assert.deepEqual([windows.vertical, windows.dot, windows.horizontal, windows.black].map(v => windows.response(v).score), [3,1,1,3]);
@@ -354,4 +392,4 @@ test('手动试数支持有限小数，拒绝无效参数和目标', () => {
   for (const b of [NaN, Infinity, '2']) assert.throws(() => parameter.trial(b), /有限数/);
   for (const answers of [[3,4], [3,4,NaN]]) assert.throws(() => parameter.trial(2,answers), /目标/);
 });
-console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数与滑窗算例）`);
+console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗与残差算例）`);

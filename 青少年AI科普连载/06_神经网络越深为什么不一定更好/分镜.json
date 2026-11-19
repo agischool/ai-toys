@@ -1,0 +1,309 @@
+{
+  "complete": true,
+  "beats": [
+    {
+      "from": "神经网络越深，为什么不一定更好？",
+      "take": 1,
+      "scene": "cover",
+      "step": 0,
+      "cam": "all",
+      "quiet": true
+    },
+    {
+      "from": "上一期，小窗口留下了按位置排列的响应",
+      "take": 2,
+      "scene": "open",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "这里的“层”，就是对输入作一次变换的",
+      "take": 2,
+      "scene": "open",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "难处在训练。",
+      "take": 2,
+      "scene": "open",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "残差连接换了一个做法：把输入保留下来",
+      "take": 1,
+      "scene": "open",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "阅读提示：先看懂“原值＋修正”即可。",
+      "take": 2,
+      "scene": "open",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "多几层为什么会添麻烦",
+      "take": 1,
+      "scene": "deep",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "先想一个简单情形：原来的网络已经能完",
+      "take": 1,
+      "scene": "deep",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "这个要求听起来容易，但在普通逐层结构",
+      "take": 1,
+      "scene": "deep",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "2015年提出的 ResNet 研究",
+      "take": 1,
+      "scene": "deep",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "这与本系列第 2 篇讨论的泛化问题不",
+      "take": 2,
+      "scene": "deep",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "留一条原路 再加上修正",
+      "take": 1,
+      "scene": "residual",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "用一个小任务看清区别：输入10、20",
+      "take": 1,
+      "scene": "residual",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "直接变换时，一段计算负责把10变成1",
+      "take": 1,
+      "scene": "residual",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "残差结构把工作拆成两路：一路带着原值",
+      "take": 2,
+      "scene": "residual",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "输出＝输入＋F（输入）",
+      "take": 1,
+      "scene": "residual",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "图1  原值沿直通路径保留，F分支提",
+      "take": 1,
+      "scene": "residual",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "沿图1的两条线看，F这段计算只要对三",
+      "take": 1,
+      "scene": "residual",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "F不是一个固定数字，它仍是一段需要学",
+      "take": 1,
+      "scene": "residual",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "如果F输出0，原值便不改变。",
+      "take": 2,
+      "scene": "residual",
+      "step": 8,
+      "cam": "desk"
+    },
+    {
+      "from": "这里容易混淆两个词：“残差”说的是目",
+      "take": 2,
+      "scene": "residual",
+      "step": 9,
+      "cam": "desk"
+    },
+    {
+      "from": "这个例子只比较两条计算路线。",
+      "take": 2,
+      "scene": "residual",
+      "step": 10,
+      "cam": "desk"
+    },
+    {
+      "from": "有了直通路径 仍要检查结果",
+      "take": 1,
+      "scene": "conditions",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "图里的绕行路线，也解释了为什么残差连",
+      "take": 3,
+      "scene": "conditions",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "真实输入往往是一组数或多张特征图。",
+      "take": 2,
+      "scene": "conditions",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "通道数或尺寸改变时，需要相应的匹配办",
+      "take": 1,
+      "scene": "conditions",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "ResNet 论文通过实际实验，展示",
+      "take": 1,
+      "scene": "conditions",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "网络深度、宽度、数据、参数初始值、更",
+      "take": 2,
+      "scene": "conditions",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "可以先遮住前面的答案，检查两个目标：",
+      "take": 2,
+      "scene": "exercise",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "核对时只用“输入＋修正”：第一种目标",
+      "take": 2,
+      "scene": "exercise",
+      "step": 1,
+      "cam": "desk",
+      "reveal": true
+    },
+    {
+      "from": "这也提醒我们，残差中的“修正”可以为",
+      "take": 2,
+      "scene": "conditions",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "选读 一点变化怎样沿两路传递",
+      "take": 1,
+      "scene": "changes",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "把F设为“输入乘以0.5”。",
+      "take": 2,
+      "scene": "changes",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "把输入调到2.1，F输出1.05，总",
+      "take": 1,
+      "scene": "changes",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "图2  输入增加0.1，两路分别贡献",
+      "take": 1,
+      "scene": "changes",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "图2把增加的0.15拆开了：0.1沿",
+      "take": 1,
+      "scene": "changes",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "在这个线性例子中，输入每增加1，两路",
+      "take": 2,
+      "scene": "changes",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "训练要从损失往前计算：参数变化会怎样",
+      "take": 2,
+      "scene": "changes",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "反向计算经过相加处时，也会计入直通路",
+      "take": 2,
+      "scene": "changes",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "这条路径不能保证梯度永远合适。",
+      "take": 1,
+      "scene": "changes",
+      "step": 8,
+      "cam": "desk"
+    },
+    {
+      "from": "若F改为“输入乘以−1”，两路正好抵",
+      "take": 1,
+      "scene": "changes",
+      "step": 9,
+      "cam": "desk"
+    },
+    {
+      "from": "深层训练可能遇到梯度过小或过大的困难",
+      "take": 1,
+      "scene": "changes",
+      "step": 10,
+      "cam": "desk"
+    },
+    {
+      "take": 0,
+      "scene": "refs",
+      "step": 0,
+      "cam": "desk",
+      "refs": true,
+      "quiet": true
+    }
+  ]
+}

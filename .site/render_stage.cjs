@@ -20,7 +20,8 @@ function parseUnits(source, file) {
   const body = source.split(/^## 资料来源\s*$/m)[0];
   const out = [];
   for (const raw of body.split('\n')) {
-    const line = raw.trim();
+    // 引用提示进入字幕时保留文字，去掉 Markdown 的单层引用标记。
+    const line = raw.trim().replace(/^>\s?/, '');
     if (!line || /^!\[/.test(line)) continue;
     let m;
     if ((m = line.match(/^# (.+)$/))) out.push({ type: 'h1', text: m[1] });
