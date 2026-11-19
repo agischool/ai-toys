@@ -1,0 +1,859 @@
+<!doctype html>
+<html lang="zh-CN" data-mode="read">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#fffdf6">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='8.25' fill='none' stroke='%23185b46' stroke-width='1.5'/%3E%3Ccircle cx='10' cy='10' r='3.4' fill='%23185b46'/%3E%3C/svg%3E">
+<title>只见过红色圆积木，就认不出蓝色的了吗？ · 互动版 · 看得见的 AI</title>
+<meta name="description" content="同样的训练满分，可能来自两种不同规则。用红蓝积木换三组题，看看颜色怎样成为分类捷径、测试成绩为什么随题目变化，以及补数据后为什么还要另留新题。">
+<style data-stage-source="stage.css">/* 互动版样式。
+ * 控件沿用 library.css 的纸色、墨绿、焦点色与 250ms ease-out；
+ * 画面沿用连载图解的 #fffdf6 底与 #203845 描边。不加阴影、发光和渐变。 */
+
+:root {
+  color-scheme: light;
+  --paper: #f6f5ef;
+  --ink: #22352d;
+  --muted: #5c6d63;
+  --line: #d8ded5;
+  --accent: #185b46;
+  --focus: #ba651f;
+  --white: #fffef9;
+  --serif: "Songti SC", "Noto Serif CJK SC", serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+
+  --art-paper: #fffdf6;
+  --art-ink: #203845;
+  --art-muted: #586e79;
+  --art-teal: #168f94;
+  --art-mint: #def3ee;
+  --art-coral: #ee6a58;
+  --art-peach: #ffe7df;
+  --art-yellow: #ffcf62;
+  --art-cream: #fff1d2;
+  --art-blue: #e3efff;
+  /* 文字或白字底用的深色变体：原色青 / 珊瑚与白字、纸色分别只有 3.9 / 3.1 比 1，压深后 5.0 比 1。 */
+  --art-teal-ink: #137a7f;
+  --art-coral-ink: #d42c16;
+
+  --move: 700ms cubic-bezier(.22, 1, .36, 1);
+}
+
+* { box-sizing: border-box }
+html, body { margin: 0; height: 100% }
+body {
+  background: var(--art-paper);
+  color: var(--art-ink);
+  font: 16px/1.75 var(--sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+}
+button { font: inherit; color: inherit }
+a { color: inherit }
+:lang(zh) { text-autospace: normal; text-spacing-trim: trim-start }
+p, li { text-wrap: pretty }
+h1, h2, h3 { text-wrap: balance }
+[hidden] { display: none !important }
+
+a:focus-visible, button:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.skip {
+  position: fixed; left: 12px; top: -64px; z-index: 20;
+  padding: 9px 16px; background: var(--white); border: 1px solid var(--line); border-radius: 9px;
+  font-size: 14px; font-weight: 600; text-decoration: none;
+  transition: top 250ms ease-out;
+}
+.skip:focus { top: 12px }
+
+/* ---------------- 模式 ---------------- */
+
+html[data-mode="stage"], html[data-mode="stage"] body { overflow: hidden }
+html[data-mode="read"] #stage, html[data-mode="read"] #toc { display: none }
+html[data-mode="stage"] #readwrap { display: none }
+html[data-mode="read"] body { background: var(--paper); color: var(--ink) }
+.hit { pointer-events: auto; cursor: pointer }
+.scene:not(.is-active) .hit, .s:not(.on) .hit, .solo .s:not(.focus) .hit { pointer-events: none }
+.hit:focus-visible { outline: 4px solid var(--art-coral-ink); outline-offset: 6px }
+
+/* ---------------- 舞台 ---------------- */
+
+/* 翻页由脚本接管：禁掉浏览器自己的拖动、缩放和橡皮筋，滚轮与滑动才不会同时触发两套行为。 */
+html[data-mode="stage"], html[data-mode="stage"] body { overscroll-behavior: none }
+#stage { position: fixed; inset: 0; background: var(--art-paper); overflow: hidden; touch-action: none }
+#stage button, #stage a, #stage .hit { touch-action: manipulation }
+#stage:not(.ready) * { transition: none !important; animation: none !important }
+
+.scene {
+  position: absolute; inset: 0; width: 100%; height: 100%; display: block;
+  pointer-events: none;
+  opacity: 0; visibility: hidden;
+  transition: opacity 250ms ease-out, visibility 0s linear 250ms;
+}
+.scene.is-active { opacity: 1; visibility: visible; transition-delay: 0s }
+.cam { transition: transform var(--move) }
+
+/* 画面元素：外层 .s 只管出现动画，内层 .pos 只管摆位（横屏用 --l*，竖屏用 --p*）。 */
+.s {
+  opacity: 0; transform: translateY(14px);
+  transition: opacity 250ms ease-out var(--d, 0ms), transform 250ms ease-out var(--d, 0ms);
+}
+.s.on { opacity: 1; transform: none }
+.s.pop { transform: scale(.86); transform-box: fill-box; transform-origin: center }
+.s.pop.on { transform: none }
+.s.fade, .s.fade.on { transform: none }
+.snap .s { transition: none !important }
+.has-focus .s.on:not(.focus) { opacity: .22 }
+.solo .s.on:not(.focus) { opacity: 0 }
+
+.pos { transform: translate(var(--lx, 0), var(--ly, 0)) rotate(var(--lr, 0deg)) scale(var(--ls, 1)) }
+#stage[data-orient="portrait"] .pos { transform: translate(var(--px, 0), var(--py, 0)) rotate(var(--pr, 0deg)) scale(var(--ps, 1)) }
+#stage[data-orient="portrait"] .only-l, #stage[data-orient="landscape"] .only-p { display: none }
+
+/* 可翻转的卡：翻面时正反两层交换。 */
+.flip .front, .flip .back { transition: opacity 250ms ease-out }
+.flip .back { opacity: 0 }
+.flip.is-flipped .front { opacity: 0 }
+.flip.is-flipped .back { opacity: 1 }
+
+.cap.quiet {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+
+/* ---------------- 顶栏 ---------------- */
+
+.hud {
+  position: absolute; z-index: 3; left: 0; right: 0; top: 0;
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+  padding: calc(12px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) 0 calc(14px + env(safe-area-inset-left));
+  pointer-events: none;
+}
+.hud-l, .hud-r { display: flex; gap: 8px; min-width: 0; pointer-events: auto }
+.hud-l { flex: 0 1 auto }
+
+.pill {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 34px; padding: 0 14px;
+  border: 1px solid var(--line); border-radius: 12px;
+  background: rgba(255, 254, 249, .94); color: var(--ink);
+  font: 600 13px/1 var(--sans); text-decoration: none; white-space: nowrap; cursor: pointer;
+  touch-action: manipulation;
+  transition: border-color 250ms ease-out, background 250ms ease-out, color 250ms ease-out;
+}
+.pill:hover { border-color: var(--accent); color: var(--accent) }
+.pill:active { transform: translateY(1px) }
+.pill:disabled { opacity: .4; cursor: default; border-color: var(--line); color: var(--ink) }
+.pill[data-playing="true"] { background: var(--accent); border-color: var(--accent); color: #fff }
+.pill svg { width: 14px; height: 14px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round }
+.pill.icon { width: 34px; padding: 0 }
+
+.sec { cursor: default; min-width: 0 }
+.sec:hover { border-color: var(--line); color: var(--ink) }
+#sec-num { color: var(--art-teal-ink); font-variant-numeric: tabular-nums }
+#sec-num:empty { display: none }
+#sec-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; max-width: min(46vw, 380px) }
+
+/* ---------------- 字幕与底栏 ---------------- */
+
+.cap {
+  position: absolute; z-index: 2; left: 50%; transform: translateX(-50%);
+  bottom: calc(56px + env(safe-area-inset-bottom));
+  width: min(calc(100% - 28px), 900px);
+  padding: 16px 22px;
+  background: var(--art-paper); border: 3px solid var(--art-ink); border-radius: 22px;
+  pointer-events: none;
+}
+.cap p { margin: 0; font-size: clamp(18px, 2.3vw, 24px); line-height: 1.65; font-weight: 600 }
+.cap p[data-kind="caption"] { font-weight: 500 }
+.cap p[data-kind="title"] { font-size: clamp(20px, 2.8vw, 30px); text-align: center }
+.cap p[data-kind="h2"] {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  font-size: clamp(22px, 3vw, 32px); font-weight: 800; line-height: 1.4;
+}
+.cap .no {
+  flex: none; display: inline-grid; place-items: center; min-width: 36px; height: 36px; padding: 0 8px;
+  border-radius: 18px; background: var(--art-coral-ink); color: #fff; font: 800 20px/1 var(--sans);
+}
+.cap .fig { color: var(--art-teal-ink); font-weight: 800 }
+.cap p.in { animation: cap-in 250ms ease-out both }
+@keyframes cap-in { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
+.cite { color: #b15b21; font-weight: 600 }
+
+.foot {
+  position: absolute; z-index: 3; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 0 calc(14px + env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left));
+  pointer-events: none;
+}
+.foot > * { pointer-events: auto }
+#bar { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--art-teal); transform-origin: left; transform: scaleX(0); transition: transform 250ms ease-out; pointer-events: none }
+#hint { margin: 0; font-size: 13px; color: var(--art-muted); pointer-events: none }
+#count { font-size: 12px; color: var(--art-muted); font-variant-numeric: tabular-nums; min-width: 4.6em; text-align: center }
+.steps { display: flex; align-items: center; gap: 8px; margin-left: auto }
+
+/* ---------------- 目录 ---------------- */
+
+#toc {
+  width: min(960px, calc(100% - 28px)); max-height: calc(100% - 28px);
+  padding: 0; border: 3px solid var(--art-ink); border-radius: 24px;
+  background: var(--art-paper); color: var(--art-ink);
+}
+#toc[open] { display: flex; flex-direction: column }
+#toc::backdrop { background: rgba(32, 56, 69, .5) }
+.toc-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--line) }
+.toc-head h2 { margin: 0; font-size: 16px; line-height: 1.5 }
+#toc-list { list-style: none; margin: 0; padding: 20px; overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px }
+.toc-foot { margin: 0; padding: 12px 20px 16px; border-top: 1px solid var(--line); font-size: 13px; line-height: 1.7; color: var(--art-muted) }
+.toc-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+  width: 100%; height: 100%; padding: 14px; text-align: left;
+  background: var(--white); border: 1px solid var(--line); border-radius: 18px; cursor: pointer;
+  transition: border-color 250ms ease-out, transform 250ms ease-out;
+}
+.toc-card:hover { border-color: var(--accent) }
+.toc-card:active { transform: translateY(1px) }
+.toc-thumb { display: block; width: 100%; height: 115px; flex: none }
+.toc-no {
+  display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding: 0 8px;
+  border-radius: 15px; background: var(--art-coral-ink); color: #fff; font: 700 14px/1 var(--sans);
+}
+.toc-name { font-size: 15px; font-weight: 600; line-height: 1.5 }
+
+/* ---------------- 全文 ---------------- */
+
+.read-bar {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 20px; background: var(--paper); border-bottom: 1px solid var(--line);
+}
+#read { max-width: 680px; margin: 0 auto; padding: 8px 20px 96px; font-size: 17px; line-height: 1.9; color: var(--ink) }
+#read:focus { outline: none }
+#read h1 { margin: 32px 0 24px; font: 650 28px/1.4 var(--serif); letter-spacing: -.01em }
+#read h1 .tl { display: inline-block }
+#read h2 { margin: 40px 0 16px; font-size: 20px; line-height: 1.5 }
+#read p { margin: 0 0 18px }
+#read .pic { margin: 24px 0 8px }
+#read img { display: block; max-width: 100%; height: auto; margin: 0 auto; border: 1px solid var(--line); border-radius: 12px; background: #fff }
+#read .figcap { margin: 0 0 24px; font-size: 14px; line-height: 1.7; color: var(--muted) }
+#read .figcap em { font-style: normal }
+.read-note { margin: 24px 0 0; font-size: 14px; line-height: 1.7; color: var(--muted) }
+#read .refs p { font-size: 14px; line-height: 1.75; overflow-wrap: anywhere }
+#read a { color: var(--accent); text-underline-offset: 3px }
+.read-end { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 40px }
+
+/* ---------------- 小屏与矮屏 ---------------- */
+
+@media (max-width: 560px) {
+  .hud { gap: 8px }
+  .lbl { display: none }
+  .cap { padding: 12px 16px; border-radius: 18px }
+  .cap p { font-size: 18px }
+}
+@media (max-width: 420px) {
+  #sec-name { max-width: 34vw }
+  .pill { padding: 0 11px }
+}
+@media (max-height: 560px) {
+  .cap { padding: 8px 16px }
+  .cap p { font-size: 17px; line-height: 1.55 }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene, .cam, .s, .flip .front, .flip .back, .pill, .toc-card, #bar, .skip { transition: none }
+  .cap p.in { animation: none }
+}
+</style>
+<script>(function(){var q=new URLSearchParams(location.search),r=matchMedia('(prefers-reduced-motion: reduce)').matches;if(!(q.has('read')||(r&&!q.has('stage'))))document.documentElement.setAttribute('data-mode','stage')})()</script>
+</head>
+<body>
+<a class="skip" href="?read" data-action="read">跳到全文</a>
+<main id="stage" data-orient="landscape">
+<svg class="scene" data-scene="cover" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s fade bleed" data-at="0" data-n="wash"><g class="pos" style="--lx:1300px;--ly:500px;--ls:1;--lr:0deg;--px:700px;--py:1180px;--ps:1;--pr:0deg"><ellipse cx="0" cy="0" rx="470" ry="520" fill="#def3ee"/></g></g><g class="s rise" data-at="0" data-n="series"><g class="pos" style="--lx:350px;--ly:155px;--ls:1;--lr:0deg;--px:310px;--py:170px;--ps:1;--pr:0deg"><rect x="-240" y="-33" width="480" height="66" rx="33" fill="#137a7f" stroke="#203845" stroke-width="5" stroke-linejoin="round"/><text x="0" y="2" font-size="36" fill="#ffffff" text-anchor="middle" font-weight="800" dominant-baseline="central"><tspan x="0" dy="0">AI 怎样认出一只猫</tspan></text></g></g><g class="s rise" data-at="0" data-n="nth"><g class="pos" style="--lx:110px;--ly:235px;--ls:1;--lr:0deg;--px:70px;--py:270px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="32" fill="#586e79" text-anchor="start" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">第 2 篇 / 共 6 篇</tspan></text></g></g><g class="s rise only-l" data-at="0" data-n="title"><g class="pos" style="--lx:110px;--ly:400px;--ls:1;--lr:0deg;--px:110px;--py:400px;--ps:1;--pr:0deg"><text x="0" y="-51.3" font-size="76" fill="#203845" text-anchor="start" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">只见过红色圆积木，</tspan><tspan x="0" dy="102.6">就认不出蓝色的了吗？</tspan></text></g></g><g class="s rise only-p" data-at="0" data-n="title"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:70px;--py:470px;--ps:1;--pr:0deg"><text x="0" y="-46.2" font-size="66" fill="#203845" text-anchor="start" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">只见过红色圆积木，</tspan><tspan x="0" dy="92.4">就认不出蓝色的了吗？</tspan></text></g></g><g class="s rise" data-at="0" data-n="rule"><g class="pos" style="--lx:114px;--ly:555px;--ls:1;--lr:0deg;--px:74px;--py:625px;--ps:1;--pr:0deg"><path d="M0 0 L145 0" fill="none" stroke="#ee6a58" stroke-width="10" stroke-linecap="round"/></g></g><g class="s rise" data-at="0" data-n="blocks"><g class="pos" style="--lx:1240px;--ly:445px;--ls:0.85;--lr:0deg;--px:425px;--py:990px;--ps:1;--pr:0deg"><g transform="translate(-160 -125) rotate(0) scale(1)"><circle cx="0" cy="0" r="125" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(125 155) rotate(0) scale(1)"><circle cx="0" cy="0" r="125" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><g transform="translate(-80 -10) rotate(0) scale(1)"><g fill="none" stroke="#ee6a58" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"><path d="M0 0 L89.1 57.92"/><path d="M87.66 42.11 L100 65 L74.08 63.02"/></g></g><g transform="translate(250 20) rotate(0) scale(1)"><circle cx="0" cy="0" r="50" fill="#d42c16" stroke="#203845" stroke-width="5"/><g transform="translate(0 0.33) rotate(0) scale(1.32)"><path d="M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="0" cy="16" r="3.5" fill="#ffffff"/></g></g></g></g><g class="s rise" data-at="0" data-n="robot"><g class="pos" style="--lx:105px;--ly:625px;--ls:1;--lr:0deg;--px:70px;--py:1160px;--ps:1;--pr:0deg"><image href="../../.site/assets/serial-robot-480.png" x="0" y="0" width="240" height="219.5" preserveAspectRatio="xMidYMid meet"/></g></g><g class="s rise" data-at="0" data-n="question"><g class="pos" style="--lx:1230px;--ly:800px;--ls:1;--lr:0deg;--px:620px;--py:1350px;--ps:0.85;--pr:0deg"><rect x="-220" y="-38" width="440" height="76" rx="38" fill="#137a7f" stroke="#203845" stroke-width="5" stroke-linejoin="round"/><text x="0" y="2" font-size="40" fill="#ffffff" text-anchor="middle" font-weight="800" dominant-baseline="central"><tspan x="0" dy="0">换个颜色，还认得吗</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="open" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="eight"><g class="pos" style="--lx:600px;--ly:300px;--ls:1;--lr:0deg;--px:400px;--py:400px;--ps:1;--pr:0deg"><rect x="-249" y="-220" width="498" height="440" rx="28" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-155" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">八个训练例子</tspan></text><g transform="translate(-168 -30) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(-56 -30) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(56 -30) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(168 -30) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(-168 105) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(-56 105) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(56 105) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(168 105) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g><g class="s pop" data-at="0" data-until="1" data-n="perfect" style="--d:180ms"><g class="pos" style="--lx:600px;--ly:620px;--ls:1;--lr:0deg;--px:400px;--py:850px;--ps:1;--pr:0deg"><rect x="-190" y="-43" width="380" height="86" rx="43" fill="#137a7f" stroke="#203845" stroke-width="5" stroke-linejoin="round"/><text x="0" y="2" font-size="52" fill="#ffffff" text-anchor="middle" font-weight="800" dominant-baseline="central"><tspan x="0" dy="0">8 / 8 · 全对</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="input"><g class="pos" style="--lx:280px;--ly:310px;--ls:1;--lr:0deg;--px:400px;--py:230px;--ps:1;--pr:0deg"><circle cx="0" cy="0" r="115" fill="#e3efff" stroke="#203845" stroke-width="6"/><text x="0" y="190" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝色 · 圆</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="flow"><g class="pos" style="--lx:490px;--ly:310px;--ls:1;--lr:0deg;--px:400px;--py:490px;--ps:0.5;--pr:90deg"><g fill="none" stroke="#203845" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M0 0 L197 0"/><path d="M187.18 -12.47 L210 0 L187.18 12.47"/></g></g></g><g class="s pop" data-at="1" data-until="2" data-n="answer" style="--d:140ms"><g class="pos" style="--lx:920px;--ly:310px;--ls:1;--lr:0deg;--px:400px;--py:720px;--ps:1;--pr:0deg"><rect x="-150" y="-100" width="300" height="200" rx="26" fill="#ffe7df" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="3" font-size="76" fill="#203845" text-anchor="middle" font-weight="800" dominant-baseline="central"><tspan x="0" dy="0">方形</tspan></text><g transform="translate(140 -96) rotate(0) scale(1)"><circle cx="0" cy="0" r="38" fill="#d42c16" stroke="#203845" stroke-width="4"/><path d="M-13.299999999999999 -13.299999999999999 L13.299999999999999 13.299999999999999 M13.299999999999999 -13.299999999999999 L-13.299999999999999 13.299999999999999" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/></g></g></g><g class="s pop" data-at="2" data-until="3" data-n="input"><g class="pos" style="--lx:280px;--ly:310px;--ls:1;--lr:0deg;--px:400px;--py:230px;--ps:1;--pr:0deg"><circle cx="0" cy="0" r="115" fill="#e3efff" stroke="#203845" stroke-width="6"/><text x="0" y="190" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝色 · 圆</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="flow"><g class="pos" style="--lx:490px;--ly:310px;--ls:1;--lr:0deg;--px:400px;--py:490px;--ps:0.5;--pr:90deg"><g fill="none" stroke="#203845" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M0 0 L197 0"/><path d="M187.18 -12.47 L210 0 L187.18 12.47"/></g></g></g><g class="s pop" data-at="2" data-until="3" data-n="answer" style="--d:140ms"><g class="pos" style="--lx:920px;--ly:310px;--ls:1;--lr:0deg;--px:400px;--py:720px;--ps:1;--pr:0deg"><rect x="-150" y="-100" width="300" height="200" rx="26" fill="#ffe7df" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="3" font-size="76" fill="#203845" text-anchor="middle" font-weight="800" dominant-baseline="central"><tspan x="0" dy="0">方形</tspan></text><g transform="translate(140 -96) rotate(0) scale(1)"><circle cx="0" cy="0" r="38" fill="#d42c16" stroke="#203845" stroke-width="4"/><path d="M-13.299999999999999 -13.299999999999999 L13.299999999999999 13.299999999999999 M13.299999999999999 -13.299999999999999 L-13.299999999999999 13.299999999999999" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/></g></g></g><g class="s pop" data-at="2" data-until="3" data-n="question"><g class="pos" style="--lx:600px;--ly:640px;--ls:1;--lr:0deg;--px:400px;--py:940px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="48" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">只换颜色，为什么答错？</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="rule.A"><g class="pos" style="--lx:300px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:260px;--ps:1;--pr:0deg"><rect x="-250" y="-185" width="500" height="370" rx="24" fill="#ffe7df" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-115" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">A · 看颜色</tspan></text><text x="0" y="-42.32" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红 → 圆</tspan><tspan x="0" dy="68.64">蓝 → 方</tspan></text><text x="0" y="125" font-size="52" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">8÷8＝100%</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="rule.B" style="--d:160ms"><g class="pos" style="--lx:900px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:760px;--ps:1;--pr:0deg"><rect x="-250" y="-185" width="500" height="370" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-115" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">B · 看轮廓</tspan></text><text x="0" y="-42.32" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">圆 → 圆</tspan><tspan x="0" dy="68.64">方 → 方</tspan></text><text x="0" y="125" font-size="52" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">8÷8＝100%</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="rule.A"><g class="pos" style="--lx:300px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:260px;--ps:1;--pr:0deg"><rect x="-250" y="-185" width="500" height="370" rx="24" fill="#ffe7df" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-115" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">A · 看颜色</tspan></text><text x="0" y="-42.32" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红 → 圆</tspan><tspan x="0" dy="68.64">蓝 → 方</tspan></text><text x="0" y="125" font-size="52" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">8÷8＝100%</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="rule.B" style="--d:160ms"><g class="pos" style="--lx:900px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:760px;--ps:1;--pr:0deg"><rect x="-250" y="-185" width="500" height="370" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-115" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">B · 看轮廓</tspan></text><text x="0" y="-42.32" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">圆 → 圆</tspan><tspan x="0" dy="68.64">方 → 方</tspan></text><text x="0" y="125" font-size="52" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">8÷8＝100%</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="rules" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="chapter.art"><g class="pos" style="--lx:600px;--ly:275px;--ls:1;--lr:0deg;--px:400px;--py:370px;--ps:1;--pr:0deg"><g transform="translate(-165 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="105" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(165 0) rotate(0) scale(1)"><rect x="-105" y="-105" width="210" height="210" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g><g class="s pop" data-at="0" data-until="1" data-n="chapter.note" style="--d:140ms"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:880px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="54" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">同样满分 · 两种线索</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="circle"><g class="pos" style="--lx:300px;--ly:310px;--ls:1;--lr:0deg;--px:400px;--py:230px;--ps:1;--pr:0deg"><circle cx="0" cy="0" r="110" fill="#ffffff" stroke="#203845" stroke-width="6"/><text x="0" y="190" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">圆</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="square"><g class="pos" style="--lx:900px;--ly:310px;--ls:1;--lr:0deg;--px:400px;--py:730px;--ps:1;--pr:0deg"><rect x="-110" y="-110" width="220" height="220" rx="5" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="190" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">方</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="labels"><g class="pos" style="--lx:600px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:400px;--ps:1;--pr:0deg"><rect x="-249" y="-250" width="498" height="500" rx="28" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-185" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">图片 + 人给的标签</tspan></text><g transform="translate(-168 -60) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><text x="-168" y="15" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="-168" dy="0">圆</tspan></text><g transform="translate(-56 -60) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><text x="-56" y="15" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="-56" dy="0">圆</tspan></text><g transform="translate(56 -60) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><text x="56" y="15" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="56" dy="0">圆</tspan></text><g transform="translate(168 -60) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><text x="168" y="15" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="168" dy="0">圆</tspan></text><g transform="translate(-168 105) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><text x="-168" y="180" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="-168" dy="0">方</tspan></text><g transform="translate(-56 105) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><text x="-56" y="180" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="-56" dy="0">方</tspan></text><g transform="translate(56 105) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><text x="56" y="180" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="56" dy="0">方</tspan></text><g transform="translate(168 105) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><text x="168" y="180" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="168" dy="0">方</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="definition"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:870px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">训练集：用于学习</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="training"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:480px;--ps:1;--pr:0deg"><rect x="-249" y="-220" width="498" height="440" rx="28" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-155" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红圆 × 4 · 蓝方 × 4</tspan></text><g transform="translate(-168 -30) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(-56 -30) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(56 -30) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(168 -30) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(-168 105) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(-56 105) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(56 105) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(168 105) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g><g class="s pop" data-at="4" data-until="5" data-n="coupled"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:480px;--ps:1;--pr:0deg"><g transform="translate(-160 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="90" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(160 0) rotate(0) scale(1)"><rect x="-90" y="-90" width="180" height="180" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><text x="0" y="200" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">颜色与形状总是一起出现</tspan></text></g></g><g class="s pop" data-at="5" data-until="6" data-n="handwritten"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:480px;--ps:1;--pr:0deg"><g transform="translate(0 -50) rotate(0) scale(1)"><path d="M-82 150 C-82 78 -44 56 0 56 C44 56 82 78 82 150 Z" fill="#168f94" stroke="#203845" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="0" cy="0" r="54" fill="#fff1d2" stroke="#203845" stroke-width="6"/><path d="M-52 -14 C-48 -64 -8 -70 18 -62 C40 -56 52 -40 52 -14 C34 -34 -26 -34 -52 -14 Z" fill="#203845" stroke="#203845" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><circle cx="-19" cy="8" r="5.5" fill="#203845"/><circle cx="19" cy="8" r="5.5" fill="#203845"/><path d="M-14 28 C-6 38 6 38 14 28" fill="none" stroke="#203845" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/></g><text x="0" y="220" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">先手写两条规则</tspan></text></g></g><g class="s pop" data-at="6" data-until="7" data-n="rule.A"><g class="pos" style="--lx:300px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:260px;--ps:1;--pr:0deg"><rect x="-250" y="-185" width="500" height="370" rx="24" fill="#ffe7df" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-115" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">A · 看颜色</tspan></text><text x="0" y="-42.32" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红 → 圆</tspan><tspan x="0" dy="68.64">蓝 → 方</tspan></text><text x="0" y="128" font-size="44" fill="#586e79" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">先看颜色</tspan></text></g></g><g class="s pop" data-at="6" data-until="7" data-n="rule.B" style="--d:160ms"><g class="pos" style="--lx:900px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:760px;--ps:1;--pr:0deg"><rect x="-250" y="-185" width="500" height="370" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-115" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">B · 看轮廓</tspan></text><text x="0" y="-42.32" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">圆 → 圆</tspan><tspan x="0" dy="68.64">方 → 方</tspan></text><text x="0" y="128" font-size="44" fill="#586e79" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">不管颜色</tspan></text></g></g><g class="s pop" data-at="7" data-until="8" data-n="rule.A"><g class="pos" style="--lx:300px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:260px;--ps:1;--pr:0deg"><rect x="-250" y="-185" width="500" height="370" rx="24" fill="#ffe7df" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-115" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">A · 看颜色</tspan></text><text x="0" y="-42.32" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红 → 圆</tspan><tspan x="0" dy="68.64">蓝 → 方</tspan></text><text x="0" y="128" font-size="44" fill="#586e79" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">先看颜色</tspan></text></g></g><g class="s pop" data-at="7" data-until="8" data-n="rule.B" style="--d:160ms"><g class="pos" style="--lx:900px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:760px;--ps:1;--pr:0deg"><rect x="-250" y="-185" width="500" height="370" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-115" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">B · 看轮廓</tspan></text><text x="0" y="-42.32" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">圆 → 圆</tspan><tspan x="0" dy="68.64">方 → 方</tspan></text><text x="0" y="128" font-size="44" fill="#586e79" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">不管颜色</tspan></text></g></g><g class="s pop" data-at="8" data-until="9" data-n="rule.A"><g class="pos" style="--lx:300px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:260px;--ps:1;--pr:0deg"><rect x="-250" y="-185" width="500" height="370" rx="24" fill="#ffe7df" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-115" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">A · 看颜色</tspan></text><text x="0" y="-42.32" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红 → 圆</tspan><tspan x="0" dy="68.64">蓝 → 方</tspan></text><text x="0" y="125" font-size="52" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">8÷8＝100%</tspan></text></g></g><g class="s pop" data-at="8" data-until="9" data-n="rule.B" style="--d:160ms"><g class="pos" style="--lx:900px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:760px;--ps:1;--pr:0deg"><rect x="-250" y="-185" width="500" height="370" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-115" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">B · 看轮廓</tspan></text><text x="0" y="-42.32" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">圆 → 圆</tspan><tspan x="0" dy="68.64">方 → 方</tspan></text><text x="0" y="125" font-size="52" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">8÷8＝100%</tspan></text></g></g><g class="s pop" data-at="9" data-until="10" data-n="rule.A"><g class="pos" style="--lx:300px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:260px;--ps:1;--pr:0deg"><rect x="-250" y="-185" width="500" height="370" rx="24" fill="#ffe7df" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-115" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">A · 看颜色</tspan></text><text x="0" y="-42.32" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红 → 圆</tspan><tspan x="0" dy="68.64">蓝 → 方</tspan></text><text x="0" y="125" font-size="52" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">8÷8＝100%</tspan></text></g></g><g class="s pop" data-at="9" data-until="10" data-n="rule.B" style="--d:160ms"><g class="pos" style="--lx:900px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:760px;--ps:1;--pr:0deg"><rect x="-250" y="-185" width="500" height="370" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-115" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">B · 看轮廓</tspan></text><text x="0" y="-42.32" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">圆 → 圆</tspan><tspan x="0" dy="68.64">方 → 方</tspan></text><text x="0" y="125" font-size="52" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">8÷8＝100%</tspan></text></g></g><g class="s pop" data-at="10" data-until="11" data-n="rule.A"><g class="pos" style="--lx:300px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:260px;--ps:1;--pr:0deg"><rect x="-250" y="-185" width="500" height="370" rx="24" fill="#ffe7df" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-115" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">A · 看颜色</tspan></text><text x="0" y="-42.32" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红 → 圆</tspan><tspan x="0" dy="68.64">蓝 → 方</tspan></text><text x="0" y="125" font-size="52" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">8÷8＝100%</tspan></text></g></g><g class="s pop" data-at="10" data-until="11" data-n="rule.B" style="--d:160ms"><g class="pos" style="--lx:900px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:760px;--ps:1;--pr:0deg"><rect x="-250" y="-185" width="500" height="370" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-115" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">B · 看轮廓</tspan></text><text x="0" y="-42.32" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">圆 → 圆</tspan><tspan x="0" dy="68.64">方 → 方</tspan></text><text x="0" y="125" font-size="52" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">8÷8＝100%</tspan></text></g></g><g class="s pop" data-at="6" data-until="7" data-n="focus"><g class="pos" style="--lx:300px;--ly:70px;--ls:1;--lr:0deg;--px:400px;--py:38px;--ps:1;--pr:0deg"><rect x="-170" y="-38" width="340" height="76" rx="38" fill="#d42c16" stroke="#203845" stroke-width="5" stroke-linejoin="round"/><text x="0" y="2" font-size="40" fill="#ffffff" text-anchor="middle" font-weight="800" dominant-baseline="central"><tspan x="0" dy="0">聚焦：颜色规则</tspan></text></g></g><g class="s pop" data-at="7" data-until="8" data-n="focus"><g class="pos" style="--lx:900px;--ly:70px;--ls:1;--lr:0deg;--px:400px;--py:538px;--ps:1;--pr:0deg"><rect x="-170" y="-38" width="340" height="76" rx="38" fill="#137a7f" stroke="#203845" stroke-width="5" stroke-linejoin="round"/><text x="0" y="2" font-size="40" fill="#ffffff" text-anchor="middle" font-weight="800" dominant-baseline="central"><tspan x="0" dy="0">聚焦：轮廓规则</tspan></text></g></g><g class="s pop" data-at="11" data-until="12" data-n="scope"><g class="pos" style="--lx:600px;--ly:95px;--ls:1;--lr:0deg;--px:400px;--py:110px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="48" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">手写规则算例</tspan></text></g></g><g class="s pop" data-at="11" data-until="12" data-n="next"><g class="pos" style="--lx:600px;--ly:390px;--ls:1;--lr:0deg;--px:400px;--py:580px;--ps:1;--pr:0deg"><rect x="-249" y="-152.5" width="498" height="305" rx="28" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-87.5" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">下一组：刻意换色</tspan></text><g transform="translate(-168 37.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><g transform="translate(-56 37.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><g transform="translate(56 37.5) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#ee6a58" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(168 37.5) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#ee6a58" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g></g></svg>
+<svg class="scene" data-scene="test" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="chapter.art"><g class="pos" style="--lx:600px;--ly:275px;--ls:1;--lr:0deg;--px:400px;--py:370px;--ps:1;--pr:0deg"><rect x="-249" y="-152.5" width="498" height="305" rx="28" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-87.5" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">事先留出的四个例子</tspan></text><g transform="translate(-168 37.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><g transform="translate(-56 37.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><g transform="translate(56 37.5) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#ee6a58" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(168 37.5) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#ee6a58" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g><g class="s pop" data-at="0" data-until="1" data-n="chapter.note" style="--d:140ms"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:880px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="54" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">换搭配 · 差别出现</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="test"><g class="pos" style="--lx:600px;--ly:300px;--ls:1;--lr:0deg;--px:400px;--py:430px;--ps:1;--pr:0deg"><rect x="-249" y="-152.5" width="498" height="305" rx="28" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-87.5" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝圆 × 2 · 红方 × 2</tspan></text><g transform="translate(-168 37.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><g transform="translate(-56 37.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><g transform="translate(56 37.5) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#ee6a58" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(168 37.5) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#ee6a58" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g><g class="s pop" data-at="2" data-until="3" data-n="test"><g class="pos" style="--lx:600px;--ly:300px;--ls:1;--lr:0deg;--px:400px;--py:430px;--ps:1;--pr:0deg"><rect x="-249" y="-152.5" width="498" height="305" rx="28" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-87.5" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝圆 × 2 · 红方 × 2</tspan></text><g transform="translate(-168 37.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><g transform="translate(-56 37.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><g transform="translate(56 37.5) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#ee6a58" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(168 37.5) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#ee6a58" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g><g class="s pop" data-at="2" data-until="3" data-n="heldout"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:880px;--ps:1;--pr:0deg"><rect x="-255" y="-40" width="510" height="80" rx="40" fill="#137a7f" stroke="#203845" stroke-width="5" stroke-linejoin="round"/><text x="0" y="2" font-size="40" fill="#ffffff" text-anchor="middle" font-weight="800" dominant-baseline="central"><tspan x="0" dy="0">测试集：未参与选择或调整</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="mistakes"><g class="pos" style="--lx:350px;--ly:340px;--ls:1;--lr:0deg;--px:400px;--py:300px;--ps:1;--pr:0deg"><rect x="-249" y="-152.5" width="498" height="305" rx="28" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-87.5" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">A · 按颜色判断</tspan></text><g transform="translate(-168 37.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><g transform="translate(-136 71.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="19" fill="#d42c16" stroke="#203845" stroke-width="4"/><path d="M-6.6499999999999995 -6.6499999999999995 L6.6499999999999995 6.6499999999999995 M6.6499999999999995 -6.6499999999999995 L-6.6499999999999995 6.6499999999999995" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/></g><g transform="translate(-56 37.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><g transform="translate(-24 71.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="19" fill="#d42c16" stroke="#203845" stroke-width="4"/><path d="M-6.6499999999999995 -6.6499999999999995 L6.6499999999999995 6.6499999999999995 M6.6499999999999995 -6.6499999999999995 L-6.6499999999999995 6.6499999999999995" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/></g><g transform="translate(56 37.5) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#ee6a58" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(88 71.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="19" fill="#d42c16" stroke="#203845" stroke-width="4"/><path d="M-6.6499999999999995 -6.6499999999999995 L6.6499999999999995 6.6499999999999995 M6.6499999999999995 -6.6499999999999995 L-6.6499999999999995 6.6499999999999995" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/></g><g transform="translate(168 37.5) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#ee6a58" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(200 71.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="19" fill="#d42c16" stroke="#203845" stroke-width="4"/><path d="M-6.6499999999999995 -6.6499999999999995 L6.6499999999999995 6.6499999999999995 M6.6499999999999995 -6.6499999999999995 L-6.6499999999999995 6.6499999999999995" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/></g></g></g><g class="s pop" data-at="3" data-until="4" data-n="score"><g class="pos" style="--lx:930px;--ly:340px;--ls:1;--lr:0deg;--px:400px;--py:850px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="76" fill="#d42c16" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0÷4＝0%</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="mistakes"><g class="pos" style="--lx:350px;--ly:340px;--ls:1;--lr:0deg;--px:400px;--py:300px;--ps:1;--pr:0deg"><rect x="-249" y="-152.5" width="498" height="305" rx="28" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-87.5" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">A · 按颜色判断</tspan></text><g transform="translate(-168 37.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><g transform="translate(-136 71.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="19" fill="#d42c16" stroke="#203845" stroke-width="4"/><path d="M-6.6499999999999995 -6.6499999999999995 L6.6499999999999995 6.6499999999999995 M6.6499999999999995 -6.6499999999999995 L-6.6499999999999995 6.6499999999999995" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/></g><g transform="translate(-56 37.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><g transform="translate(-24 71.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="19" fill="#d42c16" stroke="#203845" stroke-width="4"/><path d="M-6.6499999999999995 -6.6499999999999995 L6.6499999999999995 6.6499999999999995 M6.6499999999999995 -6.6499999999999995 L-6.6499999999999995 6.6499999999999995" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/></g><g transform="translate(56 37.5) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#ee6a58" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(88 71.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="19" fill="#d42c16" stroke="#203845" stroke-width="4"/><path d="M-6.6499999999999995 -6.6499999999999995 L6.6499999999999995 6.6499999999999995 M6.6499999999999995 -6.6499999999999995 L-6.6499999999999995 6.6499999999999995" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/></g><g transform="translate(168 37.5) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#ee6a58" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(200 71.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="19" fill="#d42c16" stroke="#203845" stroke-width="4"/><path d="M-6.6499999999999995 -6.6499999999999995 L6.6499999999999995 6.6499999999999995 M6.6499999999999995 -6.6499999999999995 L-6.6499999999999995 6.6499999999999995" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/></g></g></g><g class="s pop" data-at="4" data-until="5" data-n="score"><g class="pos" style="--lx:930px;--ly:340px;--ls:1;--lr:0deg;--px:400px;--py:850px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="76" fill="#d42c16" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0÷4＝0%</tspan></text></g></g><g class="s pop" data-at="5" data-until="6" data-n="correct"><g class="pos" style="--lx:350px;--ly:340px;--ls:1;--lr:0deg;--px:400px;--py:300px;--ps:1;--pr:0deg"><rect x="-249" y="-152.5" width="498" height="305" rx="28" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-87.5" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">B · 按轮廓判断</tspan></text><g transform="translate(-168 37.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><g transform="translate(-136 71.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="19" fill="#168f94" stroke="#203845" stroke-width="5"/><path d="M-7.9799999999999995 0.38 L-1.9000000000000001 6.460000000000001 L8.74 -5.7" fill="none" stroke="#ffffff" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/></g><g transform="translate(-56 37.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><g transform="translate(-24 71.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="19" fill="#168f94" stroke="#203845" stroke-width="5"/><path d="M-7.9799999999999995 0.38 L-1.9000000000000001 6.460000000000001 L8.74 -5.7" fill="none" stroke="#ffffff" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/></g><g transform="translate(56 37.5) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#ee6a58" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(88 71.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="19" fill="#168f94" stroke="#203845" stroke-width="5"/><path d="M-7.9799999999999995 0.38 L-1.9000000000000001 6.460000000000001 L8.74 -5.7" fill="none" stroke="#ffffff" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/></g><g transform="translate(168 37.5) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#ee6a58" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(200 71.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="19" fill="#168f94" stroke="#203845" stroke-width="5"/><path d="M-7.9799999999999995 0.38 L-1.9000000000000001 6.460000000000001 L8.74 -5.7" fill="none" stroke="#ffffff" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/></g></g></g><g class="s pop" data-at="5" data-until="6" data-n="score"><g class="pos" style="--lx:930px;--ly:340px;--ls:1;--lr:0deg;--px:400px;--py:850px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="70" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">4÷4＝100%</tspan></text></g></g><g class="s pop" data-at="6" data-until="7" data-n="scope"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:480px;--ps:1;--pr:0deg"><text x="0" y="-150" font-size="60" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">手写规则算例</tspan></text><g transform="translate(0 0) rotate(0) scale(1)"><path d="M-82 150 C-82 78 -44 56 0 56 C44 56 82 78 82 150 Z" fill="#168f94" stroke="#203845" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/><circle cx="0" cy="0" r="54" fill="#fff1d2" stroke="#203845" stroke-width="6"/><path d="M-52 -14 C-48 -64 -8 -70 18 -62 C40 -56 52 -40 52 -14 C34 -34 -26 -34 -52 -14 Z" fill="#203845" stroke="#203845" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/><circle cx="-19" cy="8" r="5.5" fill="#203845"/><circle cx="19" cy="8" r="5.5" fill="#203845"/><path d="M-14 28 C-6 38 6 38 14 28" fill="none" stroke="#203845" stroke-width="4.5" stroke-linejoin="round" stroke-linecap="round"/></g><text x="0" y="240" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">没有训练神经网络</tspan></text></g></g><g class="s pop" data-at="7" data-until="8" data-n="limits"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:480px;--ps:1;--pr:0deg"><circle cx="0" cy="0" r="80" fill="#d42c16" stroke="#203845" stroke-width="5"/><g transform="translate(0 0.53) rotate(0) scale(2.11)"><path d="M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="0" cy="16" r="3.5" fill="#ffffff"/></g><text x="0" y="198.32" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">刻意换色找弱点</tspan><tspan x="0" dy="63.36">四题成绩有边界</tspan></text></g></g><g class="s pop" data-at="10" data-until="11" data-n="rule.A"><g class="pos" style="--lx:300px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:260px;--ps:1;--pr:0deg"><rect x="-250" y="-185" width="500" height="370" rx="24" fill="#ffe7df" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-115" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">A · 看颜色</tspan></text><text x="0" y="-42.32" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红 → 圆</tspan><tspan x="0" dy="68.64">蓝 → 方</tspan></text><text x="0" y="125" font-size="52" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2÷4＝50%</tspan></text></g></g><g class="s pop" data-at="10" data-until="11" data-n="rule.B" style="--d:160ms"><g class="pos" style="--lx:900px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:760px;--ps:1;--pr:0deg"><rect x="-250" y="-185" width="500" height="370" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-115" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">B · 看轮廓</tspan></text><text x="0" y="-42.32" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">圆 → 圆</tspan><tspan x="0" dy="68.64">方 → 方</tspan></text><text x="0" y="125" font-size="52" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">4÷4＝100%</tspan></text></g></g><g class="s pop" data-at="11" data-until="12" data-n="coverage"><g class="pos" style="--lx:600px;--ly:300px;--ls:1;--lr:0deg;--px:400px;--py:400px;--ps:1;--pr:0deg"><rect x="-249" y="-152.5" width="498" height="305" rx="28" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-116.54" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红圆 · 蓝圆</tspan><tspan x="0" dy="58.08">红方 · 蓝方</tspan></text><g transform="translate(-168 37.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(-56 37.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><g transform="translate(56 37.5) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#ee6a58" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(168 37.5) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g><g class="s pop" data-at="11" data-until="12" data-n="report"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:870px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">成绩还要带上：测了什么</tspan></text></g></g><g class="s pop" data-at="12" data-until="13" data-n="generalization"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:480px;--ps:1;--pr:0deg"><circle cx="0" cy="0" r="100" fill="#e3efff" stroke="#203845" stroke-width="6"/><g transform="translate(120 -95) rotate(0) scale(1)"><circle cx="0" cy="0" r="42" fill="#168f94" stroke="#203845" stroke-width="5"/><path d="M-17.64 0.84 L-4.2 14.280000000000001 L19.32 -12.6" fill="none" stroke="#ffffff" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/></g><text x="0" y="208.32" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">没见过的新例子</tspan><tspan x="0" dy="63.36">同一任务仍能做好</tspan></text></g></g><g class="s pop" data-at="13" data-until="14" data-n="rule.A"><g class="pos" style="--lx:300px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:260px;--ps:1;--pr:0deg"><rect x="-250" y="-185" width="500" height="370" rx="24" fill="#ffe7df" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-115" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">A · 看颜色</tspan></text><text x="0" y="-42.32" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红 → 圆</tspan><tspan x="0" dy="68.64">蓝 → 方</tspan></text><text x="0" y="125" font-size="52" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0÷4＝0%</tspan></text></g></g><g class="s pop" data-at="13" data-until="14" data-n="rule.B" style="--d:160ms"><g class="pos" style="--lx:900px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:760px;--ps:1;--pr:0deg"><rect x="-250" y="-185" width="500" height="370" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-115" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">B · 看轮廓</tspan></text><text x="0" y="-42.32" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">圆 → 圆</tspan><tspan x="0" dy="68.64">方 → 方</tspan></text><text x="0" y="125" font-size="52" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">4÷4＝100%</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="exercise" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="1" data-until="2" data-n="answer-note"><g class="pos" style="--lx:600px;--ly:50px;--ls:1;--lr:0deg;--px:400px;--py:22px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击卡片可翻回题目</tspan></text></g></g><g class="s rise only-l" data-at="0" data-until="2" data-n="quiz.switched"><g class="pos" style="--lx:210px;--ly:350px;--ls:1;--lr:0deg;--px:210px;--py:350px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="switched" role="button" tabindex="-1" aria-pressed="false" aria-label="换色四题，A 答对几题？，点击翻面" data-front-label="换色四题，A 答对几题？，点击翻面" data-back-label="0 / 4 · 0%，颜色与形状不再对应，点击翻回"><g class="front" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(0 -100) rotate(0) scale(1)"><circle cx="0" cy="0" r="40" fill="#d42c16" stroke="#203845" stroke-width="5"/><g transform="translate(0 0.26) rotate(0) scale(1.05)"><path d="M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="0" cy="16" r="3.5" fill="#ffffff"/></g></g><text x="0" y="-2.72" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">换色四题</tspan><tspan x="0" dy="55.44">A 答对几题？</tspan></text><text x="0" y="165" font-size="38" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击翻面</tspan></text></g><g class="back" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-45" font-size="50" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0 / 4 · 0%</tspan></text><text x="0" y="38.6" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">颜色与形状</tspan><tspan x="0" dy="52.8">不再对应</tspan></text></g></g></g></g><g class="s rise only-p" data-at="0" data-until="2" data-n="quiz.switched"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:170px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="switched" role="button" tabindex="-1" aria-pressed="false" aria-label="换色四题，A 答对几题？，点击翻面" data-front-label="换色四题，A 答对几题？，点击翻面" data-back-label="0 / 4 · 0%，颜色与形状不再对应，点击翻回"><g class="front" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-245 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="40" fill="#d42c16" stroke="#203845" stroke-width="5"/><g transform="translate(0 0.26) rotate(0) scale(1.05)"><path d="M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="0" cy="16" r="3.5" fill="#ffffff"/></g></g><text x="65" y="-49.72" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="65" dy="0">换色四题</tspan><tspan x="65" dy="55.44">A 答对几题？</tspan></text><text x="0" y="85" font-size="38" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击翻面</tspan></text></g><g class="back" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-35" font-size="58" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0 / 4 · 0%</tspan></text><text x="0" y="55" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">颜色与形状不再对应</tspan></text></g></g></g></g><g class="s rise only-l" data-at="0" data-until="2" data-n="quiz.mixed"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:600px;--py:350px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="mixed" role="button" tabindex="-1" aria-pressed="false" aria-label="混合四题，A 答对几题？，点击翻面" data-front-label="混合四题，A 答对几题？，点击翻面" data-back-label="2 / 4 · 50%，只答对红圆与蓝方，点击翻回"><g class="front" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(0 -100) rotate(0) scale(1)"><circle cx="0" cy="0" r="40" fill="#d42c16" stroke="#203845" stroke-width="5"/><g transform="translate(0 0.26) rotate(0) scale(1.05)"><path d="M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="0" cy="16" r="3.5" fill="#ffffff"/></g></g><text x="0" y="-2.72" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">混合四题</tspan><tspan x="0" dy="55.44">A 答对几题？</tspan></text><text x="0" y="165" font-size="38" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击翻面</tspan></text></g><g class="back" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-45" font-size="50" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2 / 4 · 50%</tspan></text><text x="0" y="38.6" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">只答对</tspan><tspan x="0" dy="52.8">红圆与蓝方</tspan></text></g></g></g></g><g class="s rise only-p" data-at="0" data-until="2" data-n="quiz.mixed"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:495px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="mixed" role="button" tabindex="-1" aria-pressed="false" aria-label="混合四题，A 答对几题？，点击翻面" data-front-label="混合四题，A 答对几题？，点击翻面" data-back-label="2 / 4 · 50%，只答对红圆与蓝方，点击翻回"><g class="front" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-245 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="40" fill="#d42c16" stroke="#203845" stroke-width="5"/><g transform="translate(0 0.26) rotate(0) scale(1.05)"><path d="M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="0" cy="16" r="3.5" fill="#ffffff"/></g></g><text x="65" y="-49.72" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="65" dy="0">混合四题</tspan><tspan x="65" dy="55.44">A 答对几题？</tspan></text><text x="0" y="85" font-size="38" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击翻面</tspan></text></g><g class="back" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-35" font-size="58" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2 / 4 · 50%</tspan></text><text x="0" y="55" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">只答对红圆与蓝方</tspan></text></g></g></g></g><g class="s rise only-l" data-at="0" data-until="2" data-n="quiz.outline"><g class="pos" style="--lx:990px;--ly:350px;--ls:1;--lr:0deg;--px:990px;--py:350px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="outline" role="button" tabindex="-1" aria-pressed="false" aria-label="这两张考卷，B 各答对几题？，点击翻面" data-front-label="这两张考卷，B 各答对几题？，点击翻面" data-back-label="4 / 4 · 100%，按轮廓，两卷都全对，点击翻回"><g class="front" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(0 -100) rotate(0) scale(1)"><circle cx="0" cy="0" r="40" fill="#d42c16" stroke="#203845" stroke-width="5"/><g transform="translate(0 0.26) rotate(0) scale(1.05)"><path d="M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="0" cy="16" r="3.5" fill="#ffffff"/></g></g><text x="0" y="-2.72" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">这两张考卷</tspan><tspan x="0" dy="55.44">B 各答对几题？</tspan></text><text x="0" y="165" font-size="38" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击翻面</tspan></text></g><g class="back" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-45" font-size="50" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">4 / 4 · 100%</tspan></text><text x="0" y="38.6" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">按轮廓判断</tspan><tspan x="0" dy="52.8">两卷都全对</tspan></text></g></g></g></g><g class="s rise only-p" data-at="0" data-until="2" data-n="quiz.outline"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:820px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="outline" role="button" tabindex="-1" aria-pressed="false" aria-label="这两张考卷，B 各答对几题？，点击翻面" data-front-label="这两张考卷，B 各答对几题？，点击翻面" data-back-label="4 / 4 · 100%，按轮廓，两卷都全对，点击翻回"><g class="front" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><g transform="translate(-245 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="40" fill="#d42c16" stroke="#203845" stroke-width="5"/><g transform="translate(0 0.26) rotate(0) scale(1.05)"><path d="M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="0" cy="16" r="3.5" fill="#ffffff"/></g></g><text x="65" y="-49.72" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="65" dy="0">这两张考卷</tspan><tspan x="65" dy="55.44">B 各答对几题？</tspan></text><text x="0" y="85" font-size="38" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击翻面</tspan></text></g><g class="back" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-35" font-size="58" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">4 / 4 · 100%</tspan></text><text x="0" y="55" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">按轮廓，两卷都全对</tspan></text></g></g></g></g></g></svg>
+<svg class="scene" data-scene="shortcut" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="chapter.art"><g class="pos" style="--lx:600px;--ly:275px;--ls:1;--lr:0deg;--px:400px;--py:370px;--ps:1;--pr:0deg"><g transform="translate(-170 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="100" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(-65 0) rotate(0) scale(1)"><g fill="none" stroke="#203845" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"><path d="M0 0 L137 0"/><path d="M127.18 -12.47 L150 0 L127.18 12.47"/></g></g><g transform="translate(210 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="100" fill="#ffffff" stroke="#203845" stroke-width="6"/></g></g></g><g class="s pop" data-at="0" data-until="1" data-n="chapter.note" style="--d:140ms"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:880px;--ps:1;--pr:0deg"><text x="0" y="-35.64" font-size="54" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">有用的线索</tspan><tspan x="0" dy="71.28">也可能是捷径</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="task"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:480px;--ps:1;--pr:0deg"><circle cx="0" cy="0" r="110" fill="#ffffff" stroke="#203845" stroke-width="6"/><g transform="translate(125 65) rotate(0) scale(1)"><path d="M50.4 50.4 L113.4 113.4" fill="none" stroke="#203845" stroke-width="16" stroke-linecap="round"/><path d="M50.4 50.4 L113.4 113.4" fill="none" stroke="#ee6a58" stroke-width="8" stroke-linecap="round"/><circle cx="0" cy="0" r="70" fill="rgba(222,243,238,.7)" stroke="#203845" stroke-width="7"/><path d="M-38.5 -7 C-31.5 -35 -10.5 -49 10.5 -47.6" fill="none" stroke="#ffffff" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/></g><text x="0" y="250" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">按形状分类：看轮廓</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="shortcut"><g class="pos" style="--lx:600px;--ly:310px;--ls:1;--lr:0deg;--px:400px;--py:400px;--ps:1;--pr:0deg"><rect x="-249" y="-220" width="498" height="440" rx="28" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-184.04" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">训练里</tspan><tspan x="0" dy="58.08">红圆 · 蓝方</tspan></text><g transform="translate(-168 -30) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(-56 -30) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(56 -30) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(168 -30) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(-168 105) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(-56 105) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(56 105) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(168 105) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g><g class="s pop" data-at="2" data-until="3" data-n="shortcut.note"><g class="pos" style="--lx:600px;--ly:645px;--ls:1;--lr:0deg;--px:400px;--py:870px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="48" fill="#d42c16" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">看颜色也能全对</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="spurious"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:480px;--ps:1;--pr:0deg"><g transform="translate(-155 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="95" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(155 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="95" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><text x="0" y="213.32" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">图和标签可以都是真的</tspan><tspan x="0" dy="63.36">对应关系未必一直成立</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="model"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:480px;--ps:1;--pr:0deg"><g transform="translate(-180 -150) rotate(0) scale(1)"><rect x="0" y="0" width="360" height="300" rx="30" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><rect x="34" y="32" width="292" height="92" rx="16" fill="#ffffff" stroke="#203845" stroke-width="5" stroke-linejoin="round"/><text x="180" y="79" font-size="54" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="180" dy="0">许多参数</tspan></text><g transform="translate(90 210)"><circle cx="0" cy="0" r="36" fill="#ffcf62" stroke="#203845" stroke-width="5"/><path d="M0 -6.48 L0 -29.52" fill="none" stroke="#203845" stroke-width="7" stroke-linecap="round"/><circle cx="0" cy="0" r="4.32" fill="#203845"/></g><g transform="translate(180 210)"><circle cx="0" cy="0" r="36" fill="#ffcf62" stroke="#203845" stroke-width="5"/><path d="M0 -6.48 L0 -29.52" fill="none" stroke="#203845" stroke-width="7" stroke-linecap="round"/><circle cx="0" cy="0" r="4.32" fill="#203845"/></g><g transform="translate(270 210)"><circle cx="0" cy="0" r="36" fill="#ffcf62" stroke="#203845" stroke-width="5"/><path d="M0 -6.48 L0 -29.52" fill="none" stroke="#203845" stroke-width="7" stroke-linecap="round"/><circle cx="0" cy="0" r="4.32" fill="#203845"/></g><path d="M40 272 L120 272" fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round"/><path d="M150 272 L230 272" fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round"/><path d="M260 272 L320 272" fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round"/></g><text x="0" y="250" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">实际模型：数值计算</tspan></text></g></g><g class="s pop" data-at="5" data-until="6" data-n="parameters"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:480px;--ps:1;--pr:0deg"><g transform="translate(-155 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="90" fill="#ffcf62" stroke="#203845" stroke-width="5"/><path d="M0 -16.2 L0 -73.8" fill="none" stroke="#203845" stroke-width="7" stroke-linecap="round"/><circle cx="0" cy="0" r="10.8" fill="#203845"/></g><g transform="translate(155 0) rotate(40) scale(1)"><circle cx="0" cy="0" r="90" fill="#ffcf62" stroke="#203845" stroke-width="5"/><path d="M0 -16.2 L0 -73.8" fill="none" stroke="#203845" stroke-width="7" stroke-linecap="round"/><circle cx="0" cy="0" r="10.8" fill="#203845"/></g><text x="0" y="203.32" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">训练调整参数</tspan><tspan x="0" dy="63.36">好用的线索可能被利用</tspan></text></g></g><g class="s pop" data-at="6" data-until="7" data-n="lever0"><g class="pos" style="--lx:250px;--ly:300px;--ls:1;--lr:0deg;--px:400px;--py:170px;--ps:1;--pr:0deg"><g transform="translate(0 -40) rotate(0) scale(1)"><circle cx="0" cy="0" r="74" fill="#ffcf62" stroke="#203845" stroke-width="5"/><path d="M0 -13.32 L0 -60.68" fill="none" stroke="#203845" stroke-width="7" stroke-linecap="round"/><circle cx="0" cy="0" r="8.88" fill="#203845"/></g><text x="0" y="130" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">数据</tspan></text></g></g><g class="s pop" data-at="6" data-until="7" data-n="lever1"><g class="pos" style="--lx:600px;--ly:300px;--ls:1;--lr:0deg;--px:400px;--py:490px;--ps:1;--pr:0deg"><g transform="translate(0 -40) rotate(0) scale(1)"><circle cx="0" cy="0" r="74" fill="#ffcf62" stroke="#203845" stroke-width="5"/><path d="M0 -13.32 L0 -60.68" fill="none" stroke="#203845" stroke-width="7" stroke-linecap="round"/><circle cx="0" cy="0" r="8.88" fill="#203845"/></g><text x="0" y="130" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模型</tspan></text></g></g><g class="s pop" data-at="6" data-until="7" data-n="lever2"><g class="pos" style="--lx:950px;--ly:300px;--ls:1;--lr:0deg;--px:400px;--py:810px;--ps:1;--pr:0deg"><g transform="translate(0 -40) rotate(0) scale(1)"><circle cx="0" cy="0" r="74" fill="#ffcf62" stroke="#203845" stroke-width="5"/><path d="M0 -13.32 L0 -60.68" fill="none" stroke="#203845" stroke-width="7" stroke-linecap="round"/><circle cx="0" cy="0" r="8.88" fill="#203845"/></g><text x="0" y="130" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">训练</tspan></text></g></g><g class="s pop" data-at="7" data-until="8" data-n="shortcut-learning"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:480px;--ps:1;--pr:0deg"><g transform="translate(-180 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="105" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><g transform="translate(170 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="55" fill="#d42c16" stroke="#203845" stroke-width="4"/><path d="M-19.25 -19.25 L19.25 19.25 M19.25 -19.25 L-19.25 19.25" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/></g><text x="0" y="203.32" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">换环境就失灵</tspan><tspan x="0" dy="63.36">捷径学习</tspan></text></g></g><g class="s pop" data-at="8" data-until="9" data-n="red"><g class="pos" style="--lx:300px;--ly:330px;--ls:1;--lr:0deg;--px:400px;--py:230px;--ps:1;--pr:0deg"><g transform="translate(-100 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="85" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(100 0) rotate(0) scale(1)"><rect x="-85" y="-85" width="170" height="170" rx="8" fill="#ee6a58" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><text x="0" y="165" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红色</tspan></text></g></g><g class="s pop" data-at="8" data-until="9" data-n="blue"><g class="pos" style="--lx:900px;--ly:330px;--ls:1;--lr:0deg;--px:400px;--py:730px;--ps:1;--pr:0deg"><g transform="translate(-100 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="85" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><g transform="translate(100 0) rotate(0) scale(1)"><rect x="-85" y="-85" width="170" height="170" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><text x="0" y="165" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝色</tspan></text></g></g><g class="s pop" data-at="9" data-until="10" data-n="red"><g class="pos" style="--lx:300px;--ly:330px;--ls:1;--lr:0deg;--px:400px;--py:230px;--ps:1;--pr:0deg"><g transform="translate(-100 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="85" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(100 0) rotate(0) scale(1)"><rect x="-85" y="-85" width="170" height="170" rx="8" fill="#ee6a58" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><text x="0" y="165" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红色</tspan></text></g></g><g class="s pop" data-at="9" data-until="10" data-n="blue"><g class="pos" style="--lx:900px;--ly:330px;--ls:1;--lr:0deg;--px:400px;--py:730px;--ps:1;--pr:0deg"><g transform="translate(-100 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="85" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><g transform="translate(100 0) rotate(0) scale(1)"><rect x="-85" y="-85" width="170" height="170" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><text x="0" y="165" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">蓝色</tspan></text></g></g><g class="s pop" data-at="9" data-until="10" data-n="task-note"><g class="pos" style="--lx:600px;--ly:650px;--ls:1;--lr:0deg;--px:400px;--py:970px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">任务变了：这次就该看颜色</tspan></text></g></g><g class="s pop" data-at="10" data-until="11" data-n="same-mix"><g class="pos" style="--lx:600px;--ly:300px;--ls:1;--lr:0deg;--px:400px;--py:400px;--ps:1;--pr:0deg"><rect x="-249" y="-220" width="498" height="440" rx="28" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-184.04" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">新拍一批</tspan><tspan x="0" dy="58.08">仍是红圆、蓝方</tspan></text><g transform="translate(-168 -30) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(-56 -30) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(56 -30) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(168 -30) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(-168 105) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(-56 105) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(56 105) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(168 105) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g><g class="s pop" data-at="10" data-until="11" data-n="perfect-again"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:870px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="48" fill="#d42c16" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">A 仍能拿到 100%</tspan></text></g></g><g class="s pop" data-at="11" data-until="12" data-n="separate"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:480px;--ps:1;--pr:0deg"><rect x="-249" y="-152.5" width="498" height="305" rx="28" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-116.54" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">分开数据</tspan><tspan x="0" dy="58.08">也要检查覆盖</tspan></text><g transform="translate(-168 37.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><g transform="translate(-56 37.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><g transform="translate(56 37.5) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#ee6a58" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(168 37.5) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#ee6a58" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g></g></svg>
+<svg class="scene" data-scene="repair" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="chapter.art"><g class="pos" style="--lx:600px;--ly:275px;--ls:1;--lr:0deg;--px:400px;--py:370px;--ps:1;--pr:0deg"><g transform="translate(-160 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="105" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><g transform="translate(160 0) rotate(0) scale(1)"><rect x="-105" y="-105" width="210" height="210" rx="8" fill="#ee6a58" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g><g class="s pop" data-at="0" data-until="1" data-n="chapter.note" style="--d:140ms"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:880px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="54" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">补齐搭配 · 再检验</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="more"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:480px;--ps:1;--pr:0deg"><rect x="-305" y="-220" width="610" height="440" rx="28" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-184.04" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">八个原例子</tspan><tspan x="0" dy="58.08">+ 两种缺失搭配</tspan></text><g transform="translate(-224 -30) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(-112 -30) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(0 -30) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(112 -30) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(224 -30) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(-224 105) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(-112 105) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(0 105) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(112 105) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><g transform="translate(224 105) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#ee6a58" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g><g class="s pop" data-at="2" data-until="3" data-n="rule.A"><g class="pos" style="--lx:300px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:260px;--ps:1;--pr:0deg"><rect x="-250" y="-185" width="500" height="370" rx="24" fill="#ffe7df" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-115" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">A · 看颜色</tspan></text><text x="0" y="-42.32" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红 → 圆</tspan><tspan x="0" dy="68.64">蓝 → 方</tspan></text><text x="0" y="125" font-size="52" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">8÷10＝80%</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="rule.B" style="--d:160ms"><g class="pos" style="--lx:900px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:760px;--ps:1;--pr:0deg"><rect x="-250" y="-185" width="500" height="370" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-115" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">B · 看轮廓</tspan></text><text x="0" y="-42.32" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">圆 → 圆</tspan><tspan x="0" dy="68.64">方 → 方</tspan></text><text x="0" y="125" font-size="52" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">10÷10＝100%</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="rule.A"><g class="pos" style="--lx:300px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:260px;--ps:1;--pr:0deg"><rect x="-250" y="-185" width="500" height="370" rx="24" fill="#ffe7df" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-115" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">A · 看颜色</tspan></text><text x="0" y="-42.32" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">红 → 圆</tspan><tspan x="0" dy="68.64">蓝 → 方</tspan></text><text x="0" y="125" font-size="52" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">8÷10＝80%</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="rule.B" style="--d:160ms"><g class="pos" style="--lx:900px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:760px;--ps:1;--pr:0deg"><rect x="-250" y="-185" width="500" height="370" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-115" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">B · 看轮廓</tspan></text><text x="0" y="-42.32" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">圆 → 圆</tspan><tspan x="0" dy="68.64">方 → 方</tspan></text><text x="0" y="125" font-size="52" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">10÷10＝100%</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="quantity"><g class="pos" style="--lx:600px;--ly:300px;--ls:1;--lr:0deg;--px:400px;--py:400px;--ps:1;--pr:0deg"><rect x="-249" y="-220" width="498" height="440" rx="28" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-184.04" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">重复拍很多</tspan><tspan x="0" dy="58.08">搭配没增加</tspan></text><g transform="translate(-168 -30) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(-56 -30) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(56 -30) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(168 -30) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(-168 105) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(-56 105) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(56 105) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(168 105) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g><g class="s pop" data-at="4" data-until="5" data-n="not-coverage"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:870px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="48" fill="#d42c16" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">数量更多 ≠ 情形更全</tspan></text></g></g><g class="s pop" data-at="5" data-until="6" data-n="coverage"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:480px;--ps:1;--pr:0deg"><rect x="-249" y="-152.5" width="498" height="305" rx="28" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-116.54" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">四种搭配</tspan><tspan x="0" dy="58.08">检查有没有漏</tspan></text><g transform="translate(-168 37.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(-56 37.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><g transform="translate(56 37.5) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#ee6a58" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(168 37.5) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g><g class="s pop" data-at="6" data-until="7" data-n="retrain"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:480px;--ps:1;--pr:0deg"><g transform="translate(-180 -150) rotate(0) scale(1)"><rect x="0" y="0" width="360" height="300" rx="30" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><rect x="34" y="32" width="292" height="92" rx="16" fill="#ffffff" stroke="#203845" stroke-width="5" stroke-linejoin="round"/><text x="180" y="79" font-size="52" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="180" dy="0">重新训练</tspan></text><g transform="translate(90 210)"><circle cx="0" cy="0" r="36" fill="#ffcf62" stroke="#203845" stroke-width="5"/><path d="M0 -6.48 L0 -29.52" fill="none" stroke="#203845" stroke-width="7" stroke-linecap="round"/><circle cx="0" cy="0" r="4.32" fill="#203845"/></g><g transform="translate(180 210)"><circle cx="0" cy="0" r="36" fill="#ffcf62" stroke="#203845" stroke-width="5"/><path d="M0 -6.48 L0 -29.52" fill="none" stroke="#203845" stroke-width="7" stroke-linecap="round"/><circle cx="0" cy="0" r="4.32" fill="#203845"/></g><g transform="translate(270 210)"><circle cx="0" cy="0" r="36" fill="#ffcf62" stroke="#203845" stroke-width="5"/><path d="M0 -6.48 L0 -29.52" fill="none" stroke="#203845" stroke-width="7" stroke-linecap="round"/><circle cx="0" cy="0" r="4.32" fill="#203845"/></g><path d="M40 272 L120 272" fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round"/><path d="M150 272 L230 272" fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round"/><path d="M260 272 L320 272" fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round"/></g><g transform="translate(245 -145) rotate(0) scale(1)"><circle cx="0" cy="0" r="52" fill="#d42c16" stroke="#203845" stroke-width="5"/><g transform="translate(0 0.34) rotate(0) scale(1.37)"><path d="M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="0" cy="16" r="3.5" fill="#ffffff"/></g></g><text x="0" y="250" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">补样本后，仍需检验</tspan></text></g></g><g class="s pop" data-at="7" data-until="8" data-n="used"><g class="pos" style="--lx:600px;--ly:300px;--ls:1;--lr:0deg;--px:400px;--py:400px;--ps:1;--pr:0deg"><rect x="-249" y="-152.5" width="498" height="305" rx="28" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-87.5" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">看过答案、用来改方案</tspan></text><g transform="translate(-168 37.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><g transform="translate(-56 37.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><g transform="translate(56 37.5) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#ee6a58" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(168 37.5) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#ee6a58" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g></g><g class="s pop" data-at="7" data-until="8" data-n="development"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:870px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="48" fill="#d42c16" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">这批例子已经参与开发</tspan></text></g></g><g class="s pop" data-at="8" data-until="9" data-n="old-new"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:480px;--ps:1;--pr:0deg"><g transform="translate(-155 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#168f94" stroke="#203845" stroke-width="5"/><path d="M-27.3 1.3 L-6.5 22.1 L29.900000000000002 -19.5" fill="none" stroke="#ffffff" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/></g><g transform="translate(155 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="65" fill="#d42c16" stroke="#203845" stroke-width="5"/><g transform="translate(0 0.43) rotate(0) scale(1.71)"><path d="M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="0" cy="16" r="3.5" fill="#ffffff"/></g></g><text x="0" y="203.32" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">重做旧题：检查修正</tspan><tspan x="0" dy="63.36">还需要：新的独立测试</tspan></text></g></g><g class="s pop" data-at="9" data-until="10" data-n="split0"><g class="pos" style="--lx:210px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:170px;--ps:1;--pr:0deg"><rect x="-170" y="-145" width="340" height="290" rx="24" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-65" font-size="56" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">训练集</tspan></text><text x="0" y="55" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">调整参数</tspan></text></g></g><g class="s pop" data-at="9" data-until="10" data-n="split1"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:495px;--ps:1;--pr:0deg"><rect x="-170" y="-145" width="340" height="290" rx="24" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-65" font-size="56" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">验证集</tspan></text><text x="0" y="55" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">比较方案</tspan></text></g></g><g class="s pop" data-at="9" data-until="10" data-n="split2"><g class="pos" style="--lx:990px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:820px;--ps:1;--pr:0deg"><rect x="-170" y="-145" width="340" height="290" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-65" font-size="56" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">测试集</tspan></text><text x="0" y="55" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">定案后检查</tspan></text></g></g><g class="s pop" data-at="10" data-until="11" data-n="used-answers"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:480px;--ps:1;--pr:0deg"><g transform="translate(0 0) rotate(0) scale(0.95)"><rect x="-249" y="-152.5" width="498" height="305" rx="28" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-87.5" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">用过的答案</tspan></text><g transform="translate(-168 37.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><g transform="translate(-56 37.5) rotate(0) scale(1)"><circle cx="0" cy="0" r="39" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><g transform="translate(56 37.5) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#ee6a58" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g><g transform="translate(168 37.5) rotate(0) scale(1)"><rect x="-39" y="-39" width="78" height="78" rx="8" fill="#ee6a58" stroke="#203845" stroke-width="6" stroke-linejoin="round"/></g></g><text x="0" y="285" font-size="48" fill="#d42c16" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">不能重新变成「没见过」</tspan></text></g></g><g class="s pop" data-at="11" data-until="12" data-n="occlusion"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:480px;--ps:1;--pr:0deg"><circle cx="0" cy="0" r="120" fill="#e3efff" stroke="#203845" stroke-width="6"/><rect x="-145" y="-35" width="290" height="80" rx="4" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="240" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">轮廓被遮住</tspan></text></g></g><g class="s pop" data-at="12" data-until="13" data-n="limits"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:480px;--ps:1;--pr:0deg"><ellipse cx="0" cy="0" rx="110" ry="64" fill="#e3efff" stroke="#203845" stroke-width="6" transform="rotate(-25)"/><g transform="translate(190 -80) rotate(0) scale(1)"><circle cx="0" cy="0" r="64" fill="#d42c16" stroke="#203845" stroke-width="5"/><g transform="translate(0 0.42) rotate(0) scale(1.68)"><path d="M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="0" cy="16" r="3.5" fill="#ffffff"/></g></g><text x="0" y="203.32" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">换角度 · 换环境</tspan><tspan x="0" dy="63.36">仍要针对性检查</tspan></text></g></g><g class="s pop" data-at="13" data-until="14" data-n="learned"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:480px;--ps:1;--pr:0deg"><circle cx="0" cy="0" r="110" fill="#e3efff" stroke="#203845" stroke-width="6"/><text x="0" y="245" font-size="48" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">轮廓？颜色？两者混合？</tspan></text></g></g><g class="s pop" data-at="14" data-until="15" data-n="closing"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:400px;--py:480px;--ps:1;--pr:0deg"><g transform="translate(-165 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="95" fill="#ee6a58" stroke="#203845" stroke-width="6"/></g><g transform="translate(165 0) rotate(0) scale(1)"><circle cx="0" cy="0" r="95" fill="#e3efff" stroke="#203845" stroke-width="6"/></g><text x="0" y="208.32" font-size="48" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">训练成绩 100%</tspan><tspan x="0" dy="63.36">换种合理搭配，还能答对吗？</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="refs" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="title"><g class="pos" style="--lx:600px;--ly:90px;--ls:1;--lr:0deg;--px:400px;--py:150px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="62" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">资料来源</tspan></text></g></g><g class="s pop" data-at="0" data-until="1" data-n="scope"><g class="pos" style="--lx:600px;--ly:175px;--ls:1;--lr:0deg;--px:400px;--py:270px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">手写规则算例，并非实际模型测评</tspan></text></g></g><g class="s pop only-l" data-at="0" data-until="1" data-n="source0"><g class="pos" style="--lx:600px;--ly:285px;--ls:1;--lr:0deg;--px:400px;--py:420px;--ps:1;--pr:0deg"><a class="hit" href="https://cs231n.github.io/classification/" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-label="〔1〕数据划分 · Stanford CS231n，打开原始资料"><rect x="-475" y="-45" width="950" height="90" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">〔1〕数据划分 · Stanford CS231n</tspan></text></a></g></g><g class="s pop only-p" data-at="0" data-until="1" data-n="source0"><g class="pos" style="--lx:600px;--ly:285px;--ls:1;--lr:0deg;--px:400px;--py:420px;--ps:1;--pr:0deg"><a class="hit" href="https://cs231n.github.io/classification/" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-label="〔1〕数据划分 · Stanford CS231n，打开原始资料"><rect x="-375" y="-45" width="750" height="90" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">〔1〕数据划分 · Stanford CS231n</tspan></text></a></g></g><g class="s pop only-l" data-at="0" data-until="1" data-n="source1"><g class="pos" style="--lx:600px;--ly:400px;--ls:1;--lr:0deg;--px:400px;--py:565px;--ps:1;--pr:0deg"><a class="hit" href="https://developers.google.com/machine-learning/crash-course/overfitting/generalization" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-label="〔2〕泛化 · Google 机器学习课程，打开原始资料"><rect x="-475" y="-45" width="950" height="90" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">〔2〕泛化 · Google 机器学习课程</tspan></text></a></g></g><g class="s pop only-p" data-at="0" data-until="1" data-n="source1"><g class="pos" style="--lx:600px;--ly:400px;--ls:1;--lr:0deg;--px:400px;--py:565px;--ps:1;--pr:0deg"><a class="hit" href="https://developers.google.com/machine-learning/crash-course/overfitting/generalization" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-label="〔2〕泛化 · Google 机器学习课程，打开原始资料"><rect x="-375" y="-45" width="750" height="90" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">〔2〕泛化 · Google 机器学习课程</tspan></text></a></g></g><g class="s pop only-l" data-at="0" data-until="1" data-n="source2"><g class="pos" style="--lx:600px;--ly:515px;--ls:1;--lr:0deg;--px:400px;--py:710px;--ps:1;--pr:0deg"><a class="hit" href="https://arxiv.org/abs/2004.07780" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-label="〔3〕捷径学习 · Geirhos 等论文，打开原始资料"><rect x="-475" y="-45" width="950" height="90" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">〔3〕捷径学习 · Geirhos 等论文</tspan></text></a></g></g><g class="s pop only-p" data-at="0" data-until="1" data-n="source2"><g class="pos" style="--lx:600px;--ly:515px;--ls:1;--lr:0deg;--px:400px;--py:710px;--ps:1;--pr:0deg"><a class="hit" href="https://arxiv.org/abs/2004.07780" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-label="〔3〕捷径学习 · Geirhos 等论文，打开原始资料"><rect x="-375" y="-45" width="750" height="90" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">〔3〕捷径学习 · Geirhos 等论文</tspan></text></a></g></g><g class="s pop" data-at="0" data-until="1" data-n="read"><g class="pos" style="--lx:600px;--ly:655px;--ls:1;--lr:0deg;--px:400px;--py:900px;--ps:1;--pr:0deg"><a class="hit" href="?read" data-action="read" tabindex="-1" aria-label="阅读全文与完整资料说明"><rect x="-310" y="-40" width="620" height="80" rx="40" fill="#137a7f" stroke="#203845" stroke-width="5" stroke-linejoin="round"/><text x="0" y="2" font-size="42" fill="#ffffff" text-anchor="middle" font-weight="800" dominant-baseline="central"><tspan x="0" dy="0">阅读全文与完整资料说明</tspan></text></a></g></g></g></svg>
+<header class="hud">
+<div class="hud-l">
+<button class="pill" id="btn-toc" type="button" aria-haspopup="dialog" aria-label="目录"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01"/></svg><span class="lbl" aria-hidden="true">目录</span></button>
+<span class="pill sec" id="sec"><span id="sec-num"></span><span id="sec-name"></span></span>
+</div>
+<div class="hud-r">
+<button class="pill" id="btn-play" type="button" data-playing="false">播放</button>
+<a class="pill" href="?read" data-action="read">全文</a>
+</div>
+</header>
+<div class="cap" id="capcard" role="status" aria-live="polite" aria-atomic="true"><p id="cap"></p></div>
+<footer class="foot">
+<p id="hint"></p>
+<div class="steps">
+<button class="pill icon" id="btn-prev" type="button" aria-label="上一拍"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 10.5 8 5.5l5 5"/></svg></button>
+<span id="count"></span>
+<button class="pill icon" id="btn-next" type="button" aria-label="下一拍"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 5.5 8 10.5l5-5"/></svg></button>
+</div>
+<div id="bar"></div>
+</footer>
+</main>
+<dialog id="toc" aria-labelledby="toc-title">
+<div class="toc-head"><h2 id="toc-title">只见过红色圆积木，就认不出蓝色的了吗？</h2><button class="pill" id="toc-close" type="button">关闭</button></div>
+<ol id="toc-list"></ol>
+<p class="toc-foot">AI 怎样认出一只猫，第 2 篇 / 共 6 篇。机器人角色为 AI 辅助制作，场景与图解由代码绘制。</p>
+</dialog>
+<div id="readwrap">
+<div class="read-bar"><a class="pill" href="?stage" data-action="stage">看分镜版</a><a class="pill" href="index.html">返回本篇页面</a></div>
+<article id="read" lang="zh-CN">
+<h1><span class="tl">只见过红色圆积木，</span> <span class="tl">就认不出蓝色的了吗？</span></h1>
+<p>八张积木图片，一个程序全部认对。换来一块蓝色圆积木，它却回答：“方形。”</p>
+<p>明明只换了颜色，圆怎么会被认成方？</p>
+<p>问题可能早就藏在那八张图片里：它们让两种不同的判断办法，都能拿到满分。只看成绩，还看不出程序用的是哪一种。</p>
+<h2>八个全对的答案藏着两种规则</h2>
+<p>先约定任务：只看积木正面的图片，把清晰的圆形和正方形分开。人给每张图标好的“圆”或“方”，叫标签；用于学习的图片和标签，组成训练集。<span class="cite">〔1〕</span></p>
+<p>现在摆出八个训练例子：四个红色圆块，四个蓝色方块。红色恰好总与圆形同在，蓝色恰好总与方形同在。</p>
+<p>先不训练模型。我们手写两条规则，看看同一批图片能不能把它们区分开。</p>
+<p>规则A看颜色：遇到红色就答“圆”，遇到蓝色就答“方”。规则B看轮廓：圆形答“圆”，正方形答“方”，不管颜色。</p>
+<p>A把四个红块判成圆、四个蓝块判成方，答对8个。B按轮廓判断，也答对8个。两者都是8÷8＝100%。成绩相同，依靠的线索却不同。</p>
+<p class="pic"><img alt="颜色规则与轮廓规则在训练和换色测试中的不同成绩" src="01_%E4%B8%A4%E7%A7%8D%E8%A7%84%E5%88%99%E7%9A%84%E8%AE%AD%E7%BB%83%E4%B8%8E%E6%B5%8B%E8%AF%95.png" loading="lazy"></p>
+<p class="figcap"><em>图1  同样的训练满分，不同的测试表现。图中为手写规则算例，测试搭配被刻意改变。</em></p>
+<h2>一换搭配差别就出现了</h2>
+<p>再拿出四个事先留出的例子：两个蓝色圆块，两个红色方块。它们没有参与前面的规则选择或调整，这一组用来检查新例子表现的数据，叫测试集。</p>
+<p>对两个蓝圆块，A因为“蓝”而答“方”，错两次；对两个红方块，A因为“红”而答“圆”，又错两次。它的测试正确率是0÷4＝0%。B仍然按轮廓判断，四次全对，得到4÷4＝100%。</p>
+<p>这是按手写规则算出的示例，没有训练神经网络。测试特意换了颜色搭配来找弱点；0%不是实际产品的成绩，4次全对也不能保证以后一直正确。</p>
+<p>不妨再换一张考卷：红圆、蓝圆、红方、蓝方各一个，A和B各能答对几个？A能答对红圆和蓝方，得到2÷4＝50%；B仍答对4个。A的规则没有变，测试里的搭配变了，成绩就从0%变成50%。所以报告正确率时，还要交代测了哪些情况，不能把刻意找弱点的四题成绩当作所有使用情形的表现。</p>
+<p>在训练时没见过的例子上仍能做好同一任务，这种能力叫泛化。<span class="cite">〔2〕</span>前面特意改变搭配的四个测试例子，暴露了原来八个例子没有区分出来的差别。</p>
+<h2>颜色为什么成了捷径</h2>
+<p>按形状分类时，颜色本来不决定答案。但最初那批图片恰好全是红圆、蓝方，于是看颜色也能答对。它成了这项任务的“捷径”。所谓虚假线索，是说这段对应关系未必适用于别的情境，并不是图片或标签造了假。</p>
+<p>真实的机器学习系统通常不会把“红色就是圆”写成一句话。训练程序调整许多参数，让预测更接近标签；某种线索只要在训练中好用，就可能被利用。数据怎样收集、模型怎样设计、训练怎样进行，都会影响最后学到什么。研究者把依赖这类省事线索、换个环境就失灵的现象称为“捷径学习”。<span class="cite">〔3〕</span></p>
+<p>颜色本身并没有错。如果任务是区分红色和蓝色，就必须看颜色，轮廓反而未必重要。一条线索是否合适，要放回具体任务里判断。</p>
+<p>再拍一批照片，也未必能揭穿捷径。假如新拍的仍全是红圆和蓝方，A照样可能拿满分。训练和测试要分开，测试里有没有不同情形，也同样要紧。</p>
+<h2>补上缺失的搭配之后</h2>
+<p>让训练样本中也出现蓝圆块和红方块，颜色规则就不再处处奏效。比如在原来的八个例子中，再加入一个蓝圆块和一个红方块：A仍只答对原来的8个，正确率变成8÷10＝80%；B答对全部10个，仍是100%。</p>
+<p class="pic"><img alt="补充蓝圆和红方样本后颜色规则与轮廓规则的成绩" src="02_%E8%A1%A5%E5%85%85%E6%A0%B7%E6%9C%AC%E6%9A%B4%E9%9C%B2%E9%A2%9C%E8%89%B2%E6%8D%B7%E5%BE%84.png" loading="lazy"></p>
+<p class="figcap"><em>图2  补进缺失的颜色搭配后，颜色规则在10个训练例子中答对8个，轮廓规则答对10个。</em></p>
+<p>对照图2就能发现：把原来的红圆、蓝方多拍几千张，补不出缺少的蓝圆和红方。图片数量增加了，见过的搭配却可能没变。</p>
+<p>补充样本让两条规则有了可比较的差别，也提醒开发者检查数据里是否漏掉了重要情形。实际模型能否因此学得更好，仍要重新训练和检验；增加几个样本，并不保证它从此只看形状。</p>
+<p>这里还有一道容易忽略的界线：如果看过那四个测试例子的答案，又据此补数据、改方案，这四个例子就已经参与了开发。改好后再做一遍，可以检查旧错误有没有修正，但不能把它当成一次全新的独立测试。</p>
+<p>实际开发中，常把数据分成三部分：训练集用于调整参数，验证集用于比较方案，最后另留测试集，在方案确定后检查。<span class="cite">〔1〕</span>小例子里的道理也一样：用过的答案不能重新变成“没见过的答案”。</p>
+<p>多样的样本也有边界。颜色问题解决了，轮廓被遮住、拍摄角度变了，仍可能带来新困难。测试只能为它覆盖到的情形提供证据；换了使用环境，还需要有针对性的检查。<span class="cite">〔2〕</span></p>
+<p>所以，蓝色圆积木能不能被认出来，要看系统学到了什么：轮廓、颜色，还是两者的混合。面对“训练成绩100%”，多追问一句就很有用：换一种合理的搭配，它还能答对吗？</p>
+<h2>资料来源</h2><div class="refs">
+<p>文中算例与图解用于说明原理，不是实际模型的测评结果。研究结论对应以下资料。</p>
+<p><span class="cite">〔1〕</span> Stanford CS231n，Image Classification（课程笔记；访问日期：2026-10-05）。</p>
+<p><a href="https://cs231n.github.io/classification/" rel="noopener noreferrer">https://cs231n.github.io/classification/</a></p>
+<p><span class="cite">〔2〕</span> Google Developers，Generalization（官方课程；访问日期：2026-10-05）。</p>
+<p><a href="https://developers.google.com/machine-learning/crash-course/overfitting/generalization" rel="noopener noreferrer">https://developers.google.com/machine-learning/crash-course/overfitting/generalization</a></p>
+<p><span class="cite">〔3〕</span> Geirhos 等，2020，Shortcut Learning in Deep Neural Networks，Nature Machine Intelligence。arXiv:2004.07780。</p>
+<p><a href="https://arxiv.org/abs/2004.07780" rel="noopener noreferrer">https://arxiv.org/abs/2004.07780</a></p>
+</div>
+<div class="read-end"><a class="pill" href="?stage" data-action="stage">看分镜版</a><a class="pill" href="正文.md">查看正文 Markdown</a></div>
+<p class="read-note">AI 怎样认出一只猫，第 2 篇 / 共 6 篇。机器人角色为 AI 辅助制作，场景与图解由代码绘制。</p>
+</article>
+</div>
+<script type="application/json" id="stage-data">{"total":60,"sectionCount":4,"sections":[{"num":0,"label":"导读","mark":"导","first":0,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003cg transform=\"translate(0 0) rotate(0) scale(1)\">\u003ccircle cx=\"0\" cy=\"0\" r=\"110\" fill=\"#e3efff\" stroke=\"#203845\" stroke-width=\"6\"/>\u003c/g>\u003cg transform=\"translate(130 -85) rotate(0) scale(1)\">\u003ccircle cx=\"0\" cy=\"0\" r=\"45\" fill=\"#d42c16\" stroke=\"#203845\" stroke-width=\"5\"/>\u003cg transform=\"translate(0 0.3) rotate(0) scale(1.18)\">\u003cpath d=\"M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\u003ccircle cx=\"0\" cy=\"16\" r=\"3.5\" fill=\"#ffffff\"/>\u003c/g>\u003c/g>\u003c/svg>"},{"num":1,"label":"八个全对的答案藏着两种规则","first":6,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003cg transform=\"translate(-105 0) rotate(0) scale(1)\">\u003ccircle cx=\"0\" cy=\"0\" r=\"78\" fill=\"#ee6a58\" stroke=\"#203845\" stroke-width=\"6\"/>\u003c/g>\u003cg transform=\"translate(105 0) rotate(0) scale(1)\">\u003crect x=\"-78\" y=\"-78\" width=\"156\" height=\"156\" rx=\"8\" fill=\"#e3efff\" stroke=\"#203845\" stroke-width=\"6\" stroke-linejoin=\"round\"/>\u003c/g>\u003c/svg>"},{"num":2,"label":"一换搭配差别就出现了","first":18,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003cg transform=\"translate(-105 0) rotate(0) scale(1)\">\u003ccircle cx=\"0\" cy=\"0\" r=\"78\" fill=\"#e3efff\" stroke=\"#203845\" stroke-width=\"6\"/>\u003c/g>\u003cg transform=\"translate(105 0) rotate(0) scale(1)\">\u003crect x=\"-78\" y=\"-78\" width=\"156\" height=\"156\" rx=\"8\" fill=\"#ee6a58\" stroke=\"#203845\" stroke-width=\"6\" stroke-linejoin=\"round\"/>\u003c/g>\u003c/svg>"},{"num":3,"label":"颜色为什么成了捷径","first":32,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003cg transform=\"translate(0 0) rotate(0) scale(1)\">\u003cpath d=\"M75.6 75.6 L170.1 170.1\" fill=\"none\" stroke=\"#203845\" stroke-width=\"16\" stroke-linecap=\"round\"/>\u003cpath d=\"M75.6 75.6 L170.1 170.1\" fill=\"none\" stroke=\"#ee6a58\" stroke-width=\"8\" stroke-linecap=\"round\"/>\u003ccircle cx=\"0\" cy=\"0\" r=\"105\" fill=\"rgba(222,243,238,.7)\" stroke=\"#203845\" stroke-width=\"7\"/>\u003cpath d=\"M-57.75000000000001 -10.5 C-47.25 -52.5 -15.75 -73.5 15.75 -71.4\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\u003c/g>\u003cg transform=\"translate(-70 -55) rotate(0) scale(1)\">\u003ccircle cx=\"0\" cy=\"0\" r=\"60\" fill=\"#ee6a58\" stroke=\"#203845\" stroke-width=\"6\"/>\u003c/g>\u003c/svg>"},{"num":4,"label":"补上缺失的搭配之后","first":44,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003cg transform=\"translate(-100 -60) rotate(0) scale(1)\">\u003ccircle cx=\"0\" cy=\"0\" r=\"65\" fill=\"#ee6a58\" stroke=\"#203845\" stroke-width=\"6\"/>\u003c/g>\u003cg transform=\"translate(100 -60) rotate(0) scale(1)\">\u003crect x=\"-65\" y=\"-65\" width=\"130\" height=\"130\" rx=\"8\" fill=\"#e3efff\" stroke=\"#203845\" stroke-width=\"6\" stroke-linejoin=\"round\"/>\u003c/g>\u003cg transform=\"translate(-100 105) rotate(0) scale(1)\">\u003ccircle cx=\"0\" cy=\"0\" r=\"65\" fill=\"#e3efff\" stroke=\"#203845\" stroke-width=\"6\"/>\u003c/g>\u003cg transform=\"translate(100 105) rotate(0) scale(1)\">\u003crect x=\"-65\" y=\"-65\" width=\"130\" height=\"130\" rx=\"8\" fill=\"#ee6a58\" stroke=\"#203845\" stroke-width=\"6\" stroke-linejoin=\"round\"/>\u003c/g>\u003c/svg>"},{"num":0,"mark":"源","label":"资料来源","first":59,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003cpath d=\"M75.6 75.6 L170.1 170.1\" fill=\"none\" stroke=\"#203845\" stroke-width=\"16\" stroke-linecap=\"round\"/>\u003cpath d=\"M75.6 75.6 L170.1 170.1\" fill=\"none\" stroke=\"#ee6a58\" stroke-width=\"8\" stroke-linecap=\"round\"/>\u003ccircle cx=\"0\" cy=\"0\" r=\"105\" fill=\"rgba(222,243,238,.7)\" stroke=\"#203845\" stroke-width=\"7\"/>\u003cpath d=\"M-57.75000000000001 -10.5 C-47.25 -52.5 -15.75 -73.5 15.75 -71.4\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\u003c/svg>"}],"scenes":{"cover":{"cams":{"all":{"l":[0,0,1600,900],"p":[0,0,900,1500]}}},"open":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"rules":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"test":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"exercise":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"shortcut":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"repair":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"refs":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}}},"beats":[{"scene":"cover","step":0,"cam":"all","html":"只见过红色圆积木，就认不出蓝色的了吗？","kind":"title","chars":19,"section":0,"quiet":true},{"scene":"open","step":0,"cam":"desk","html":"八张积木图片，一个程序全部认对。","kind":"text","chars":16,"section":0},{"scene":"open","step":1,"cam":"desk","html":"换来一块蓝色圆积木，它却回答：“方形。”","kind":"text","chars":20,"section":0},{"scene":"open","step":2,"cam":"desk","html":"明明只换了颜色，圆怎么会被认成方？","kind":"text","chars":17,"section":0},{"scene":"open","step":3,"cam":"desk","html":"问题可能早就藏在那八张图片里：它们让两种不同的判断办法，都能拿到满分。","kind":"text","chars":35,"section":0},{"scene":"open","step":4,"cam":"desk","html":"只看成绩，还看不出程序用的是哪一种。","kind":"text","chars":18,"section":0},{"scene":"rules","step":0,"cam":"desk","html":"\u003cb class=\"no\">1\u003c/b>\u003cspan>八个全对的答案藏着两种规则\u003c/span>","kind":"h2","chars":13,"section":1},{"scene":"rules","step":1,"cam":"desk","html":"先约定任务：只看积木正面的图片，把清晰的圆形和正方形分开。","kind":"text","chars":29,"section":1},{"scene":"rules","step":2,"cam":"desk","html":"人给每张图标好的“圆”或“方”，叫标签；用于学习的图片和标签，组成训练集。\u003cspan class=\"cite\">〔1〕\u003c/span>","kind":"text","chars":40,"section":1},{"scene":"rules","step":3,"cam":"desk","html":"现在摆出八个训练例子：四个红色圆块，四个蓝色方块。","kind":"text","chars":25,"section":1},{"scene":"rules","step":4,"cam":"desk","html":"红色恰好总与圆形同在，蓝色恰好总与方形同在。","kind":"text","chars":22,"section":1},{"scene":"rules","step":5,"cam":"desk","html":"先不训练模型。我们手写两条规则，看看同一批图片能不能把它们区分开。","kind":"text","chars":33,"section":1},{"scene":"rules","step":6,"cam":"desk","html":"规则A看颜色：遇到红色就答“圆”，遇到蓝色就答“方”。","kind":"text","chars":27,"section":1},{"scene":"rules","step":7,"cam":"desk","html":"规则B看轮廓：圆形答“圆”，正方形答“方”，不管颜色。","kind":"text","chars":27,"section":1},{"scene":"rules","step":8,"cam":"desk","html":"A把四个红块判成圆、四个蓝块判成方，答对8个。","kind":"text","chars":23,"section":1},{"scene":"rules","step":9,"cam":"desk","html":"B按轮廓判断，也答对8个。","kind":"text","chars":13,"section":1},{"scene":"rules","step":10,"cam":"desk","html":"两者都是8÷8＝100%。成绩相同，依靠的线索却不同。","kind":"text","chars":27,"section":1},{"scene":"rules","step":11,"cam":"desk","html":"\u003cb class=\"fig\">图1\u003c/b> 同样的训练满分，不同的测试表现。图中为手写规则算例，测试搭配被刻意改变。","kind":"caption","chars":38,"section":1},{"scene":"test","step":0,"cam":"desk","html":"\u003cb class=\"no\">2\u003c/b>\u003cspan>一换搭配差别就出现了\u003c/span>","kind":"h2","chars":10,"section":2},{"scene":"test","step":1,"cam":"desk","html":"再拿出四个事先留出的例子：两个蓝色圆块，两个红色方块。","kind":"text","chars":27,"section":2},{"scene":"test","step":2,"cam":"desk","html":"它们没有参与前面的规则选择或调整，这一组用来检查新例子表现的数据，叫测试集。","kind":"text","chars":38,"section":2},{"scene":"test","step":3,"cam":"desk","html":"对两个蓝圆块，A因为“蓝”而答“方”，错两次；对两个红方块，A因为“红”而答“圆”，又错两次。","kind":"text","chars":47,"section":2},{"scene":"test","step":4,"cam":"desk","html":"它的测试正确率是0÷4＝0%。","kind":"text","chars":15,"section":2},{"scene":"test","step":5,"cam":"desk","html":"B仍然按轮廓判断，四次全对，得到4÷4＝100%。","kind":"text","chars":25,"section":2},{"scene":"test","step":6,"cam":"desk","html":"这是按手写规则算出的示例，没有训练神经网络。","kind":"text","chars":22,"section":2},{"scene":"test","step":7,"cam":"desk","html":"测试特意换了颜色搭配来找弱点；0%不是实际产品的成绩，4次全对也不能保证以后一直正确。","kind":"text","chars":43,"section":2},{"scene":"exercise","step":0,"cam":"desk","html":"不妨再换一张考卷：红圆、蓝圆、红方、蓝方各一个，A和B各能答对几个？","kind":"text","chars":34,"section":2},{"scene":"exercise","step":1,"cam":"desk","html":"A能答对红圆和蓝方，得到2÷4＝50%；B仍答对4个。","kind":"text","chars":27,"section":2,"reveal":true},{"scene":"test","step":10,"cam":"desk","html":"A的规则没有变，测试里的搭配变了，成绩就从0%变成50%。","kind":"text","chars":29,"section":2},{"scene":"test","step":11,"cam":"desk","html":"所以报告正确率时，还要交代测了哪些情况，不能把刻意找弱点的四题成绩当作所有使用情形的表现。","kind":"text","chars":45,"section":2},{"scene":"test","step":12,"cam":"desk","html":"在训练时没见过的例子上仍能做好同一任务，这种能力叫泛化。\u003cspan class=\"cite\">〔2〕\u003c/span>","kind":"text","chars":31,"section":2},{"scene":"test","step":13,"cam":"desk","html":"前面特意改变搭配的四个测试例子，暴露了原来八个例子没有区分出来的差别。","kind":"text","chars":35,"section":2},{"scene":"shortcut","step":0,"cam":"desk","html":"\u003cb class=\"no\">3\u003c/b>\u003cspan>颜色为什么成了捷径\u003c/span>","kind":"h2","chars":9,"section":3},{"scene":"shortcut","step":1,"cam":"desk","html":"按形状分类时，颜色本来不决定答案。","kind":"text","chars":17,"section":3},{"scene":"shortcut","step":2,"cam":"desk","html":"但最初那批图片恰好全是红圆、蓝方，于是看颜色也能答对。它成了这项任务的“捷径”。","kind":"text","chars":40,"section":3},{"scene":"shortcut","step":3,"cam":"desk","html":"所谓虚假线索，是说这段对应关系未必适用于别的情境，并不是图片或标签造了假。","kind":"text","chars":37,"section":3},{"scene":"shortcut","step":4,"cam":"desk","html":"真实的机器学习系统通常不会把“红色就是圆”写成一句话。","kind":"text","chars":27,"section":3},{"scene":"shortcut","step":5,"cam":"desk","html":"训练程序调整许多参数，让预测更接近标签；某种线索只要在训练中好用，就可能被利用。","kind":"text","chars":40,"section":3},{"scene":"shortcut","step":6,"cam":"desk","html":"数据怎样收集、模型怎样设计、训练怎样进行，都会影响最后学到什么。","kind":"text","chars":32,"section":3},{"scene":"shortcut","step":7,"cam":"desk","html":"研究者把依赖这类省事线索、换个环境就失灵的现象称为“捷径学习”。\u003cspan class=\"cite\">〔3〕\u003c/span>","kind":"text","chars":35,"section":3},{"scene":"shortcut","step":8,"cam":"desk","html":"颜色本身并没有错。如果任务是区分红色和蓝色，就必须看颜色，轮廓反而未必重要。","kind":"text","chars":38,"section":3},{"scene":"shortcut","step":9,"cam":"desk","html":"一条线索是否合适，要放回具体任务里判断。","kind":"text","chars":20,"section":3},{"scene":"shortcut","step":10,"cam":"desk","html":"再拍一批照片，也未必能揭穿捷径。假如新拍的仍全是红圆和蓝方，A照样可能拿满分。","kind":"text","chars":39,"section":3},{"scene":"shortcut","step":11,"cam":"desk","html":"训练和测试要分开，测试里有没有不同情形，也同样要紧。","kind":"text","chars":26,"section":3},{"scene":"repair","step":0,"cam":"desk","html":"\u003cb class=\"no\">4\u003c/b>\u003cspan>补上缺失的搭配之后\u003c/span>","kind":"h2","chars":9,"section":4},{"scene":"repair","step":1,"cam":"desk","html":"让训练样本中也出现蓝圆块和红方块，颜色规则就不再处处奏效。","kind":"text","chars":29,"section":4},{"scene":"repair","step":2,"cam":"desk","html":"比如在原来的八个例子中，再加入一个蓝圆块和一个红方块：A仍只答对原来的8个，正确率变成8÷10＝80%；B答对全部10个，仍是100%。","kind":"text","chars":68,"section":4},{"scene":"repair","step":3,"cam":"desk","html":"\u003cb class=\"fig\">图2\u003c/b> 补进缺失的颜色搭配后，颜色规则在10个训练例子中答对8个，轮廓规则答对10个。","kind":"caption","chars":41,"section":4},{"scene":"repair","step":4,"cam":"desk","html":"对照图2就能发现：把原来的红圆、蓝方多拍几千张，补不出缺少的蓝圆和红方。图片数量增加了，见过的搭配却可能没变。","kind":"text","chars":55,"section":4},{"scene":"repair","step":5,"cam":"desk","html":"补充样本让两条规则有了可比较的差别，也提醒开发者检查数据里是否漏掉了重要情形。","kind":"text","chars":39,"section":4},{"scene":"repair","step":6,"cam":"desk","html":"实际模型能否因此学得更好，仍要重新训练和检验；增加几个样本，并不保证它从此只看形状。","kind":"text","chars":42,"section":4},{"scene":"repair","step":7,"cam":"desk","html":"这里还有一道容易忽略的界线：如果看过那四个测试例子的答案，又据此补数据、改方案，这四个例子就已经参与了开发。","kind":"text","chars":54,"section":4},{"scene":"repair","step":8,"cam":"desk","html":"改好后再做一遍，可以检查旧错误有没有修正，但不能把它当成一次全新的独立测试。","kind":"text","chars":38,"section":4},{"scene":"repair","step":9,"cam":"desk","html":"实际开发中，常把数据分成三部分：训练集用于调整参数，验证集用于比较方案，最后另留测试集，在方案确定后检查。\u003cspan class=\"cite\">〔1〕\u003c/span>","kind":"text","chars":56,"section":4},{"scene":"repair","step":10,"cam":"desk","html":"小例子里的道理也一样：用过的答案不能重新变成“没见过的答案”。","kind":"text","chars":31,"section":4},{"scene":"repair","step":11,"cam":"desk","html":"多样的样本也有边界。颜色问题解决了，轮廓被遮住、拍摄角度变了，仍可能带来新困难。","kind":"text","chars":40,"section":4},{"scene":"repair","step":12,"cam":"desk","html":"测试只能为它覆盖到的情形提供证据；换了使用环境，还需要有针对性的检查。\u003cspan class=\"cite\">〔2〕\u003c/span>","kind":"text","chars":38,"section":4},{"scene":"repair","step":13,"cam":"desk","html":"所以，蓝色圆积木能不能被认出来，要看系统学到了什么：轮廓、颜色，还是两者的混合。","kind":"text","chars":40,"section":4},{"scene":"repair","step":14,"cam":"desk","html":"面对“训练成绩100%”，多追问一句就很有用：换一种合理的搭配，它还能答对吗？","kind":"text","chars":39,"section":4},{"scene":"refs","step":0,"cam":"desk","html":"","kind":"text","chars":0,"section":5,"quiet":true}]}</script>
+<script data-stage-source="stage.js">/* 互动版运行时：一次手势一拍的分镜阅读器。
+ * 经典脚本，无依赖，双击 file:// 也能运行。
+ * 不依赖浏览器的滚动：滚轮、触摸、键盘各自折算成「前进一拍 / 后退一拍」，画面固定不动，
+ * 所以触控板惯性、鼠标滚轮、手指轻划在各浏览器里表现一致。
+ * 纯函数在 Node 下经 module.exports 暴露，供单元测试。 */
+(function () {
+  'use strict';
+
+  /* ---------------- 纯函数 ---------------- */
+
+  /* 自动播放时每拍停留的秒数：按字数估读，已含 0.7s 的镜头移动。 */
+  function dwell(chars) {
+    return Math.min(12, Math.max(2.4, 1.4 + 0.14 * chars));
+  }
+
+  /* 把世界坐标里的矩形 rect=[x,y,w,h] 等比放进 area={x,y,w,h} 并居中。 */
+  function fitCamera(rect, area) {
+    var s = Math.min(area.w / rect[2], area.h / rect[3]);
+    return {
+      s: s,
+      x: area.x + (area.w - rect[2] * s) / 2 - rect[0] * s,
+      y: area.y + (area.h - rect[3] * s) / 2 - rect[1] * s
+    };
+  }
+
+  /* 元素在第 i 拍是否可见：at 起、until 前。 */
+  function visibleAt(at, until, i) {
+    return i >= at && (until == null || i < until);
+  }
+
+  /* 元素名 name 是否被聚焦列表点名：全等，或以 "<项>." 开头。 */
+  function focusHit(focus, name) {
+    for (var k = 0; k < focus.length; k++) {
+      if (name === focus[k] || name.indexOf(focus[k] + '.') === 0) return true;
+    }
+    return false;
+  }
+
+  /* '#b12' → 第 12 拍（下标 11）；无效返回 -1。 */
+  function parseBeatHash(hash, total) {
+    var m = /^#b(\d+)$/.exec(hash || '');
+    if (!m) return -1;
+    var n = Number(m[1]);
+    return n >= 1 && n <= total ? n - 1 : -1;
+  }
+  function formatBeatHash(i) { return '#b' + (i + 1); }
+
+  /* 滚轮手势限流：一次手势只前进一拍。feed(dy, t) 返回 +1 / -1 / 0；t 是毫秒时间戳，由调用方传入，
+   * 所以测试可以喂合成的事件序列。
+   * 触控板松手后还会有一两秒的惯性事件：翻页后锁住，直到事件流停顿 quiet 毫秒才解锁。
+   * 锁定期间有两种情况视为读者又发起了一次手势：
+   *   1) 锁定 minLock 毫秒后，增量突然比最近的平均值大得多（在惯性上又甩了一下）；
+   *   2) 锁定 restart 毫秒后，增量仍不小于本次手势峰值的 restartRatio（一直在匀速滚动的鼠标滚轮）。 */
+  function createWheelGate(options) {
+    var o = { threshold: 18, quiet: 130, minLock: 350, reaccel: 1.7, restart: 900, restartRatio: 0.7 };
+    for (var key in options) o[key] = options[key];
+    var sum = 0, locked = false, lastT = -1e9, lockedAt = 0, avg = 0, peak = 0;
+    return {
+      feed: function (dy, t) {
+        var a = Math.abs(dy);
+        if (!a) return 0;
+        if (t - lastT > o.quiet) { locked = false; sum = 0; avg = 0; peak = 0; }
+        lastT = t;
+        var prev = avg;
+        avg = prev ? prev * 0.6 + a * 0.4 : a;
+        if (locked) {
+          peak = Math.max(peak, a);
+          var since = t - lockedAt;
+          var surge = since > o.minLock && a > prev * o.reaccel + 8;
+          var steady = since > o.restart && a >= peak * o.restartRatio && a >= 20;
+          if (!surge && !steady) return 0;
+          locked = false; sum = 0;
+        }
+        sum += dy;
+        if (Math.abs(sum) < o.threshold) return 0;
+        var dir = sum > 0 ? 1 : -1;
+        sum = 0; locked = true; lockedAt = t; peak = a;
+        return dir;
+      }
+    };
+  }
+
+  /* 触摸滑动：手指上滑为前进。慢拖需要 48px，快速一划 24px 即可；斜着划不算。 */
+  function swipeStep(dx, dy, ms) {
+    var ay = Math.abs(dy), ax = Math.abs(dx);
+    if (ay < ax * 1.2) return 0;
+    if (ay >= 48 || (ay >= 24 && ms < 220)) return dy < 0 ? 1 : -1;
+    return 0;
+  }
+
+  /* 画面区：为顶栏和字幕卡留出位置。capH 是字幕卡实际占的高度（含它离底边的距离），
+   * 由页面量出，所以短句子给画面留更多地方；静默拍（封面）没有字幕卡，只留底栏。 */
+  function artArea(w, h, capH) {
+    var portrait = w / h < 0.85;
+    var top = portrait ? 56 : 64;
+    var bottom = capH ? capH + 14 : 64;
+    return { x: 0, y: top, w: w, h: Math.max(120, h - top - bottom), portrait: portrait };
+  }
+
+  var api = {
+    dwell: dwell, fitCamera: fitCamera, visibleAt: visibleAt, focusHit: focusHit,
+    parseBeatHash: parseBeatHash, formatBeatHash: formatBeatHash,
+    createWheelGate: createWheelGate, swipeStep: swipeStep, artArea: artArea
+  };
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  if (typeof document === 'undefined') return;
+
+  /* ---------------- 页面 ---------------- */
+
+  var dataEl = document.getElementById('stage-data');
+  if (!dataEl) return;
+  var data = JSON.parse(dataEl.textContent);
+  var beats = data.beats;
+  var total = beats.length;
+  var root = document.documentElement;
+  var $ = function (sel, scope) { return (scope || document).querySelector(sel); };
+  var $$ = function (sel, scope) { return Array.prototype.slice.call((scope || document).querySelectorAll(sel)); };
+
+  var stage = $('#stage');
+  var capText = $('#cap');
+  var capCard = $('#capcard');
+  var count = $('#count');
+  var hint = $('#hint');
+  var secNum = $('#sec-num');
+  var secName = $('#sec-name');
+  var secPill = $('#sec');
+  var bar = $('#bar');
+  var btnPrev = $('#btn-prev');
+  var btnNext = $('#btn-next');
+  var btnPlay = $('#btn-play');
+  var btnToc = $('#btn-toc');
+  var toc = $('#toc');
+  var readEl = $('#read');
+
+  var cur = -1;
+  var playing = false;
+  var timer = 0;
+  var lastScene = null;
+  var urlTimer = 0;
+  var flipState = {};
+
+  /* 每个场景自己编步号（0 起）；每一拍在分镜里声明自己对应哪一步。 */
+  var scenes = {};
+  $$('.scene').forEach(function (svg) {
+    var timed = $$('[data-at]', svg);
+    timed.forEach(function (el) {
+      el._at = Number(el.getAttribute('data-at'));
+      var un = el.getAttribute('data-until');
+      el._until = un == null ? null : Number(un);
+    });
+    scenes[svg.getAttribute('data-scene')] = { el: svg, cam: $('.cam', svg), timed: timed };
+  });
+
+  function mode() { return root.getAttribute('data-mode'); }
+
+  /* ---- 渲染：状态只由（场景、步号、镜头）决定，所以跳转和逐拍走得到同样的画面 ---- */
+
+  function setOn(sc, step) {
+    for (var k = 0; k < sc.timed.length; k++) {
+      var on = visibleAt(sc.timed[k]._at, sc.timed[k]._until, step);
+      sc.timed[k].classList.toggle('on', on);
+      sc.timed[k].setAttribute('aria-hidden', String(!on));
+    }
+  }
+
+  /* 聚焦：这一拍点名的元素保持原样，其余压暗（solo 时整个藏起来）。镜头放大时用，
+   * 免得露出一半的邻居显得像出错。名字用 data-n。 */
+  function setFocus(sc, focus, solo) {
+    var has = !!(focus && focus.length);
+    sc.el.classList.toggle('has-focus', has);
+    sc.el.classList.toggle('solo', has && !!solo);
+    for (var k = 0; k < sc.timed.length; k++) {
+      var e = sc.timed[k];
+      e.classList.toggle('focus', has && focusHit(focus, e.getAttribute('data-n') || ''));
+    }
+  }
+
+  /* how：'instant' 直接到位；'enter' 刚切入场景，先复位再让元素依次出现；'diff' 同场景内只动变化的元素。 */
+  function applyElements(i, how) {
+    var b = beats[i];
+    var sc = scenes[b.scene];
+    if (!sc) return;
+    if (how === 'instant') {
+      sc.el.classList.add('snap');
+      setOn(sc, b.step);
+      setFocus(sc, b.focus, b.solo);
+      void sc.el.getBoundingClientRect();
+      sc.el.classList.remove('snap');
+    } else if (how === 'enter') {
+      sc.el.classList.add('snap');
+      sc.timed.forEach(function (e) { e.classList.remove('on'); });
+      setFocus(sc, b.focus, b.solo);
+      void sc.el.getBoundingClientRect();
+      sc.el.classList.remove('snap');
+      setOn(sc, b.step);
+    } else {
+      setOn(sc, b.step);
+      setFocus(sc, b.focus, b.solo);
+    }
+  }
+
+  function applyCamera(i, instant) {
+    var b = beats[i];
+    var sc = scenes[b.scene];
+    if (!sc) return;
+    var cam = data.scenes[b.scene].cams[b.cam];
+    var area = artArea(innerWidth, innerHeight, b.quiet ? 0 : innerHeight - capCard.getBoundingClientRect().top);
+    var rect = area.portrait ? cam.p : cam.l;
+    var t = fitCamera(rect, area);
+    var g = sc.cam;
+    if (instant) g.style.transition = 'none';
+    g.style.transform = 'translate(' + t.x.toFixed(2) + 'px,' + t.y.toFixed(2) + 'px) scale(' + t.s.toFixed(4) + ')';
+    if (instant) { void g.getBoundingClientRect(); g.style.transition = ''; }
+  }
+
+  function applyScene(i) {
+    var id = beats[i].scene;
+    if (id === lastScene) return false;
+    Object.keys(scenes).forEach(function (key) {
+      scenes[key].el.classList.toggle('is-active', key === id);
+      scenes[key].el.setAttribute('aria-hidden', String(key !== id));
+    });
+    lastScene = id;
+    return true;
+  }
+
+  /* 静默拍（封面）：字幕卡不显示，但文字仍写进状态区，读屏照样播报。 */
+  function applyCaption(i) {
+    var b = beats[i];
+    capText.innerHTML = b.html || '';
+    capText.setAttribute('data-kind', b.kind || 'text');
+    capCard.classList.toggle('quiet', !!b.quiet);
+    capText.classList.remove('in');
+    void capText.offsetWidth;
+    capText.classList.add('in');
+  }
+
+  function applyHud(i) {
+    var b = beats[i];
+    var sec = data.sections[b.section];
+    secNum.textContent = sec.num ? sec.num + '/' + data.sectionCount : '';
+    secName.textContent = sec.label;
+    secPill.hidden = !sec.label;
+    bar.style.transform = 'scaleX(' + ((i + 1) / total).toFixed(4) + ')';
+    count.textContent = (i + 1) + ' / ' + total;
+    btnPrev.disabled = i <= 0;
+    btnNext.disabled = i >= total - 1;
+  }
+
+  function syncUrl(i) {
+    clearTimeout(urlTimer);
+    urlTimer = setTimeout(function () {
+      if (mode() !== 'stage') return;
+      try { history.replaceState(null, '', location.pathname + location.search + formatBeatHash(i)); } catch (e) { /* Safari 限频时忽略 */ }
+    }, 200);
+  }
+
+  function render(i, opts) {
+    opts = opts || {};
+    i = Math.max(0, Math.min(total - 1, i));
+    if (i === cur && !opts.force) return;
+    stage.setAttribute('data-orient', artArea(innerWidth, innerHeight).portrait ? 'portrait' : 'landscape');
+    var changed = applyScene(i);
+    cur = i;
+    applyCaption(i);   // 先排字幕：镜头要按字幕卡的实际高度留白
+    applyElements(i, opts.instant ? 'instant' : changed ? 'enter' : 'diff');
+    syncInteractions();
+    applyCamera(i, opts.instant || changed);
+    applyHud(i);
+    syncUrl(i);
+    if (i > 0 && hint) hint.hidden = true;
+    schedule();
+  }
+
+  function go(i, fromAuto) {
+    if (!fromAuto) stopPlay();
+    render(i);
+  }
+  function step(dir, fromAuto) { go(cur + dir, fromAuto); }
+
+  /* ---- 自动播放：读者一操作就停 ---- */
+
+  function stopPlay() {
+    if (!playing) return;
+    playing = false;
+    clearTimeout(timer);
+    btnPlay.setAttribute('data-playing', 'false');
+    btnPlay.textContent = '播放';
+  }
+  function startPlay() {
+    if (cur >= total - 1) render(0);
+    playing = true;
+    btnPlay.setAttribute('data-playing', 'true');
+    btnPlay.textContent = '暂停';
+    schedule();
+  }
+  function schedule() {
+    clearTimeout(timer);
+    if (!playing || document.hidden || mode() !== 'stage') return;
+    timer = setTimeout(function () {
+      if (cur >= total - 1) { stopPlay(); return; }
+      step(1, true);
+    }, dwell(beats[cur].chars || 0) * 1000);
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) clearTimeout(timer); else schedule();
+  });
+
+  /* ---- 输入：滚轮、触摸、键盘各自折算成一拍 ---- */
+
+  var gate = createWheelGate();
+  function inDialog(t) { return !!(t && t.closest && t.closest('dialog')); }
+
+  /* 挂在 document 上：光标停在顶栏按钮上时滚轮也要接管。 */
+  document.addEventListener('wheel', function (e) {
+    if (mode() !== 'stage' || e.ctrlKey || toc.open || inDialog(e.target)) return;
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY) * 1.5) return;   // 横向手势留给浏览器（后退/前进）
+    e.preventDefault();
+    if (e.deltaY) stopPlay();   // 自动播放中读者一动滚轮就接管，哪怕这一下没够翻页
+    var unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? innerHeight : 1;
+    var dir = gate.feed(e.deltaY * unit, e.timeStamp);
+    if (dir) step(dir);
+  }, { passive: false });
+
+  var touch = null;
+  document.addEventListener('touchstart', function (e) {
+    if (mode() !== 'stage' || inDialog(e.target) || e.touches.length !== 1) { touch = null; return; }
+    var p = e.touches[0];
+    touch = { x: p.clientX, y: p.clientY, t: e.timeStamp };
+  }, { passive: true });
+  document.addEventListener('touchmove', function (e) {
+    if (touch && e.cancelable) e.preventDefault();   // 不让页面跟着手指橡皮筋
+  }, { passive: false });
+  document.addEventListener('touchend', function (e) {
+    if (!touch) return;
+    var p = e.changedTouches[0], t0 = touch;
+    touch = null;
+    var dir = swipeStep(p.clientX - t0.x, p.clientY - t0.y, e.timeStamp - t0.t);
+    if (dir) step(dir);
+  });
+  document.addEventListener('touchcancel', function () { touch = null; });
+
+  /* 键盘：焦点在按钮或链接上时，空格和回车留给它们自己。 */
+  document.addEventListener('keydown', function (e) {
+    if (mode() !== 'stage' || e.ctrlKey || e.metaKey || e.altKey || toc.open) return;
+    var t = e.target;
+    if (t && t.closest && t.closest('input,textarea,select,[contenteditable]')) return;
+    var key = e.key;
+    var onControl = t && t.closest && t.closest('button,a,.hit');
+    if ((key === ' ' || key === 'Enter') && onControl) return;
+    var dir = 0, to = -1;
+    if (key === 'ArrowDown' || key === 'ArrowRight' || key === 'PageDown' || (key === ' ' && !e.shiftKey)) dir = 1;
+    else if (key === 'ArrowUp' || key === 'ArrowLeft' || key === 'PageUp' || (key === ' ' && e.shiftKey)) dir = -1;
+    else if (key === 'Home') to = 0;
+    else if (key === 'End') to = total - 1;
+    else return;
+    e.preventDefault();
+    if (e.repeat) return;
+    if (to >= 0) go(to); else step(dir);
+  });
+
+  btnPrev.addEventListener('click', function () { step(-1); });
+  btnNext.addEventListener('click', function () { step(1); });
+  btnPlay.addEventListener('click', function () { if (playing) stopPlay(); else startPlay(); });
+
+  /* 翻面是独立的阅读动作，不推动拍号；横竖屏共用同一张卡的状态。 */
+  function syncInteractions() {
+    Object.keys(scenes).forEach(function (id) {
+      var sc = scenes[id];
+      $$('.hit', sc.el).forEach(function (hit) {
+        var host = hit.closest('.s');
+        var shown = id === lastScene && host.classList.contains('on') && getComputedStyle(host).display !== 'none' &&
+          !(sc.el.classList.contains('solo') && !host.classList.contains('focus'));
+        hit.setAttribute('tabindex', shown ? '0' : '-1');
+        var key = hit.getAttribute('data-flip');
+        if (!key) return;
+        var reveal = !!(beats[cur] && beats[cur].reveal);
+        var stateKey = (reveal ? cur + ':' : '') + key;
+        var flipped = flipState[stateKey] == null ? reveal : flipState[stateKey];
+        hit.classList.toggle('is-flipped', flipped);
+        hit.setAttribute('aria-pressed', String(flipped));
+        hit.setAttribute('aria-label', hit.getAttribute(flipped ? 'data-back-label' : 'data-front-label'));
+      });
+    });
+    var focused = document.activeElement;
+    if (focused && focused.matches('.hit') && focused.getAttribute('tabindex') !== '0') {
+      stage.setAttribute('tabindex', '-1');
+      stage.focus({ preventScroll: true });
+    }
+  }
+  function flip(hit) {
+    if (!hit || hit.getAttribute('tabindex') !== '0') return;
+    stopPlay();
+    var key = (beats[cur].reveal ? cur + ':' : '') + hit.getAttribute('data-flip');
+    flipState[key] = !hit.classList.contains('is-flipped');
+    syncInteractions();
+  }
+  stage.addEventListener('click', function (e) {
+    var hit = e.target.closest && e.target.closest('[data-flip]');
+    if (hit) { e.preventDefault(); flip(hit); }
+  });
+  stage.addEventListener('keydown', function (e) {
+    var hit = e.target.closest && e.target.closest('[data-flip]');
+    if (!hit || (e.key !== 'Enter' && e.key !== ' ')) return;
+    e.preventDefault(); e.stopPropagation();
+    if (!e.repeat) flip(hit);
+  });
+
+  /* ---- 目录 ---- */
+
+  function buildToc() {
+    var list = $('#toc-list');
+    list.innerHTML = '';
+    data.sections.forEach(function (sec) {
+      var li = document.createElement('li');
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'toc-card';
+      b.innerHTML = '<span class="toc-no"></span><span class="toc-name"></span>';
+      if (sec.thumbnail) b.insertAdjacentHTML('afterbegin', sec.thumbnail);
+      $('.toc-no', b).textContent = sec.num || sec.mark || '';
+      $('.toc-name', b).textContent = sec.label;
+      b.addEventListener('click', function () { closeToc(); go(sec.first); });
+      li.appendChild(b);
+      list.appendChild(li);
+    });
+  }
+  function openToc() {
+    stopPlay();
+    if (toc.showModal) toc.showModal(); else toc.setAttribute('open', '');
+  }
+  function closeToc() {
+    if (toc.close) toc.close(); else toc.removeAttribute('open');
+  }
+  btnToc.addEventListener('click', openToc);
+  toc.addEventListener('click', function (e) { if (e.target === toc) closeToc(); });
+  toc.addEventListener('close', function () { btnToc.focus(); });
+  $('#toc-close').addEventListener('click', closeToc);
+
+  /* ---- 模式：分镜 / 全文 ---- */
+
+  /* 改查询参数：?read 与 ?stage 互斥；空值写成无等号的形式。 */
+  function queryWith(changes) {
+    var p = new URLSearchParams(location.search);
+    Object.keys(changes).forEach(function (name) {
+      if (changes[name]) p.set(name, ''); else p.delete(name);
+    });
+    var qs = p.toString().replace(/=(?=&|$)/g, '');
+    return location.pathname + (qs ? '?' + qs : '');
+  }
+  var startBeat = parseBeatHash(location.hash, total);
+
+  function setMode(next) {
+    root.setAttribute('data-mode', next);
+    if (next === 'read') {
+      stopPlay();
+      history.replaceState(null, '', queryWith({ read: true, stage: false }));
+      window.scrollTo(0, 0);
+      readEl.setAttribute('tabindex', '-1');
+      readEl.focus({ preventScroll: true });
+    } else {
+      /* 系统开了「减少动态效果」时，要用 ?stage 才能留在分镜版。 */
+      var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      history.replaceState(null, '', queryWith({ read: false, stage: reduced }));
+      render(cur < 0 ? Math.max(startBeat, 0) : cur, { force: true, instant: true });
+    }
+  }
+  $$('[data-action="read"]').forEach(function (el) {
+    el.addEventListener('click', function (e) { e.preventDefault(); setMode('read'); });
+  });
+  $$('[data-action="stage"]').forEach(function (el) {
+    el.addEventListener('click', function (e) { e.preventDefault(); setMode('stage'); });
+  });
+
+  window.addEventListener('hashchange', function () {
+    var i = parseBeatHash(location.hash, total);
+    if (i >= 0 && mode() === 'stage') go(i);
+  });
+  var resizeTimer = 0;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      if (mode() === 'stage' && cur >= 0) render(cur, { force: true, instant: true });
+    }, 80);
+  });
+
+  /* ---- 启动 ---- */
+
+  buildToc();
+  if (hint) hint.textContent = matchMedia('(pointer: coarse)').matches ? '上滑翻页' : '滚动或按 ↓ 翻页';
+  var begin = function () {
+    if (mode() === 'stage') render(Math.max(startBeat, 0), { force: true, instant: true });
+    requestAnimationFrame(function () { requestAnimationFrame(function () { stage.classList.add('ready'); }); });
+  };
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(begin, begin); else begin();
+})();
+</script>
+</body>
+</html>

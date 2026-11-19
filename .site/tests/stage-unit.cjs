@@ -242,4 +242,21 @@ test('资料来源不混入正文分镜单元', () => {
   assert.deepEqual(parseUnits('# 标题\n\n句子。\n\n## 资料来源\n\nhttps://example.org', 'test'), [{ type: 'h1', text: '标题' }, { type: 'p', text: '句子。' }]);
 });
 
-console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖）`);
+/* 第 02 篇的算分直接驱动画面；逐组核对分子、分母和百分数。 */
+const blocks = require('../stage/blocks.cjs');
+for (const [dataset, expected] of Object.entries({ training: [[8,8,100],[8,8,100]], switched: [[0,4,0],[4,4,100]], mixed: [[2,4,50],[4,4,100]], supplemented: [[8,10,80],[10,10,100]] })) {
+  test('积木手写规则：' + dataset, () => {
+    for (const [i, rule] of ['A', 'B'].entries()) {
+      const result = blocks.evaluate(blocks[dataset], rule);
+      assert.deepEqual([result.correct, result.total, result.percent], expected[i]);
+    }
+  });
+}
+test('颜色规则与轮廓规则在换色样本上逐项分歧，原训练数据不变', () => {
+  const before = JSON.stringify(blocks.training);
+  for (const item of blocks.switched) assert.notEqual(blocks.rules.A(item), blocks.rules.B(item));
+  assert.equal(JSON.stringify(blocks.training), before);
+  assert.deepEqual(blocks.supplemented.slice(0, 8), blocks.training);
+  assert.deepEqual(blocks.supplemented.slice(8), [{ color: 'blue', shape: 'circle' }, { color: 'red', shape: 'square' }]);
+});
+console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木算例）`);

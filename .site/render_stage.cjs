@@ -140,6 +140,9 @@ const ICON_LIST = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8
 
 function page({ title, summary, sceneSvgs, data, read, unit, local, count, hasNext }) {
   const json = JSON.stringify(data).replace(/</g, '\\u003c');
+  /* 共用源码在构建时打包，file:// 不必再读取隐藏目录里的 CSS/JS。 */
+  const css = fs.readFileSync(path.join(__dirname, 'stage/stage.css'), 'utf8');
+  const js = fs.readFileSync(path.join(__dirname, 'stage/stage.js'), 'utf8');
   const pager = `第 ${local} 篇 / 共 ${count} 篇`;
   return `<!doctype html>
 <html lang="zh-CN" data-mode="read">
@@ -150,7 +153,7 @@ function page({ title, summary, sceneSvgs, data, read, unit, local, count, hasNe
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='8.25' fill='none' stroke='%23185b46' stroke-width='1.5'/%3E%3Ccircle cx='10' cy='10' r='3.4' fill='%23185b46'/%3E%3C/svg%3E">
 <title>${esc(title)} · 互动版 · 看得见的 AI</title>
 <meta name="description" content="${esc(summary)}">
-<link rel="stylesheet" href="../../.site/stage/stage.css">
+<style data-stage-source="stage.css">${css}</style>
 <script>(function(){var q=new URLSearchParams(location.search),r=matchMedia('(prefers-reduced-motion: reduce)').matches;if(!(q.has('read')||(r&&!q.has('stage'))))document.documentElement.setAttribute('data-mode','stage')})()</script>
 </head>
 <body>
@@ -192,7 +195,7 @@ ${read}
 </article>
 </div>
 <script type="application/json" id="stage-data">${json}</script>
-<script src="../../.site/stage/stage.js" defer></script>
+<script data-stage-source="stage.js">${js}</script>
 </body>
 </html>
 `;

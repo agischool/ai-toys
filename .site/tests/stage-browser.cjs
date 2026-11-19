@@ -297,7 +297,15 @@ async function actions(browser, url) {
     await p.goto(url);
     const indices = await p.evaluate(() => {
       const d = JSON.parse(document.getElementById('stage-data').textContent);
-      return { exercise: d.beats.findIndex(b => b.scene === 'human' && b.step === 5) + 1, answer: d.beats.findIndex(b => b.reveal) + 1, refs: d.beats.findIndex(b => b.scene === 'refs') + 1, sections: d.sections.length };
+      const hasCards = b => {
+        const scene = [...document.querySelectorAll('.scene')].find(s => s.dataset.scene === b.scene);
+        return scene && [...scene.querySelectorAll('[data-flip]')].some(card => {
+          const host = card.closest('.s');
+          return Number(host.dataset.at) <= b.step && (host.dataset.until == null || b.step < Number(host.dataset.until));
+        });
+      };
+      return { exercise: d.beats.findIndex(b => !b.reveal && hasCards(b)) + 1,
+        answer: d.beats.findIndex(b => b.reveal) + 1, refs: d.beats.findIndex(b => b.scene === 'refs') + 1, sections: d.sections.length };
     });
     if (!indices.exercise || !indices.refs) { fail('没有完整的动作卡或资料场景'); await ctx.close(); continue; }
     const open = async n => { await p.goto(`${url}#b${n}`); await p.reload(); await sleep(500); };
@@ -318,7 +326,7 @@ async function actions(browser, url) {
     await sleep(1000);
     check(`${name} 换横竖屏保留翻面状态`, await cards().nth(0).getAttribute('aria-pressed'), 'true');
     await open(indices.answer);
-    check(`${name} 讲解拍展示三种分类`, await cards().evaluateAll(es => es.map(e => e.getAttribute('aria-pressed'))), ['true', 'true', 'true']);
+    check(`${name} 讲解拍展示三张答案`, await cards().evaluateAll(es => es.map(e => e.getAttribute('aria-pressed'))), ['true', 'true', 'true']);
     await cards().nth(0).focus();
     await p.keyboard.press('ArrowDown'); await sleep(900);
     check(`${name} 离开动作拍不把焦点留在隐藏卡上`, await p.evaluate(() => !!document.activeElement.closest('.hit')), false);
@@ -333,7 +341,8 @@ async function actions(browser, url) {
     check(`${name} 目录没有横向溢出`, tocProblems, false);
     await p.keyboard.press('Escape');
     await open(indices.refs);
-    check(`${name} 五条可访问的原始资料链接`, await p.locator('.scene.is-active a[href^="https://"][tabindex="0"]').count(), 5);
+    const expectedSources = (fs.readFileSync(path.join(SERIAL, folder, '正文.md'), 'utf8').match(/^https:\/\/\S+/gm) || []).length;
+    check(`${name} 原始资料链接数量与正文相同`, await p.locator('.scene.is-active a[href^="https://"][tabindex="0"]').count(), expectedSources);
     check(`${name} 非当前场景没有可聚焦道具`, await p.locator('.scene:not(.is-active) .hit[tabindex="0"]').count(), 0);
     await p.locator('.scene.is-active [data-action="read"][tabindex="0"]').click();
     check(`${name} 资料页可回全文`, await p.evaluate(() => document.documentElement.dataset.mode), 'read');

@@ -1,0 +1,428 @@
+{
+  "complete": true,
+  "beats": [
+    {
+      "from": "只见过红色圆积木，就认不出蓝色的了吗",
+      "take": 1,
+      "scene": "cover",
+      "step": 0,
+      "cam": "all",
+      "quiet": true
+    },
+    {
+      "from": "八张积木图片，一个程序全部认对。",
+      "take": 1,
+      "scene": "open",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "换来一块蓝色圆积木，它却回答：“方形",
+      "take": 1,
+      "scene": "open",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "明明只换了颜色，圆怎么会被认成方？",
+      "take": 1,
+      "scene": "open",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "问题可能早就藏在那八张图片里：它们让",
+      "take": 1,
+      "scene": "open",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "只看成绩，还看不出程序用的是哪一种。",
+      "take": 1,
+      "scene": "open",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "八个全对的答案藏着两种规则",
+      "take": 1,
+      "scene": "rules",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "先约定任务：只看积木正面的图片，把清",
+      "take": 1,
+      "scene": "rules",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "人给每张图标好的“圆”或“方”，叫标",
+      "take": 1,
+      "scene": "rules",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "现在摆出八个训练例子：四个红色圆块，",
+      "take": 1,
+      "scene": "rules",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "红色恰好总与圆形同在，蓝色恰好总与方",
+      "take": 1,
+      "scene": "rules",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "先不训练模型。",
+      "take": 2,
+      "scene": "rules",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "规则A看颜色：遇到红色就答“圆”，遇",
+      "take": 1,
+      "scene": "rules",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "规则B看轮廓：圆形答“圆”，正方形答",
+      "take": 1,
+      "scene": "rules",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "A把四个红块判成圆、四个蓝块判成方，",
+      "take": 1,
+      "scene": "rules",
+      "step": 8,
+      "cam": "desk"
+    },
+    {
+      "from": "B按轮廓判断，也答对8个。",
+      "take": 1,
+      "scene": "rules",
+      "step": 9,
+      "cam": "desk"
+    },
+    {
+      "from": "两者都是8÷8＝100%。",
+      "take": 2,
+      "scene": "rules",
+      "step": 10,
+      "cam": "desk"
+    },
+    {
+      "from": "图1  同样的训练满分，不同的测试表",
+      "take": 2,
+      "scene": "rules",
+      "step": 11,
+      "cam": "desk"
+    },
+    {
+      "from": "一换搭配差别就出现了",
+      "take": 1,
+      "scene": "test",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "再拿出四个事先留出的例子：两个蓝色圆",
+      "take": 1,
+      "scene": "test",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "它们没有参与前面的规则选择或调整，这",
+      "take": 1,
+      "scene": "test",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "对两个蓝圆块，A因为“蓝”而答“方”",
+      "take": 1,
+      "scene": "test",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "它的测试正确率是0÷4＝0%。",
+      "take": 1,
+      "scene": "test",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "B仍然按轮廓判断，四次全对，得到4÷",
+      "take": 1,
+      "scene": "test",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "这是按手写规则算出的示例，没有训练神",
+      "take": 1,
+      "scene": "test",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "测试特意换了颜色搭配来找弱点；0%不",
+      "take": 1,
+      "scene": "test",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "不妨再换一张考卷：红圆、蓝圆、红方、",
+      "take": 1,
+      "scene": "exercise",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "A能答对红圆和蓝方，得到2÷4＝50",
+      "take": 1,
+      "scene": "exercise",
+      "step": 1,
+      "cam": "desk",
+      "reveal": true
+    },
+    {
+      "from": "A的规则没有变，测试里的搭配变了，成",
+      "take": 1,
+      "scene": "test",
+      "step": 10,
+      "cam": "desk"
+    },
+    {
+      "from": "所以报告正确率时，还要交代测了哪些情",
+      "take": 1,
+      "scene": "test",
+      "step": 11,
+      "cam": "desk"
+    },
+    {
+      "from": "在训练时没见过的例子上仍能做好同一任",
+      "take": 1,
+      "scene": "test",
+      "step": 12,
+      "cam": "desk"
+    },
+    {
+      "from": "前面特意改变搭配的四个测试例子，暴露",
+      "take": 1,
+      "scene": "test",
+      "step": 13,
+      "cam": "desk"
+    },
+    {
+      "from": "颜色为什么成了捷径",
+      "take": 1,
+      "scene": "shortcut",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "按形状分类时，颜色本来不决定答案。",
+      "take": 1,
+      "scene": "shortcut",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "但最初那批图片恰好全是红圆、蓝方，于",
+      "take": 2,
+      "scene": "shortcut",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "所谓虚假线索，是说这段对应关系未必适",
+      "take": 1,
+      "scene": "shortcut",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "真实的机器学习系统通常不会把“红色就",
+      "take": 1,
+      "scene": "shortcut",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "训练程序调整许多参数，让预测更接近标",
+      "take": 1,
+      "scene": "shortcut",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "数据怎样收集、模型怎样设计、训练怎样",
+      "take": 1,
+      "scene": "shortcut",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "研究者把依赖这类省事线索、换个环境就",
+      "take": 1,
+      "scene": "shortcut",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "颜色本身并没有错。",
+      "take": 2,
+      "scene": "shortcut",
+      "step": 8,
+      "cam": "desk"
+    },
+    {
+      "from": "一条线索是否合适，要放回具体任务里判",
+      "take": 1,
+      "scene": "shortcut",
+      "step": 9,
+      "cam": "desk"
+    },
+    {
+      "from": "再拍一批照片，也未必能揭穿捷径。",
+      "take": 2,
+      "scene": "shortcut",
+      "step": 10,
+      "cam": "desk"
+    },
+    {
+      "from": "训练和测试要分开，测试里有没有不同情",
+      "take": 1,
+      "scene": "shortcut",
+      "step": 11,
+      "cam": "desk"
+    },
+    {
+      "from": "补上缺失的搭配之后",
+      "take": 1,
+      "scene": "repair",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "让训练样本中也出现蓝圆块和红方块，颜",
+      "take": 1,
+      "scene": "repair",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "比如在原来的八个例子中，再加入一个蓝",
+      "take": 1,
+      "scene": "repair",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "图2  补进缺失的颜色搭配后，颜色规",
+      "take": 1,
+      "scene": "repair",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "对照图2就能发现：把原来的红圆、蓝方",
+      "take": 2,
+      "scene": "repair",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "补充样本让两条规则有了可比较的差别，",
+      "take": 1,
+      "scene": "repair",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "实际模型能否因此学得更好，仍要重新训",
+      "take": 1,
+      "scene": "repair",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "这里还有一道容易忽略的界线：如果看过",
+      "take": 1,
+      "scene": "repair",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "改好后再做一遍，可以检查旧错误有没有",
+      "take": 1,
+      "scene": "repair",
+      "step": 8,
+      "cam": "desk"
+    },
+    {
+      "from": "实际开发中，常把数据分成三部分：训练",
+      "take": 1,
+      "scene": "repair",
+      "step": 9,
+      "cam": "desk"
+    },
+    {
+      "from": "小例子里的道理也一样：用过的答案不能",
+      "take": 1,
+      "scene": "repair",
+      "step": 10,
+      "cam": "desk"
+    },
+    {
+      "from": "多样的样本也有边界。",
+      "take": 2,
+      "scene": "repair",
+      "step": 11,
+      "cam": "desk"
+    },
+    {
+      "from": "测试只能为它覆盖到的情形提供证据；换",
+      "take": 1,
+      "scene": "repair",
+      "step": 12,
+      "cam": "desk"
+    },
+    {
+      "from": "所以，蓝色圆积木能不能被认出来，要看",
+      "take": 1,
+      "scene": "repair",
+      "step": 13,
+      "cam": "desk"
+    },
+    {
+      "from": "面对“训练成绩100%”，多追问一句",
+      "take": 1,
+      "scene": "repair",
+      "step": 14,
+      "cam": "desk"
+    },
+    {
+      "take": 0,
+      "scene": "refs",
+      "step": 0,
+      "cam": "desk",
+      "refs": true,
+      "quiet": true
+    }
+  ]
+}
