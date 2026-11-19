@@ -1,0 +1,302 @@
+{
+  "complete": true,
+  "beats": [
+    {
+      "take": 1,
+      "scene": "cover",
+      "step": 0,
+      "cam": "all",
+      "quiet": true,
+      "from": "校园 AI 助手，什么时候该说“不知道”？"
+    },
+    {
+      "take": 4,
+      "scene": "open",
+      "step": 0,
+      "cam": "desk",
+      "from": "“周二下午三点，图书馆开门吗？”"
+    },
+    {
+      "take": 2,
+      "scene": "open",
+      "step": 1,
+      "cam": "desk",
+      "from": "上一期检查一段已经写好的回答，这次把检查提前安排"
+    },
+    {
+      "take": 2,
+      "scene": "open",
+      "step": 2,
+      "cam": "desk",
+      "from": "它只回答校园公开服务信息，不处理学生个人档案，也"
+    },
+    {
+      "take": 1,
+      "scene": "source",
+      "step": 0,
+      "cam": "desk",
+      "from": "先给它一份能查的资料"
+    },
+    {
+      "take": 3,
+      "scene": "source",
+      "step": 1,
+      "cam": "desk",
+      "from": "这所虚构学校只有一份纳入示例的公告 D1，题为《"
+    },
+    {
+      "take": 2,
+      "scene": "source",
+      "step": 2,
+      "cam": "desk",
+      "from": "管理员核准这份公开公告入库，并保存标题、发布者、"
+    },
+    {
+      "take": 1,
+      "scene": "source",
+      "step": 3,
+      "cam": "desk",
+      "from": "这里说“没有资料”，只指限定的资料库里没找到，不"
+    },
+    {
+      "take": 3,
+      "scene": "source",
+      "step": 4,
+      "cam": "desk",
+      "from": "设计也没有给助手读取学生档案的入口。"
+    },
+    {
+      "take": 1,
+      "scene": "source",
+      "step": 5,
+      "cam": "desk",
+      "from": "图1  范围、证据与适用期共同决定输出路径；流程"
+    },
+    {
+      "take": 1,
+      "scene": "process",
+      "step": 0,
+      "cam": "desk",
+      "from": "把一个问题送进流程"
+    },
+    {
+      "take": 2,
+      "scene": "process",
+      "step": 1,
+      "cam": "desk",
+      "from": "沿着图1，先过范围检查。"
+    },
+    {
+      "take": 1,
+      "scene": "process",
+      "step": 2,
+      "cam": "desk",
+      "from": "问题含糊时先澄清，“图书馆周二开吗”若指另一个学"
+    },
+    {
+      "take": 3,
+      "scene": "process",
+      "step": 3,
+      "cam": "desk",
+      "from": "范围合适，再从核准资料里检索相关段落。"
+    },
+    {
+      "take": 2,
+      "scene": "process",
+      "step": 4,
+      "cam": "desk",
+      "from": "找到段落后，还要检查谁发布的、什么时候适用，以及"
+    },
+    {
+      "take": 2,
+      "scene": "process",
+      "step": 5,
+      "cam": "desk",
+      "from": "有依据的回答附上公告标题、适用期和相关原句。"
+    },
+    {
+      "take": 1,
+      "scene": "process",
+      "step": 6,
+      "cam": "desk",
+      "from": "助手不会擅自转发用户的原问题，是否继续向人询问，"
+    },
+    {
+      "take": 1,
+      "scene": "results",
+      "step": 0,
+      "cam": "desk",
+      "from": "五个问题都走到结果"
+    },
+    {
+      "take": 2,
+      "scene": "results",
+      "step": 1,
+      "cam": "desk",
+      "from": "第一个问题是“本学期某个周二15点，按常规安排开"
+    },
+    {
+      "take": 2,
+      "scene": "results",
+      "step": 2,
+      "cam": "desk",
+      "from": "纸面推演得到：“按 D1 的本学期常规安排，开放"
+    },
+    {
+      "take": 2,
+      "scene": "results",
+      "step": 3,
+      "cam": "desk",
+      "from": "第二个问题改成“本学期周日开放吗？”"
+    },
+    {
+      "take": 2,
+      "scene": "results",
+      "step": 4,
+      "cam": "desk",
+      "from": "结果为：“按 D1 的本学期安排，周日闭馆。”"
+    },
+    {
+      "take": 4,
+      "scene": "results",
+      "step": 5,
+      "cam": "desk",
+      "from": "第三个问题是“今天临时检修，图书馆还开吗？”"
+    },
+    {
+      "take": 4,
+      "scene": "results",
+      "step": 6,
+      "cam": "desk",
+      "from": "第四个问题是“明年周二也这样开放吗？”"
+    },
+    {
+      "take": 4,
+      "scene": "results",
+      "step": 7,
+      "cam": "desk",
+      "from": "第五个问题是“告诉我某位同学的家庭住址。”"
+    },
+    {
+      "take": 1,
+      "scene": "results",
+      "step": 8,
+      "cam": "desk",
+      "from": "图2  五种结果均已按修订后的规则推演；同一组示"
+    },
+    {
+      "take": 3,
+      "scene": "results",
+      "step": 9,
+      "cam": "desk",
+      "from": "图2中的五个结果说明，“没给出答案”有不同原因。"
+    },
+    {
+      "take": 1,
+      "scene": "revision",
+      "step": 0,
+      "cam": "desk",
+      "from": "检查之后还改了什么"
+    },
+    {
+      "take": 2,
+      "scene": "revision",
+      "step": 1,
+      "cam": "desk",
+      "from": "这套流程也经过一次纸面修改：最初只比较星期和时间"
+    },
+    {
+      "take": 2,
+      "scene": "revision",
+      "step": 2,
+      "cam": "desk",
+      "from": "再用同样的五个问题复核，才得到上面的结果。"
+    },
+    {
+      "take": 2,
+      "scene": "revision",
+      "step": 3,
+      "cam": "desk",
+      "from": "正式开发还需另备未参与设计的例子，检查不同问法、"
+    },
+    {
+      "take": 1,
+      "scene": "revision",
+      "step": 4,
+      "cam": "desk",
+      "from": "回答生成后，人仍有工作要做：图书馆负责公告，管理"
+    },
+    {
+      "take": 1,
+      "scene": "revision",
+      "step": 5,
+      "cam": "desk",
+      "from": "新来的临时通知也要先核准来源和适用期，再更新进资"
+    },
+    {
+      "take": 1,
+      "scene": "challenge",
+      "step": 0,
+      "cam": "desk",
+      "from": "给流程加一个检查题"
+    },
+    {
+      "take": 2,
+      "scene": "challenge",
+      "step": 1,
+      "cam": "desk",
+      "from": "仍只允许使用 D1，换问「本学期周二 19 点，"
+    },
+    {
+      "take": 0,
+      "scene": "exercise",
+      "step": 0,
+      "cam": "desk",
+      "quiet": true
+    },
+    {
+      "take": 0,
+      "scene": "exercise",
+      "step": 1,
+      "cam": "desk",
+      "quiet": true,
+      "reveal": true
+    },
+    {
+      "take": 2,
+      "scene": "challenge",
+      "step": 2,
+      "cam": "desk",
+      "from": "D1 写明工作日开放到 18 点，因此这个问题有"
+    },
+    {
+      "take": 2,
+      "scene": "challenge",
+      "step": 3,
+      "cam": "desk",
+      "from": "再对照临时检修那一题：同样问开不开，是否缺少证据"
+    },
+    {
+      "take": 3,
+      "scene": "challenge",
+      "step": 4,
+      "cam": "desk",
+      "from": "屏幕上写着“图书馆开放”。"
+    },
+    {
+      "take": 2,
+      "scene": "challenge",
+      "step": 5,
+      "cam": "desk",
+      "from": "把 D1 递给同学，请他再出一道题。"
+    },
+    {
+      "take": 0,
+      "scene": "refs",
+      "step": 0,
+      "cam": "desk",
+      "quiet": true,
+      "refs": true
+    }
+  ]
+}

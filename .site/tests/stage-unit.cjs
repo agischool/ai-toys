@@ -751,4 +751,47 @@ test('缺失范围、非法字段值与无效题数会报错，不补事实或�
   assert.throws(()=>evidence.assess(evidence.sources.open,{...evidence.claims[0],value:'true'}),/事实/);
   for(const records of [[],null,Array(1),[{label:'',total:1,correct:1}],[{label:'错',total:1,correct:2}],[{label:'负',total:-1,correct:0}],[{label:'小数',total:1.5,correct:1}],[{label:'布尔',total:true,correct:1}],[{label:'无穷',total:Infinity,correct:1}],[{label:'大',total:Number.MAX_SAFE_INTEGER,correct:1},{label:'加',total:1,correct:0}]])assert.throws(()=>evidence.summarize(records),/分组|题数|合计/);
 });
-console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权、解码、存储、方案筛选、编码、关系与证据核对算例）`);
+
+const campus=require('../stage/campus.cjs');
+test('校园纸面规则将五个问题分别送到开放、闭馆、缺证据和越界',()=>{
+  assert.deepEqual(campus.cases.map(q=>campus.decide(q).status),['open','closed','insufficient','insufficient','refuse']);
+  assert.deepEqual(campus.cases.slice(2,4).map(q=>campus.decide(q).reason),['缺少检修期间通知','缺少明年安排']);
+});
+test('常规时段按工作日12点含、18点不含判断，遍历整周整点',()=>{
+  for(let day=1;day<=7;day++)for(let hour=0;hour<24;hour++){
+    const r=campus.decide({...campus.cases[0],day,hour});
+    assert.equal(r.status,day<=5&&hour>=12&&hour<18?'open':'closed');
+    assert.equal(r.citation.id,'D1');
+  }
+  assert.equal(campus.decide(campus.exercise).status,'closed');
+});
+test('临时检修不被常规时间覆盖，明年与节假日不外推',()=>{
+  for(const day of [2,7])for(const hour of [11,15,19]){
+    assert.equal(campus.decide({...campus.cases[0],day,hour,temporary:true}).status,'insufficient');
+    assert.equal(campus.decide({...campus.cases[0],day,hour,holiday:true}).status,'insufficient');
+    assert.equal(campus.decide({...campus.cases[0],day,hour,period:'next'}).status,'insufficient');
+  }
+});
+test('范围外与含糊请求先停止或澄清，不触发D1取回',()=>{
+  for(const [q,status] of [[{kind:'private'},'refuse'],[{kind:'ambiguous'},'clarify'],[{kind:'public',period:'unknown'},'clarify']]){
+    const r=campus.decide(q);assert.equal(r.status,status);assert.deepEqual(r.trace,['范围检查']);assert.equal(r.citation,undefined);
+  }
+});
+test('有依据的开放与闭馆均附标题、发布者、适用期和原句',()=>{
+  for(const q of [campus.cases[0],campus.cases[1],campus.exercise]){
+    const r=campus.decide(q);
+    assert.deepEqual(r.citation,{id:'D1',title:campus.document.title,publisher:'图书馆',period:'本学期',quote:campus.document.quote});
+    assert.deepEqual(r.trace,['范围检查','取回 D1','核对适用期','检查临时条件','比较星期与时段','附上依据']);
+  }
+  for(const q of campus.cases.slice(2))assert.equal(campus.decide(q).citation,undefined);
+});
+test('规则输入、公告冻结，输出轨迹与引用不共享可变对象',()=>{
+  assert.ok(Object.isFrozen(campus.document)&&Object.isFrozen(campus.cases)&&campus.cases.every(Object.isFrozen));
+  const q={...campus.cases[0]},before=JSON.stringify(q),a=campus.decide(q);a.trace.push('改动');a.citation.quote='改动';
+  assert.equal(JSON.stringify(q),before);assert.equal(campus.decide(q).trace.length,6);assert.equal(campus.decide(q).citation.quote,campus.document.quote);
+});
+test('校园规则拒绝无效标注，不猜星期、时间或临时条件',()=>{
+  for(const q of [null,{},'周二三点开门吗',{kind:'other'}])assert.throws(()=>campus.decide(q),/范围/);
+  for(const change of [{period:'去年'},{day:0},{day:8},{day:true},{day:2.5},{hour:24},{hour:-1},{hour:15.5},{hour:true},{hour:NaN},{temporary:undefined},{temporary:'false'},{holiday:0}])assert.throws(()=>campus.decide({...campus.cases[0],...change}),/适用期|标注/);
+});
+console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权、解码、存储、方案筛选、编码、关系、证据核对与校园流程算例）`);
