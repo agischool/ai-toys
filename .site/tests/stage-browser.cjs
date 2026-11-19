@@ -321,7 +321,12 @@ async function localReferences(page, url, name) {
     const target = decodeURIComponent(new URL(link.href, pathToFileURL(path.join(SERIAL, folder, '互动版.html')).href).pathname);
     const valid = target.startsWith(ROOT + path.sep) && fs.existsSync(target) && fs.statSync(target).isFile();
     check(name + ' 本地入口目标文件存在', valid, true);
-    check(name + ' 本地入口也保留在正文', fs.readFileSync(path.join(SERIAL, folder, '正文.md'), 'utf8').includes('](' + link.href + ')'), true);
+    const series = require('../serial_units.json').find(unit => link.href === '../' + unit.id + '.html');
+    if (series) {
+      check(name + ' 学习地图链接名称与系列配置一致', link.label, series.name + '，打开系列目录');
+    } else {
+      check(name + ' 本地入口也保留在正文', fs.readFileSync(path.join(SERIAL, folder, '正文.md'), 'utf8').includes('](' + link.href + ')'), true);
+    }
     if (valid && url.startsWith('http')) {
       const response = await page.request.get(new URL(link.href, url).href);
       check(name + ' 本地入口响应字节与源文件一致', response.ok() && (await response.body()).equals(fs.readFileSync(target)), true);
@@ -330,7 +335,8 @@ async function localReferences(page, url, name) {
 }
 
 async function actions(browser, url) {
-  console.log('\n[缩略目录、翻面卡与资料来源]');
+  console.log('\n[缩略目录、翻面卡与末页入口]');
+  const expectedSources = (fs.readFileSync(path.join(SERIAL, folder, '正文.md'), 'utf8').match(/^https:\/\/\S+/gm) || []).length;
   for (const name of ['desk', 'mob']) {
     const ctx = await browser.newContext(VPS[name]);
     const p = await ctx.newPage();
@@ -345,9 +351,10 @@ async function actions(browser, url) {
         });
       };
       return { exercise: d.beats.findIndex(b => !b.reveal && hasCards(b)) + 1,
-        answer: d.beats.findIndex(b => b.reveal) + 1, refs: d.beats.findIndex(b => b.scene === 'refs') + 1, sections: d.sections.length };
+        answer: d.beats.findIndex(b => b.reveal) + 1, refs: d.beats.findIndex(b => b.scene === 'refs') + 1, map: d.beats.findIndex(b => b.scene === 'map') + 1, sections: d.sections.length };
     });
-    if (!indices.exercise || !indices.refs) { fail('没有完整的动作卡或资料场景'); await ctx.close(); continue; }
+    const closing = expectedSources ? indices.refs : indices.map;
+    if (!indices.exercise || !indices.answer || !closing) { fail('没有完整的动作卡或对应正文的末页场景'); await ctx.close(); continue; }
     const open = async n => { await p.goto(`${url}#b${n}`); await p.reload(); await sleep(500); };
     const cards = () => p.locator('.scene.is-active [data-flip][tabindex="0"]');
     await open(indices.exercise);
@@ -381,12 +388,16 @@ async function actions(browser, url) {
     check(`${name} 目录没有横向溢出`, tocProblems, false);
     await p.keyboard.press('Escape');
     await localReferences(p, url, name);
-    await open(indices.refs);
-    const expectedSources = (fs.readFileSync(path.join(SERIAL, folder, '正文.md'), 'utf8').match(/^https:\/\/\S+/gm) || []).length;
+    await open(closing);
+    if (!expectedSources) {
+      const expectedMap = require('../serial_units.json').map(unit => '../' + unit.id + '.html');
+      check(name + ' 学习地图含五套独立系列入口', await p.locator('.scene.is-active a.hit[tabindex="0"]').evaluateAll(es => es.map(e => e.getAttribute('href')).filter(h => !h.startsWith('?'))), expectedMap);
+      check(name + ' 无来源段不增加虚构的资料目录', await p.locator('.toc-card').filter({hasText:'资料来源'}).count(), 0);
+    }
     check(`${name} 原始资料链接数量与正文相同`, await p.locator('.scene.is-active a[href^="https://"][tabindex="0"]').count(), expectedSources);
     check(`${name} 非当前场景没有可聚焦道具`, await p.locator('.scene:not(.is-active) .hit[tabindex="0"]').count(), 0);
     await p.locator('.scene.is-active [data-action="read"][tabindex="0"]').click();
-    check(`${name} 资料页可回全文`, await p.evaluate(() => document.documentElement.dataset.mode), 'read');
+    check(`${name} 末页可回全文`, await p.evaluate(() => document.documentElement.dataset.mode), 'read');
     await ctx.close();
   }
 }

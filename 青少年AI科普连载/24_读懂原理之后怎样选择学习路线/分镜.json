@@ -1,0 +1,196 @@
+{
+  "complete": true,
+  "beats": [
+    {
+      "take": 1,
+      "scene": "cover",
+      "step": 0,
+      "cam": "all",
+      "quiet": true,
+      "from": "读懂 AI 原理之后，下一步怎样选？"
+    },
+    {
+      "take": 3,
+      "scene": "open",
+      "step": 0,
+      "cam": "desk",
+      "from": "抄写四个字母，途中会碰到三种不同的问题：训练时给"
+    },
+    {
+      "take": 1,
+      "scene": "open",
+      "step": 1,
+      "cam": "desk",
+      "from": "挑一道你想讲给同桌听的，拿张纸试一试。"
+    },
+    {
+      "take": 1,
+      "scene": "predict",
+      "step": 0,
+      "cam": "desk",
+      "from": "遮住答案，第一分该打在哪里？"
+    },
+    {
+      "take": 2,
+      "scene": "predict",
+      "step": 1,
+      "cam": "desk",
+      "from": "把 <abcd|abcd> 写在纸上。"
+    },
+    {
+      "take": 2,
+      "scene": "predict",
+      "step": 2,
+      "cam": "desk",
+      "from": "用纸盖住竖线右边。"
+    },
+    {
+      "take": 2,
+      "scene": "predict",
+      "step": 3,
+      "cam": "desk",
+      "from": "是第一个 a。"
+    },
+    {
+      "take": 2,
+      "scene": "predict",
+      "step": 4,
+      "cam": "desk",
+      "from": "只给回答计分时，要圈出五个目标：a b c d "
+    },
+    {
+      "take": 1,
+      "scene": "predict",
+      "step": 5,
+      "cam": "desk",
+      "from": "这是本系列第 1 篇里的训练办法。"
+    },
+    {
+      "take": 1,
+      "scene": "cache",
+      "step": 0,
+      "cam": "desk",
+      "from": "写到第四格，重复做了多少计算？"
+    },
+    {
+      "take": 1,
+      "scene": "cache",
+      "step": 1,
+      "cam": "desk",
+      "from": "画第一格，在里面点一下，表示算出了这个位置的键（"
+    },
+    {
+      "take": 3,
+      "scene": "cache",
+      "step": 2,
+      "cam": "desk",
+      "from": "再添一格。"
+    },
+    {
+      "take": 2,
+      "scene": "cache",
+      "step": 3,
+      "cam": "desk",
+      "from": "1 ＋ 2 ＋ 3 ＋ 4 ＝ 10 下。"
+    },
+    {
+      "take": 0,
+      "scene": "cache",
+      "step": 4,
+      "cam": "desk",
+      "quiet": true
+    },
+    {
+      "take": 1,
+      "scene": "cache",
+      "step": 5,
+      "cam": "desk",
+      "from": "本系列第 2 篇里的模型只能读取当前位置和前文，"
+    },
+    {
+      "take": 1,
+      "scene": "cache",
+      "step": 6,
+      "cam": "desk",
+      "from": "新格仍要跟旧格匹配，这笔账只数了算 K 的次数。"
+    },
+    {
+      "take": 1,
+      "scene": "merge",
+      "step": 0,
+      "cam": "desk",
+      "from": "两个专家各出一个数，合起来是多少？"
+    },
+    {
+      "take": 2,
+      "scene": "merge",
+      "step": 1,
+      "cam": "desk",
+      "from": "沿用本系列第 3 篇的手算例子。"
+    },
+    {
+      "take": 2,
+      "scene": "merge",
+      "step": 2,
+      "cam": "desk",
+      "from": "现在让它们各占一半，先用手遮住右边那一列，只看 "
+    },
+    {
+      "take": 1,
+      "scene": "merge",
+      "step": 3,
+      "cam": "desk",
+      "from": "2 和 3 各取一半，得到 2.5；再算另一列，"
+    },
+    {
+      "take": 1,
+      "scene": "merge",
+      "step": 4,
+      "cam": "desk",
+      "from": "最后的结果是 [2.5, 5]。"
+    },
+    {
+      "take": 2,
+      "scene": "merge",
+      "step": 5,
+      "cam": "desk",
+      "from": "把比重改回 0.6 和 0.4，第一项就成了 2"
+    },
+    {
+      "take": 0,
+      "scene": "exercise",
+      "step": 0,
+      "cam": "desk",
+      "quiet": true
+    },
+    {
+      "take": 2,
+      "scene": "exercise",
+      "step": 1,
+      "cam": "desk",
+      "reveal": true,
+      "from": "图 1　把预测写下来再核对。"
+    },
+    {
+      "take": 1,
+      "scene": "lab",
+      "step": 0,
+      "cam": "desk",
+      "from": "想用程序再试一次，可以打开训练、缓存与专家路由实"
+    },
+    {
+      "take": 1,
+      "scene": "lab",
+      "step": 1,
+      "cam": "desk",
+      "from": "想换个问题，下面这张图可以帮你选下一套。"
+    },
+    {
+      "take": 2,
+      "scene": "map",
+      "step": 0,
+      "cam": "desk",
+      "from": "图 2　认猫、读故事、查证据、找场地、练模型。"
+    }
+  ]
+}

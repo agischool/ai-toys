@@ -1220,4 +1220,36 @@ test('无效token、计分起点、因果位置与保存数值会报错',()=>{
   for(const [p,n] of [[-1,10],[10,10],[true,10],[0,0],[0,1.5]])assert.throws(()=>sftRecords.visible(p,n),/无效/);
   for(const saved of [null,{}, {...sftRecords.record,selected_target_positions:[6,7,8,9]},{...sftRecords.record,one_step_loss_before:NaN},{...sftRecords.record,masked_logit_gradient_max:-1}])assert.throws(()=>sftRecords.summary(saved),/不一致|无效/);
 });
-console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权、解码、存储、方案筛选、编码、关系、证据核对、校园流程、工具记录、多步场地路线、上下文卡片、任务验收、训练计分、缓存计数与专家路由算例）`);
+const serialRoot=path.join(__dirname,'../../青少年AI科普连载');
+const reviewFolder=fs.readdirSync(serialRoot).find(n=>n.startsWith('24_'));
+const reviewPage=require('../render_stage.cjs').compileOne(reviewFolder);
+const reviewData=JSON.parse(reviewPage.html.match(/<script type="application\/json" id="stage-data">([^<]+)<\/script>/)[1]);
+test('全24篇都有完整分镜，收尾篇完整保留39单元且无虚构资料来源',()=>{
+  const folders=fs.readdirSync(serialRoot).filter(n=>/^\d\d_/.test(n)).sort();
+  assert.equal(folders.length,24);
+  folders.forEach((name,i)=>{assert.equal(Number(name.slice(0,2)),i+1);assert.equal(JSON.parse(fs.readFileSync(path.join(serialRoot,name,'分镜.json'),'utf8')).complete,true);});
+  assert.equal(reviewPage.total,39);assert.equal(reviewPage.consumed,39);assert.equal(reviewPage.complete,true);
+  assert.equal(reviewData.sections.length,4);assert.ok(reviewData.sections.every(s=>s.mark!=='源'));
+  assert.equal(reviewData.beats.at(-1).scene,'map');assert.ok(!reviewPage.html.includes('href="https://'));
+});
+test('收尾复习保留三张独立翻面卡、揭晓拍及后续实验和学习地图',()=>{
+  const b=reviewData.beats,first=b.findIndex(r=>r.scene==='exercise');
+  assert.ok(!b[first].reveal);assert.equal(b[first+1].reveal,true);
+  assert.equal(b[first+2].scene,'lab');assert.equal(b[first+3].scene,'lab');assert.equal(b[first+4].scene,'map');
+  for(const id of ['target','cache','merge'])assert.equal((reviewPage.html.match(new RegExp('data-flip="'+id+'"','g'))||[]).length,2);
+  assert.ok(reviewPage.html.includes('href="../../Python实现/source/continuation_mechanisms/README.md"'));
+});
+test('学习地图按五套真实系列配置链接已有目录，横竖屏保留相同目标与名称',()=>{
+  const catalog=require('../serial_units.json');assert.equal(catalog.length,5);
+  for(const unit of catalog){
+    const href='../'+unit.id+'.html';
+    assert.ok(fs.existsSync(path.resolve(serialRoot,reviewFolder,href)));
+    assert.equal(reviewPage.html.split('href="'+href+'"').length-1,2);
+    assert.equal(reviewPage.html.split('aria-label="'+unit.name+'，打开系列目录"').length-1,2);
+    assert.ok(fs.readFileSync(path.join(serialRoot,unit.id+'.html'),'utf8').includes(unit.name));
+  }
+});
+test('第24篇和末页浏览器检查接入后，前23篇生成物仍逐字节兼容',()=>{
+  for(const name of fs.readdirSync(serialRoot).filter(n=>/^\d\d_/.test(n)&&Number(n.slice(0,2))<=23))assert.equal(require('../render_stage.cjs').compileOne(name).html,fs.readFileSync(path.join(serialRoot,name,'互动版.html'),'utf8'),name);
+});
+console.log(`PASS: ${count} 项互动版检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权、解码、存储、方案筛选、编码、关系、证据核对、校园流程、工具记录、多步场地路线、上下文卡片、任务验收、训练计分、缓存计数、专家路由算例与全24篇收尾检查）`);
