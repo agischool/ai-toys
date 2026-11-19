@@ -1,0 +1,344 @@
+{
+  "complete": true,
+  "beats": [
+    {
+      "take": 1,
+      "scene": "cover",
+      "step": 0,
+      "cam": "all",
+      "quiet": true,
+      "from": "聊天记录越长，AI 就越不容易忘吗？"
+    },
+    {
+      "take": 2,
+      "scene": "open",
+      "step": 0,
+      "cam": "desk",
+      "from": "「场地必须有坡道。」"
+    },
+    {
+      "take": 4,
+      "scene": "open",
+      "step": 1,
+      "cam": "desk",
+      "from": "后来，助手查了开放时间，又查了设备。"
+    },
+    {
+      "take": 2,
+      "scene": "open",
+      "step": 2,
+      "cam": "desk",
+      "from": "上一期，我们记下已经确认的条件，再决定下一步。"
+    },
+    {
+      "take": 1,
+      "scene": "storage",
+      "step": 0,
+      "cam": "desk",
+      "from": "先分清三个存放位置"
+    },
+    {
+      "take": 3,
+      "scene": "storage",
+      "step": 1,
+      "cam": "desk",
+      "from": "模型参数是训练时调整的数值，决定模型怎样处理输入"
+    },
+    {
+      "take": 3,
+      "scene": "storage",
+      "step": 2,
+      "cam": "desk",
+      "from": "这一轮的上下文，是程序实际交给模型处理的输入。"
+    },
+    {
+      "take": 2,
+      "scene": "storage",
+      "step": 3,
+      "cam": "desk",
+      "from": "还可以把原话单独存在文件里。"
+    },
+    {
+      "take": 2,
+      "scene": "storage",
+      "step": 4,
+      "cam": "desk",
+      "from": "所以，发现助手漏掉了坡道要求，可以先检查这一轮的"
+    },
+    {
+      "take": 1,
+      "scene": "cards",
+      "step": 0,
+      "cam": "desk",
+      "from": "六张卡，装进不同的输入"
+    },
+    {
+      "take": 1,
+      "scene": "cards",
+      "step": 1,
+      "cam": "desk",
+      "from": "先摆三张写着要求的卡：第一张是「场地必须有坡道」"
+    },
+    {
+      "take": 1,
+      "scene": "cards",
+      "step": 2,
+      "cam": "desk",
+      "from": "接着放两张查到的场地卡：科学活动室周二 15—1"
+    },
+    {
+      "take": 2,
+      "scene": "cards",
+      "step": 3,
+      "cam": "desk",
+      "from": "最后一张写着「只给建议，不预约」。"
+    },
+    {
+      "take": 2,
+      "scene": "cards",
+      "step": 4,
+      "cam": "desk",
+      "from": "第一种办法最直接：全部保留，C1 到 C6 都放"
+    },
+    {
+      "take": 2,
+      "scene": "cards",
+      "step": 5,
+      "cam": "desk",
+      "from": "第二种办法，只保留最后三张。"
+    },
+    {
+      "take": 2,
+      "scene": "cards",
+      "step": 6,
+      "cam": "desk",
+      "from": "两处场地事实还在，用户的硬性要求却丢了。"
+    },
+    {
+      "take": 2,
+      "scene": "cards",
+      "step": 7,
+      "cam": "desk",
+      "from": "就像把前半页撕下来，只拿最后半页去办事，场地事实"
+    },
+    {
+      "take": 2,
+      "scene": "cards",
+      "step": 8,
+      "cam": "desk",
+      "from": "图 1  全文、截断、摘要和按条件检索四类方法，"
+    },
+    {
+      "take": 1,
+      "scene": "summary",
+      "step": 0,
+      "cam": "desk",
+      "from": "摘要短了，条件可能跟着少了"
+    },
+    {
+      "take": 2,
+      "scene": "summary",
+      "step": 1,
+      "cam": "desk",
+      "from": "第三种办法，把历史内容整理成短摘要。"
+    },
+    {
+      "take": 2,
+      "scene": "summary",
+      "step": 2,
+      "cam": "desk",
+      "from": "再写一版漏项摘要，其他要求保留，却删掉坡道条件。"
+    },
+    {
+      "take": 3,
+      "scene": "summary",
+      "step": 3,
+      "cam": "desk",
+      "from": "不妨把两版摘要都交给另一个人，只问「坡道是不是必"
+    },
+    {
+      "take": 1,
+      "scene": "summary",
+      "step": 4,
+      "cam": "desk",
+      "from": "实际系统也可能使用模型压缩历史，但压缩需要决定保"
+    },
+    {
+      "take": 1,
+      "scene": "retrieve",
+      "step": 0,
+      "cam": "desk",
+      "from": "从外部记录把条件读回来"
+    },
+    {
+      "take": 1,
+      "scene": "retrieve",
+      "step": 1,
+      "cam": "desk",
+      "from": "第四种办法，先保留外部原记录，需要做场地建议时，"
+    },
+    {
+      "take": 2,
+      "scene": "retrieve",
+      "step": 2,
+      "cam": "desk",
+      "from": "配套实验按预定规则取回 C1、C2、C3、C6，"
+    },
+    {
+      "take": 2,
+      "scene": "retrieve",
+      "step": 3,
+      "cam": "desk",
+      "from": "取回来之后，还有一件事要核对：这是用户的要求，还"
+    },
+    {
+      "take": 1,
+      "scene": "retrieve",
+      "step": 4,
+      "cam": "desk",
+      "from": "旧活动留下的条件，也要与这次任务分开。"
+    },
+    {
+      "take": 2,
+      "scene": "retrieve",
+      "step": 5,
+      "cam": "desk",
+      "from": "读回后，六张卡又齐了。"
+    },
+    {
+      "take": 1,
+      "scene": "retrieve",
+      "step": 5,
+      "cam": "desk",
+      "from": "两种办法都要检查：轮到给建议时，条件和资料到底有"
+    },
+    {
+      "take": 1,
+      "scene": "use",
+      "step": 0,
+      "cam": "desk",
+      "from": "信息还在，也不等于一定用对"
+    },
+    {
+      "take": 2,
+      "scene": "use",
+      "step": 1,
+      "cam": "desk",
+      "from": "到这里，我们检查的是第一层问题：坡道要求有没有进"
+    },
+    {
+      "take": 2,
+      "scene": "use",
+      "step": 2,
+      "cam": "desk",
+      "from": "研究者也检查过这第二层问题。"
+    },
+    {
+      "take": 2,
+      "scene": "use",
+      "step": 3,
+      "cam": "desk",
+      "from": "在多文档问答等设置中，相关材料位于中间时，常比位"
+    },
+    {
+      "take": 2,
+      "scene": "use",
+      "step": 4,
+      "cam": "desk",
+      "from": "六张卡让我们看见输入中还剩什么。"
+    },
+    {
+      "take": 2,
+      "scene": "use",
+      "step": 5,
+      "cam": "desk",
+      "from": "图 2  「要求被保留」与「要求被正确使用」需要"
+    },
+    {
+      "take": 1,
+      "scene": "challenge",
+      "step": 0,
+      "cam": "desk",
+      "from": "给下一轮留一份可核对的记录"
+    },
+    {
+      "take": 1,
+      "scene": "challenge",
+      "step": 1,
+      "cam": "desk",
+      "from": "现在请把六张卡压成一份短记录，交给另一位读者，只"
+    },
+    {
+      "take": 0,
+      "scene": "exercise",
+      "step": 0,
+      "cam": "desk",
+      "quiet": true
+    },
+    {
+      "take": 2,
+      "scene": "exercise",
+      "step": 1,
+      "cam": "desk",
+      "reveal": true,
+      "from": "如果其中一项无法确定，就回到原卡补充。"
+    },
+    {
+      "take": 2,
+      "scene": "challenge",
+      "step": 2,
+      "cam": "desk",
+      "from": "沿着这份清单，就能把笼统的「又忘了」拆成两个问题"
+    },
+    {
+      "take": 1,
+      "scene": "lab",
+      "step": 0,
+      "cam": "desk",
+      "from": "想看卡片怎样进入程序"
+    },
+    {
+      "take": 2,
+      "scene": "lab",
+      "step": 1,
+      "cam": "desk",
+      "from": "选读：本地实验说明 与 本系列第 3 篇输出 保"
+    },
+    {
+      "take": 1,
+      "scene": "lab",
+      "step": 2,
+      "cam": "desk",
+      "from": "它检查的是「必须有坡道」等固定条件短语是否留下，"
+    },
+    {
+      "take": 2,
+      "scene": "lab",
+      "step": 3,
+      "cam": "desk",
+      "from": "卡片是本例的计数办法。"
+    },
+    {
+      "take": 1,
+      "scene": "lab",
+      "step": 4,
+      "cam": "desk",
+      "from": "本例最后检索回六张卡，未测节省了多少输入空间。"
+    },
+    {
+      "take": 0,
+      "scene": "lab",
+      "step": 5,
+      "cam": "desk",
+      "quiet": true
+    },
+    {
+      "take": 0,
+      "scene": "refs",
+      "step": 0,
+      "cam": "desk",
+      "quiet": true,
+      "refs": true
+    }
+  ]
+}

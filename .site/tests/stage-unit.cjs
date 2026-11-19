@@ -926,4 +926,53 @@ test('不一致的执行数、状态和无效条件标注报错，不补造证�
   for(const v of [null,{}, {...r,tool_calls:1},{...r,max_steps:1},{...r,status:'unknown'},{...r,status:'blocked_repeat'},{...r,suggestion:null},{...r,trace:[{...r.trace[0],executed:false}]}])assert.throws(()=>venueRecords.summarize(v),/记录|状态|次数/);
   for(const changes of [{start:true},{end:25},{start:16,end:15},{ramp:'有'}])assert.throws(()=>venueRecords.evidence({...r,task:{...r.task,...changes}},'V1'),/标注/);
 });
-console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权、解码、存储、方案筛选、编码、关系、证据核对、校园流程、工具记录与多步场地路线算例）`);
+const contextRecords=require('../stage/context-records.cjs');
+test('五组输入对照与源记录一致，保留标志和字符数可复核',()=>{
+  const saved=JSON.parse(fs.readFileSync(path.join(__dirname,'../../Python实现/source/campus_agent_lab/outputs/reference/episode19/result.json'),'utf8'));
+  assert.deepEqual(contextRecords.originalCards,saved.original_cards);assert.deepEqual(contextRecords.comparisons,saved.comparisons);
+  const inspected=contextRecords.comparisons.map(contextRecords.inspect);
+  assert.deepEqual(inspected.map(r=>r.ids.length),[6,3,1,1,6]);
+  assert.deepEqual(inspected.map(r=>r.characters),[83,58,50,37,83]);
+  assert.deepEqual(inspected.map(r=>Object.values(r.present)),[[true,true,true,true],[false,false,false,true],[true,true,true,true],[false,true,true,true],[true,true,true,true]]);
+});
+test('全文、末三卡和按kind取回的顺序与保存输入逐卡一致',()=>{
+  for(const mode of ['full','last_three','retrieve_requirements'])assert.deepEqual(contextRecords.select(contextRecords.originalCards,mode),contextRecords.comparisons.find(c=>c.mode===mode).input_cards);
+  assert.deepEqual(contextRecords.select(contextRecords.originalCards,'last_three').map(c=>c.id),['C4','C5','C6']);
+  assert.deepEqual(contextRecords.select(contextRecords.originalCards,'retrieve_requirements').map(c=>c.id),['C1','C2','C3','C6','C4','C5']);
+});
+test('场地有坡道不能替代硬要求，固定短语检查不冒充语义理解',()=>{
+  const c=contextRecords.originalCards;
+  assert.equal(contextRecords.checkPhrases(c[0].text).ramp_required,true);
+  assert.equal(contextRecords.checkPhrases(c[3].text).ramp_required,false);
+  assert.equal(contextRecords.checkPhrases('场地一定要配备坡道').ramp_required,false);
+  assert.equal(contextRecords.checkPhrases('并非必须有坡道').ramp_required,true);
+  assert.equal(contextRecords.checkPhrases('允许预约').no_booking,false);
+});
+test('两版摘要由人预写，条件保留不等于场地事实齐全或模型用对',()=>{
+  for(const mode of ['manual_summary_good','manual_summary_missing_ramp'])assert.throws(()=>contextRecords.select(contextRecords.originalCards,mode),/人工摘要/);
+  const good=contextRecords.comparisons[2],bad=contextRecords.comparisons[3];
+  assert.equal(good.origin,'人工编写的完整对照摘要');assert.equal(bad.origin,'人工刻意漏掉坡道要求的对照摘要');
+  assert.ok(!good.input_text.includes('周二15—17'));
+  assert.equal(contextRecords.inspect(good).present.ramp_required,true);
+  assert.equal(contextRecords.inspect(bad).present.ramp_required,false);
+  assert.ok(!Object.hasOwn(contextRecords.inspect(good),'modelUsedCorrectly'));
+});
+test('字符计数包括换行，Unicode码点计数不当作token数',()=>{
+  const text='😀'+String.fromCharCode(10)+'字',record={mode:'test',input_cards:[{id:'A',text:'😀'},{id:'B',text:'字'}],input_text:text,characters:3,requirements_present:contextRecords.checkPhrases(text)};
+  assert.equal(contextRecords.inspect(record).characters,3);assert.equal(text.length,4);
+  assert.ok(!Object.hasOwn(contextRecords.inspect(record),'tokens'));
+});
+test('输入对照深层冻结，选择和核对均不修改原卡',()=>{
+  assert.ok(Object.isFrozen(contextRecords.originalCards[0])&&Object.isFrozen(contextRecords.comparisons[0].requirements_present));
+  const before=JSON.stringify(contextRecords.originalCards),selected=contextRecords.select(contextRecords.originalCards,'full');selected[0].text='改写';
+  const result=contextRecords.inspect(contextRecords.comparisons[0]);result.present.ramp_required=false;result.ids.pop();
+  assert.equal(JSON.stringify(contextRecords.originalCards),before);
+  assert.equal(contextRecords.inspect(contextRecords.comparisons[0]).present.ramp_required,true);
+});
+test('不一致的卡片、拼接文字、字符数和保留标志会报错',()=>{
+  const r=contextRecords.comparisons[0];
+  for(const v of [null,{}, {...r,characters:82},{...r,input_text:'不同文本'},{...r,input_cards:[r.input_cards[0],r.input_cards[0]]},{...r,requirements_present:{...r.requirements_present,ramp_required:false}},{...r,requirements_present:{...r.requirements_present,extra:true}}])assert.throws(()=>contextRecords.inspect(v),/记录|卡片|文字|字符数|短语/);
+  for(const c of [null,[null],Array(1),[{id:'X',text:'内容'}],[{id:'X',text:'内容',kind:'other'}]])assert.throws(()=>contextRecords.select(c,'full'),/卡片/);
+  assert.throws(()=>contextRecords.checkPhrases(null),/文本/);
+});
+console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权、解码、存储、方案筛选、编码、关系、证据核对、校园流程、工具记录、多步场地路线与上下文卡片算例）`);
