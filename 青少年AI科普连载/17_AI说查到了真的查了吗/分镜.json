@@ -1,0 +1,295 @@
+{
+  "complete": true,
+  "beats": [
+    {
+      "take": 1,
+      "scene": "cover",
+      "step": 0,
+      "cam": "all",
+      "quiet": true,
+      "from": "AI 说「查到了」，真的查了吗？"
+    },
+    {
+      "take": 3,
+      "scene": "open",
+      "step": 0,
+      "cam": "desk",
+      "from": "「我查到了，图书馆周二下午开放。」"
+    },
+    {
+      "take": 1,
+      "scene": "roles",
+      "step": 0,
+      "cam": "desk",
+      "from": "一句回答，还不是一次查找"
+    },
+    {
+      "take": 2,
+      "scene": "roles",
+      "step": 1,
+      "cam": "desk",
+      "from": "假设学校有一份公告 D1：「本学期图书馆工作日 "
+    },
+    {
+      "take": 3,
+      "scene": "roles",
+      "step": 2,
+      "cam": "desk",
+      "from": "两名同学都答「开放」。"
+    },
+    {
+      "take": 3,
+      "scene": "roles",
+      "step": 3,
+      "cam": "desk",
+      "from": "把查找过程分开看。"
+    },
+    {
+      "take": 3,
+      "scene": "roles",
+      "step": 4,
+      "cam": "desk",
+      "from": "下面用同一份公告演示。"
+    },
+    {
+      "take": 2,
+      "scene": "roles",
+      "step": 3,
+      "cam": "desk",
+      "from": "图 1　四个角色的分工。"
+    },
+    {
+      "take": 1,
+      "scene": "request",
+      "step": 0,
+      "cam": "desk",
+      "from": "把「帮我查一下」写成请求卡"
+    },
+    {
+      "take": 2,
+      "scene": "request",
+      "step": 1,
+      "cam": "desk",
+      "from": "在我们的设计里，公告工具叫「查公告」。"
+    },
+    {
+      "take": 3,
+      "scene": "request",
+      "step": 2,
+      "cam": "desk",
+      "from": "这一次请求可以写成一张卡：请求编号 Q1，工具「"
+    },
+    {
+      "take": 2,
+      "scene": "request",
+      "step": 3,
+      "cam": "desk",
+      "from": "为了让程序认出这张卡，工具名称和条件都要放在约定"
+    },
+    {
+      "take": 2,
+      "scene": "request",
+      "step": 4,
+      "cam": "desk",
+      "from": "这样的分工也见于 CS329Z 的一份教学作业："
+    },
+    {
+      "take": 1,
+      "scene": "gate",
+      "step": 0,
+      "cam": "desk",
+      "from": "先检查卡片，再执行"
+    },
+    {
+      "take": 1,
+      "scene": "gate",
+      "step": 1,
+      "cam": "desk",
+      "from": "执行程序拿到请求，先检查两件事：有没有这个工具，"
+    },
+    {
+      "take": 3,
+      "scene": "gate",
+      "step": 2,
+      "cam": "desk",
+      "from": "例如，模型把工具写成不存在的「查全部资料」，程序"
+    },
+    {
+      "take": 2,
+      "scene": "gate",
+      "step": 3,
+      "cam": "desk",
+      "from": "通过检查后，程序才调用公告工具。"
+    },
+    {
+      "take": 2,
+      "scene": "gate",
+      "step": 4,
+      "cam": "desk",
+      "from": "请求写错了，要改请求；读取失败了，要处理工具故障"
+    },
+    {
+      "take": 1,
+      "scene": "returns",
+      "step": 0,
+      "cam": "desk",
+      "from": "正常返回，也有不同结果"
+    },
+    {
+      "take": 2,
+      "scene": "returns",
+      "step": 1,
+      "cam": "desk",
+      "from": "沿着 Q1 看配套程序的结果：工具正常返回，给出"
+    },
+    {
+      "take": 1,
+      "scene": "returns",
+      "step": 2,
+      "cam": "desk",
+      "from": "这时我们能检查一条完整路线：问题中的设施和时期进"
+    },
+    {
+      "take": 3,
+      "scene": "returns",
+      "step": 3,
+      "cam": "desk",
+      "from": "再把问题换成「明年周二开放吗」。"
+    },
+    {
+      "take": 2,
+      "scene": "returns",
+      "step": 4,
+      "cam": "desk",
+      "from": "合理回答应说明现有资料没有明年安排。"
+    },
+    {
+      "take": 3,
+      "scene": "returns",
+      "step": 5,
+      "cam": "desk",
+      "from": "第三种情形是工具读取失败。"
+    },
+    {
+      "take": 2,
+      "scene": "returns",
+      "step": 6,
+      "cam": "desk",
+      "from": "图 2　查找操作正常结束与是否有适用资料，需要分"
+    },
+    {
+      "take": 1,
+      "scene": "check",
+      "step": 0,
+      "cam": "desk",
+      "from": "有调用记录，也要检查回答"
+    },
+    {
+      "take": 3,
+      "scene": "check",
+      "step": 1,
+      "cam": "desk",
+      "from": "现在再加一个条件：「今天临时检修，周二 15 点"
+    },
+    {
+      "take": 2,
+      "scene": "check",
+      "step": 2,
+      "cam": "desk",
+      "from": "这时，调用记录告诉我们「取回了 D1」，问题还要"
+    },
+    {
+      "take": 3,
+      "scene": "check",
+      "step": 3,
+      "cam": "desk",
+      "from": "可以按三个问题依次检查：有没有有效请求和执行结果"
+    },
+    {
+      "take": 3,
+      "scene": "check",
+      "step": 4,
+      "cam": "desk",
+      "from": "前两步都正常，最后一步仍可能出错。"
+    },
+    {
+      "take": 1,
+      "scene": "challenge",
+      "step": 0,
+      "cam": "desk",
+      "from": "用三张卡做一次判断"
+    },
+    {
+      "take": 3,
+      "scene": "challenge",
+      "step": 1,
+      "cam": "desk",
+      "from": "现在桌上有三张卡。"
+    },
+    {
+      "take": 0,
+      "scene": "exercise",
+      "step": 0,
+      "cam": "desk",
+      "quiet": true
+    },
+    {
+      "take": 1,
+      "scene": "exercise",
+      "step": 1,
+      "cam": "desk",
+      "reveal": true,
+      "from": "依次看这三张卡，就能发现证据一步步增加：承诺之后"
+    },
+    {
+      "take": 3,
+      "scene": "challenge",
+      "step": 2,
+      "cam": "desk",
+      "from": "再把第三张卡换成「零条匹配」或「读取失败」，试着"
+    },
+    {
+      "take": 2,
+      "scene": "challenge",
+      "step": 3,
+      "cam": "desk",
+      "from": "下一期，问题还会复杂一点：查到场地开放时间后，设"
+    },
+    {
+      "take": 1,
+      "scene": "lab",
+      "step": 0,
+      "cam": "desk",
+      "from": "想看程序怎样留下记录"
+    },
+    {
+      "take": 3,
+      "scene": "lab",
+      "step": 1,
+      "cam": "desk",
+      "from": "选读：配套输出中，Q1 正常返回 D1；Q2 正"
+    },
+    {
+      "take": 1,
+      "scene": "lab",
+      "step": 2,
+      "cam": "desk",
+      "from": "代码里的「查公告」叫 search_announ"
+    },
+    {
+      "take": 1,
+      "scene": "lab",
+      "step": 3,
+      "cam": "desk",
+      "from": "名称可以在 本地实验说明 和 保存的输出 中对照"
+    },
+    {
+      "take": 0,
+      "scene": "refs",
+      "step": 0,
+      "cam": "desk",
+      "quiet": true,
+      "refs": true
+    }
+  ]
+}

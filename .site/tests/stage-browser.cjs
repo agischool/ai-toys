@@ -137,6 +137,11 @@ async function contrast(browser, url) {
       await page.reload({ waitUntil: 'load' });
       await sleep(250);
       if (n === Math.min(6, total)) { await page.click('#btn-toc'); await sleep(250); }   // 目录弹窗也量一次
+      // 淡入时的中间透明度不代表最终文字颜色；等实际动画结束，避免固定延时抢在末帧采样。
+      await page.evaluate(async () => {
+        await document.fonts.ready;
+        await Promise.all(document.getElementById('cap').getAnimations().map(a => a.finished));
+      });
       const r = await page.evaluate(() => {
         const parse = c => { const m = c.match(/rgba?\(([^)]+)\)/); if (!m) return null; const a = m[1].split(',').map(Number); return { r: a[0], g: a[1], b: a[2], a: a.length > 3 ? a[3] : 1 }; };
         const lin = v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
@@ -289,6 +294,41 @@ async function gestures(browser, url) {
 /* ------------------------------------------------------------------ */
 /* 4. file:// 直接双击打开：能翻页、没有外部请求、机器人图能解码           */
 /* ------------------------------------------------------------------ */
+/* 实验入口可点击、可聚焦，HTTP 返回字节与本地源文件一致；file:// 保留同一目标。 */
+async function localReferences(page, url, name) {
+  const links = await page.evaluate(() => {
+    const d = JSON.parse(document.getElementById('stage-data').textContent), seen = new Set();
+    return [...document.querySelectorAll('.scene a.hit[href]')].flatMap(a => {
+      const href = a.getAttribute('href');
+      if (/^(?:[a-z][a-z0-9+.-]*:|[?#])/i.test(href) || seen.has(href)) return [];
+      seen.add(href);
+      const host = a.closest('.s'), scene = a.closest('.scene').dataset.scene;
+      const index = d.beats.findIndex(b => b.scene === scene && Number(host.dataset.at) <= b.step &&
+        (host.dataset.until == null || b.step < Number(host.dataset.until)));
+      return [{href, label:a.getAttribute('aria-label'), beat:index + 1}];
+    });
+  });
+  for (const link of links) {
+    check(name + ' 本地入口有对应分镜', link.beat > 0, true);
+    if (!link.beat) continue;
+    await page.goto(url + '#b' + link.beat); await page.reload(); await sleep(500);
+    const anchor = page.getByRole('link', {name:link.label, exact:true});
+    check(name + ' 本地入口可聚焦', await anchor.getAttribute('tabindex'), '0');
+    check(name + ' 本地入口保留原始路径', await anchor.getAttribute('href'), link.href);
+    await anchor.click({trial:true}); await anchor.focus();
+    await page.keyboard.press('Space');
+    check(name + ' 本地链接上空格不翻页', Number((await page.locator('#count').textContent()).split('/')[0]), link.beat);
+    const target = decodeURIComponent(new URL(link.href, pathToFileURL(path.join(SERIAL, folder, '互动版.html')).href).pathname);
+    const valid = target.startsWith(ROOT + path.sep) && fs.existsSync(target) && fs.statSync(target).isFile();
+    check(name + ' 本地入口目标文件存在', valid, true);
+    check(name + ' 本地入口也保留在正文', fs.readFileSync(path.join(SERIAL, folder, '正文.md'), 'utf8').includes('](' + link.href + ')'), true);
+    if (valid && url.startsWith('http')) {
+      const response = await page.request.get(new URL(link.href, url).href);
+      check(name + ' 本地入口响应字节与源文件一致', response.ok() && (await response.body()).equals(fs.readFileSync(target)), true);
+    }
+  }
+}
+
 async function actions(browser, url) {
   console.log('\n[缩略目录、翻面卡与资料来源]');
   for (const name of ['desk', 'mob']) {
@@ -340,6 +380,7 @@ async function actions(browser, url) {
     });
     check(`${name} 目录没有横向溢出`, tocProblems, false);
     await p.keyboard.press('Escape');
+    await localReferences(p, url, name);
     await open(indices.refs);
     const expectedSources = (fs.readFileSync(path.join(SERIAL, folder, '正文.md'), 'utf8').match(/^https:\/\/\S+/gm) || []).length;
     check(`${name} 原始资料链接数量与正文相同`, await p.locator('.scene.is-active a[href^="https://"][tabindex="0"]').count(), expectedSources);
@@ -366,6 +407,7 @@ async function fileOpen(browser) {
   const robot = await p.evaluate(async () => { const i = new Image(); i.src = document.querySelector('.scene image').getAttribute('href'); try { await i.decode(); return [i.naturalWidth, i.naturalHeight]; } catch (e) { return String(e); } });
   check('机器人图片能解码', robot, [480, 439]);
   check('外部请求数', reqs.filter(u => !u.startsWith('file://') && !u.startsWith('data:')).length, 0);
+  await localReferences(p, pathToFileURL(path.join(SERIAL, folder, '互动版.html')).href, 'file://');
   check('报错', errs, []);
   await ctx.close();
 }

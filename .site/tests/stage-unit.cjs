@@ -794,4 +794,69 @@ test('校园规则拒绝无效标注，不猜星期、时间或临时条件',()=
   for(const q of [null,{},'周二三点开门吗',{kind:'other'}])assert.throws(()=>campus.decide(q),/范围/);
   for(const change of [{period:'去年'},{day:0},{day:8},{day:true},{day:2.5},{hour:24},{hour:-1},{hour:15.5},{hour:true},{hour:NaN},{temporary:undefined},{temporary:'false'},{holiday:0}])assert.throws(()=>campus.decide({...campus.cases[0],...change}),/适用期|标注/);
 });
-console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权、解码、存储、方案筛选、编码、关系、证据核对与校园流程算例）`);
+
+/* 字幕只读可见文字；原链接仍由全文和各篇入口保留。 */
+test('正文链接的显示文字进入字幕，URL中的问号句号不参与切句',()=>{
+  const u=parseUnits('# 标题\n\n看 [实验](../../lab/README.md?q=为什么？) 和 [结果](../../result.json)。下一句。','link');
+  assert.deepEqual(u,[{type:'h1',text:'标题'},{type:'p',text:'看 实验 和 结果。'},{type:'p',text:'下一句。'}]);
+  const result=assemble(u,{complete:true,beats:u.map(x=>({take:1,from:x.text}))},'link');
+  assert.equal(result.beats[1].html,'看 实验 和 结果。');
+});
+test('行内代码、标识符和脚注的可见内容保留，不输出Markdown定界符',()=>{
+  const tick=String.fromCharCode(96);
+  const u=parseUnits('检查 '+tick+'tool_error'+tick+'，再看 search_announcements。〔1〕','inline');
+  assert.deepEqual(u,[{type:'p',text:'检查 tool_error，再看 search_announcements。〔1〕'}]);
+  assert.deepEqual(parseUnits(tick+']('+tick+'。','inline'),[{type:'p',text:'](。'}]);
+  assert.match(assemble(u,{complete:true,beats:[{take:1,from:'检查'}]},'inline').beats[0].html,/tool_error.*<span class="cite">〔1〕<\/span>/);
+});
+test('链接显示文字中的问句和标签后的引号按现有边界完整消费',()=>{
+  const u=parseUnits('看 [为什么？这样做。](https://example.org/a_(b))“继续。”','inline');
+  assert.deepEqual(u.map(x=>x.text),['看 为什么？','这样做。','“继续。”']);
+  assert.throws(()=>parseUnits('看 [未完成](地址','bad'),/Markdown/);
+});
+test('不支持的强调和图片混排仍报错，HTML可见文字在字幕中转义',()=>{
+  for(const text of ['看 *强调*。','看 **加粗**。','看 _强调_。','看 ![图](a.png)。'])assert.throws(()=>parseUnits(text,'bad'),/Markdown/);
+  const u=parseUnits('看 [<script>alert(1)</script>](https://example.org)。','inline');
+  const html=assemble(u,{complete:true,beats:[{take:1,from:'看'}]},'inline').beats[0].html;
+  assert.ok(html.includes('&lt;script&gt;')&&!html.includes('<script>'));
+});
+test('前16篇生成物在扩展字幕解析后仍逐字节一致',()=>{
+  const {compileOne}=require('../render_stage.cjs');
+  const root=path.join(__dirname,'../../青少年AI科普连载');
+  for(const folder of fs.readdirSync(root).filter(n=>/^(0[1-9]|1[0-6])_/.test(n)))assert.equal(compileOne(folder).html,fs.readFileSync(path.join(root,folder,'互动版.html'),'utf8'),folder);
+});
+const records=require('../stage/tool-records.cjs');
+test('配套四份记录分别是有材料、零匹配、未执行与故障',()=>{
+  assert.deepEqual(records.cases.map(c=>records.summarize(c.event)),[
+    {id:'Q1',executed:true,status:'ok',matches:1,outcome:'found'},
+    {id:'Q2',executed:true,status:'ok',matches:0,outcome:'empty'},
+    {id:'Q3',executed:false,status:'invalid_args',matches:null,outcome:'invalid'},
+    {id:'Q4',executed:true,status:'tool_error',matches:null,outcome:'failed'}]);
+});
+test('画面使用的记录完整保留配套JSON中的请求、结果与回答',()=>{
+  const saved=JSON.parse(fs.readFileSync(path.join(__dirname,'../../Python实现/source/campus_agent_lab/outputs/reference/episode17/result.json'),'utf8'));
+  assert.deepEqual(records.cases,saved.cases);
+  const c=records.cases[0];assert.equal(c.event.args.facility,c.event.result[0].facility);assert.equal(c.event.args.period,c.event.result[0].period);assert.equal(c.event.result[0].publisher,'图书馆');
+});
+test('空列表是正常完成；读取失败不伪造零份结果',()=>{
+  assert.equal(records.summarize(records.cases[1].event).status,'ok');
+  assert.equal(records.summarize(records.cases[1].event).matches,0);
+  assert.equal(records.summarize(records.cases[3].event).matches,null);
+  const unknown={...records.cases[2].event,status:'unknown_tool',tool:'查全部资料',result:'工具不存在'};
+  assert.deepEqual(records.summarize(unknown),{id:'Q3',executed:false,status:'unknown_tool',matches:null,outcome:'invalid'});
+});
+test('取回公告不代表覆盖问题条件，记录摘要不判断答案正确性',()=>{
+  const event=JSON.parse(JSON.stringify(records.cases[0].event));event.result[0].period='别的时期';
+  assert.equal(records.summarize(event).outcome,'found');
+  assert.ok(!Object.hasOwn(records.summarize(event),'answerCorrect'));
+});
+test('记录冻结，摘要与调用方均不改写保存的执行事实',()=>{
+  assert.ok(Object.isFrozen(records.cases)&&Object.isFrozen(records.cases[0].event.args)&&Object.isFrozen(records.cases[0].event.result[0]));
+  const event=JSON.parse(JSON.stringify(records.cases[0].event)),before=JSON.stringify(event),out=records.summarize(event);out.matches=99;
+  assert.equal(JSON.stringify(event),before);assert.equal(records.summarize(event).matches,1);
+});
+test('无效记录与互相矛盾的执行状态会报错，不补全事实',()=>{
+  const good=records.cases[0].event;
+  for(const e of [null,{}, {...good,request_id:''},{...good,args:[]},{...good,executed:1},{...good,executed:false},{...good,result:null},{...good,result:Array(1)},{...good,result:[{doc_id:'D1'}]}, {...records.cases[2].event,executed:true},{...records.cases[3].event,executed:false},{...records.cases[3].event,result:[]},{...good,status:'other'}])assert.throws(()=>records.summarize(e),/记录|状态/);
+});
+console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权、解码、存储、方案筛选、编码、关系、证据核对、校园流程与工具记录算例）`);

@@ -16,6 +16,20 @@ const units = require('./serial_units.json');
 /* ---------------- 正文 → 文字单元 ---------------- */
 
 /* 单元类型：h1 标题 / h2 小节标题 / p 正文句 / cap 图说句。图片行与「资料来源」不进分镜。 */
+/* 字幕消费可见文字；链接目标保留在全文，场景也可提供独立入口。
+ * 用 Markdown 解析器识别链接及行内代码，避免 URL 标点参与中文切句。
+ * 其余富文本仍显式拒绝，防止悄悄遗漏格式承载的内容。 */
+const inlineMd = new MarkdownIt({ html: false, linkify: false, typographer: false });
+function inlineText(line, file) {
+  if (!/[*_`]|\]\(/.test(line)) return line;
+  const tokens = inlineMd.parseInline(line, {})[0].children || [];
+  if (tokens.some(t => !['text', 'code_inline', 'link_open', 'link_close'].includes(t.type)) ||
+      tokens.some(t => t.type === 'text' && t.content.includes(']('))) {
+    throw new Error(file + ': 互动版暂不支持这行里的 Markdown 标记：' + line.slice(0, 30));
+  }
+  return tokens.filter(t => t.type === 'text' || t.type === 'code_inline').map(t => t.content).join('');
+}
+
 function parseUnits(source, file) {
   const body = source.split(/^## 资料来源\s*$/m)[0];
   const out = [];
@@ -28,8 +42,7 @@ function parseUnits(source, file) {
     else if ((m = line.match(/^## (.+)$/))) out.push({ type: 'h2', text: m[1] });
     else if ((m = line.match(/^\*([^*]+)\*$/))) splitSentences(m[1]).forEach(s => out.push({ type: 'cap', text: s }));
     else {
-      if (/[*_`]|\]\(/.test(line)) throw new Error(`${file}: 互动版暂不支持这行里的 Markdown 标记：${line.slice(0, 30)}`);
-      splitSentences(line).forEach(s => out.push({ type: 'p', text: s }));
+      splitSentences(inlineText(line, file)).forEach(s => out.push({ type: 'p', text: s }));
     }
   }
   return out;
