@@ -1,0 +1,337 @@
+{
+  "complete": true,
+  "beats": [
+    {
+      "from": "大模型越大，就一定越好吗？",
+      "take": 1,
+      "scene": "cover",
+      "step": 0,
+      "cam": "all",
+      "quiet": true
+    },
+    {
+      "from": "假设班里要选一个 AI 答题助手。",
+      "take": 3,
+      "scene": "open",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "如果必须很快拿到结果，或每次只能花有限的",
+      "take": 2,
+      "scene": "open",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "有人会问：“能不能直接选最大的？”",
+      "take": 2,
+      "scene": "open",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "阅读提示：先分清参数、数据与计算量，再把",
+      "take": 2,
+      "scene": "open",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "大到底量的是什么",
+      "take": 1,
+      "scene": "scales",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "这里说的模型，就是收到题目、经过计算再给",
+      "take": 1,
+      "scene": "scales",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "模型里可以通过练习调整的数叫参数，数一数",
+      "take": 2,
+      "scene": "scales",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "训练数据量是另一个尺度。",
+      "take": 3,
+      "scene": "scales",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "计算量记录的是训练做了多少数值运算。",
+      "take": 2,
+      "scene": "scales",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "预算有限时，增加参数还是多用训练数据，就",
+      "take": 1,
+      "scene": "scales",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "把选择条件算到底",
+      "take": 1,
+      "scene": "compare",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "训练规模之外，还有日常使用的选择。",
+      "take": 2,
+      "scene": "compare",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "这里的成本单位叫“点”，不对应真实价格，",
+      "take": 1,
+      "scene": "compare",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "A答对80题，耗时1秒，成本1点；B答对",
+      "take": 3,
+      "scene": "compare",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "现在要求一次成本不超过3点，同时5秒内返",
+      "take": 1,
+      "scene": "compare",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "在这个演示里，A的1点、1秒都合格；B的",
+      "take": 2,
+      "scene": "compare",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "如果在这些条件下优先选择答对题数更多的方",
+      "take": 1,
+      "scene": "compare",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "把时间要求收紧为2秒，预算仍是3点。",
+      "take": 2,
+      "scene": "compare",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "标准答案没有变化，资源限制一变，合适的选",
+      "take": 2,
+      "scene": "compare",
+      "step": 8,
+      "cam": "desk"
+    },
+    {
+      "from": "从B换到C，在这组虚构成绩里，只多答对2",
+      "take": 1,
+      "scene": "compare",
+      "step": 9,
+      "cam": "desk"
+    },
+    {
+      "from": "这是否值得，取决于多答对的是什么题、错误",
+      "take": 2,
+      "scene": "compare",
+      "step": 10,
+      "cam": "desk"
+    },
+    {
+      "from": "现实中的等待时间还会变化。",
+      "take": 2,
+      "scene": "compare",
+      "step": 11,
+      "cam": "desk"
+    },
+    {
+      "from": "比较服务时，应尽量统一这些条件，还要留意",
+      "take": 2,
+      "scene": "compare",
+      "step": 12,
+      "cam": "desk"
+    },
+    {
+      "from": "资源还花在看不见的地方",
+      "take": 1,
+      "scene": "resources",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "模型运行需要存储参数和中间结果，也需要设",
+      "take": 2,
+      "scene": "resources",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "训练一次的成本，与长期服务很多次请求的成",
+      "take": 1,
+      "scene": "resources",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "工程方法能帮助利用设备。",
+      "take": 2,
+      "scene": "resources",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "它说明训练任务可以怎样安排，不代表把聊天",
+      "take": 1,
+      "scene": "resources",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "实际选型时，还应拿接近用途的新例子检查：",
+      "take": 2,
+      "scene": "resources",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "回到开头，选择C还是A、B，要先把要求补",
+      "take": 2,
+      "scene": "resources",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "自己改一项要求",
+      "take": 1,
+      "scene": "challenge",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "仍用图中的三个方案，把条件改为「成本不超",
+      "take": 1,
+      "scene": "challenge",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "take": 0,
+      "scene": "exercise",
+      "step": 0,
+      "cam": "desk",
+      "quiet": true
+    },
+    {
+      "from": "先逐条筛选：A、B 虽能按时返回，答对题",
+      "take": 1,
+      "scene": "exercise",
+      "step": 1,
+      "cam": "desk",
+      "reveal": true
+    },
+    {
+      "from": "因此这组条件下没有合格方案，不能为了选出",
+      "take": 2,
+      "scene": "challenge",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "选读：训练规模与预测表现有什么关系",
+      "take": 1,
+      "scene": "research",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "2020年，Kaplan等人比较了不同规",
+      "take": 3,
+      "scene": "research",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "论文用来衡量预测表现的指标叫交叉熵损失。",
+      "take": 1,
+      "scene": "research",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "这个名字先不用急着背。",
+      "take": 3,
+      "scene": "research",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "它衡量语言预测表现，不是给诚实程度或所有",
+      "take": 1,
+      "scene": "research",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "有了这样的经验曲线，开发者可以估计增加资",
+      "take": 3,
+      "scene": "research",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "2022年的 Chinchilla 研究",
+      "take": 1,
+      "scene": "research",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "论文表6报告，在每题前提供5个示例的设置",
+      "take": 2,
+      "scene": "research",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "这项结果说明，较少参数配合不同训练投入，",
+      "take": 1,
+      "scene": "research",
+      "step": 8,
+      "cam": "desk"
+    },
+    {
+      "from": "它并没有证明小模型总胜过大模型；两者训练",
+      "take": 1,
+      "scene": "research",
+      "step": 9,
+      "cam": "desk"
+    },
+    {
+      "take": 0,
+      "scene": "refs",
+      "step": 0,
+      "cam": "desk",
+      "refs": true,
+      "quiet": true
+    }
+  ]
+}

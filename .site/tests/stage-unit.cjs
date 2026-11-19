@@ -529,6 +529,48 @@ test('换选吗产生另一上下文，接回片段不修改原数组',()=>{
   assert.deepEqual(before,['今天','下雨']);
   for(const args of [[[],'了'],[before,''],[[1],'了']]) assert.throws(()=>decoder.append(...args),/文字/);
 });
+const selection=require('../stage/selection.cjs');
+test('预算与时限筛选后优先答对数，缩短时限会改变方案',()=>{
+  assert.deepEqual(selection.evaluate().feasible,['A','B']);
+  assert.equal(selection.evaluate().best,'B');
+  const fast=selection.evaluate(selection.scenarios.fast);
+  assert.deepEqual(fast.feasible,['A']); assert.equal(fast.best,'A');
+});
+test('所有条件同时成立才合格，无解不放宽约束',()=>{
+  const r=selection.evaluate(selection.scenarios.challenge);
+  assert.deepEqual(r.feasible,[]); assert.equal(r.best,null);
+  assert.deepEqual(r.rows.map(c=>c.failed),[['题数不足'],['题数不足'],['超时']]);
+  assert.deepEqual(r.limits,{budget:6,seconds:5,minCorrect:91});
+});
+test('成本时限题数包括等号，失败原因可以同时出现',()=>{
+  assert.deepEqual(selection.evaluate({budget:3,seconds:4,minCorrect:90}).feasible,['B']);
+  assert.deepEqual(selection.evaluate({budget:6,seconds:8,minCorrect:92}).feasible,['C']);
+  assert.deepEqual(selection.evaluate({budget:0,seconds:0,minCorrect:100}).rows[0].failed,['超预算','超时','题数不足']);
+});
+test('B到C差值和反向差值正确，返回副本不改原数据',()=>{
+  assert.deepEqual(selection.delta(),{correct:2,seconds:4,cost:3});
+  assert.deepEqual(selection.delta('C','B'),{correct:-2,seconds:-4,cost:-3});
+  const r=selection.evaluate(); r.rows[0].correct=0; r.limits.budget=999;
+  assert.equal(selection.candidates[0].correct,80); assert.equal(selection.scenarios.standard.budget,3);
+  assert.ok(Object.isFrozen(selection.candidates[0]));
+  assert.throws(()=>selection.delta('D'),/未知方案/);
+});
+test('筛选拒绝无效条件',()=>{
+  for(const limits of [null,{},...[-1,Infinity,NaN,'3'].map(budget=>({budget,seconds:5,minCorrect:0})),...[-1,Infinity,NaN,'5'].map(seconds=>({budget:3,seconds,minCorrect:0})),...[-1,101,1.5,'90'].map(minCorrect=>({budget:3,seconds:5,minCorrect}))]) assert.throws(()=>selection.evaluate(limits),/条件/);
+});
+test('论文结果与虚构方案分开，并保留比较条件',()=>{
+  const r=selection.research;
+  assert.deepEqual(r.models.map(m=>[m.name,m.parametersYi,m.accuracy]),[['Chinchilla',700,67.6],['Gopher',2800,60]]);
+  assert.deepEqual(r.conditions,{benchmark:'MMLU',tasks:57,shots:5,compute:'近似相同训练计算预算',source:'表 6'});
+  assert.ok(r.models.every(m=>m.training.length>0 && Object.isFrozen(m)));
+});
+test('前向流水各小批依次经过三段，返回矩阵互不共享',()=>{
+  const rows=selection.forwardSchedule();
+  assert.equal(rows.length,3); assert.ok(rows.every(r=>r.length===5));
+  rows.forEach(r=>assert.deepEqual(r.filter(v=>v!==null),[0,1,2]));
+  for(let b=0;b<3;b++) assert.deepEqual(rows.map(r=>r.indexOf(b)),[b,b+1,b+2]);
+  rows[0][0]=99; assert.equal(selection.forwardSchedule()[0][0],0);
+});
 const storage=require('../stage/storage.cjs');
 test('五格依次写入红蓝黄，第四五格为空且原数组不变',()=>{
   const d=storage.demonstration();
@@ -567,4 +609,4 @@ test('五格存储拒绝非法地址、形状与内容，不隐式扩容或换�
   for(const memory of [[],[null,null],Array(5),[1,null,null,null,null]]) assert.throws(()=>storage.read(memory,1),/存储/);
   for(const v of ['',null,1]) assert.throws(()=>storage.write(storage.initial,2,v),/内容/);
 });
-console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权、解码与存储算例）`);
+console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权、解码、存储与方案筛选算例）`);
