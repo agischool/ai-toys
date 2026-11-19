@@ -286,4 +286,34 @@ test('同样九个像素，单通道为 9 个值，RGB 为 27 个值', () => {
   assert.equal(pixels.channelCount(3,3,1), 9);
   assert.equal(pixels.channelCount(3,3,3), 27);
 });
-console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木与像素算例）`);
+const parameter = require('../stage/parameter.cjs');
+test('固定输入与目标时，b 从 0 到 3 的预测、逐题误差和总损失正确', () => {
+  const expected = [
+    [[1,2,3], [2,2,2], 6], [[2,3,4], [1,1,1], 3],
+    [[3,4,5], [0,0,0], 0], [[4,5,6], [1,1,1], 3]
+  ];
+  expected.forEach(([predictions, errors, loss], b) => {
+    const result = parameter.trial(b);
+    assert.deepEqual(result.rows.map(r => r.prediction), predictions);
+    assert.deepEqual(result.rows.map(r => r.error), errors);
+    assert.equal(result.loss, loss);
+    assert.deepEqual(result.rows.map(r => r.input), [1,2,3]);
+    assert.deepEqual(result.rows.map(r => r.target), [3,4,5]);
+  });
+});
+test('改成预测值作为目标虽得零损失，但没有完成原任务，原数据不变', () => {
+  assert.equal(parameter.trial(0, parameter.inputs).loss, 0);
+  assert.equal(parameter.trial(0).loss, 6);
+  assert.deepEqual(parameter.targets, [3,4,5]);
+  assert.ok(Object.isFrozen(parameter.inputs) && Object.isFrozen(parameter.targets));
+});
+test('确定参数后可计算新输入，但不改变训练目标', () => {
+  assert.equal(parameter.predict(4,2), 6);
+  assert.deepEqual(parameter.trial(2).rows.map(r => r.target), [3,4,5]);
+});
+test('手动试数支持有限小数，拒绝无效参数和目标', () => {
+  assert.equal(parameter.trial(1.5).loss, 1.5);
+  for (const b of [NaN, Infinity, '2']) assert.throws(() => parameter.trial(b), /有限数/);
+  for (const answers of [[3,4], [3,4,NaN]]) assert.throws(() => parameter.trial(2,answers), /目标/);
+});
+console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素与参数算例）`);

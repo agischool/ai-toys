@@ -1,0 +1,386 @@
+{
+  "complete": true,
+  "beats": [
+    {
+      "from": "AI 答错以后，到底改了什么？",
+      "take": 1,
+      "scene": "cover",
+      "step": 0,
+      "cam": "all",
+      "quiet": true
+    },
+    {
+      "from": "一个程序第一次答错，试了几轮，终于答",
+      "take": 2,
+      "scene": "open",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "前面把图片拆成了数字。",
+      "take": 2,
+      "scene": "open",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "下面的输入和目标答案始终不动，只调整",
+      "take": 1,
+      "scene": "open",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "先给模型留一个可调的位置",
+      "take": 1,
+      "scene": "model",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "假设我们有三个样本：输入1，目标答案",
+      "take": 2,
+      "scene": "model",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "人一眼便能发现，每个答案都比输入大2",
+      "take": 2,
+      "scene": "model",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "我们只规定它的计算形式：",
+      "take": 2,
+      "scene": "model",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "b就是留给训练调整的参数。",
+      "take": 2,
+      "scene": "model",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "旋钮一动，三个预测一起改变；它不能对",
+      "take": 1,
+      "scene": "model",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "这里，人先选定“加上同一个数”的模型",
+      "take": 2,
+      "scene": "model",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "第一次把b设为0。",
+      "take": 2,
+      "scene": "model",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "模型给出的这三个数叫预测值。",
+      "take": 2,
+      "scene": "model",
+      "step": 8,
+      "cam": "desk"
+    },
+    {
+      "from": "图1  在这个小模型中，输入与目标不",
+      "take": 1,
+      "scene": "model",
+      "step": 9,
+      "cam": "desk"
+    },
+    {
+      "from": "给错误一个能计算的数",
+      "take": 1,
+      "scene": "loss",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "三个预测都比目标小2。",
+      "take": 2,
+      "scene": "loss",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "我们约定：先算每个预测与目标相差多少",
+      "take": 1,
+      "scene": "loss",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "比如预测1、目标3，差距是2；预测5",
+      "take": 1,
+      "scene": "loss",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "这种只计距离、不计方向的差距，叫绝对",
+      "take": 1,
+      "scene": "loss",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "把三个样本的绝对误差相加，就得到总绝",
+      "take": 2,
+      "scene": "loss",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "选哪种算法，要在比较前约定；实际任务",
+      "take": 1,
+      "scene": "loss",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "当b＝0时，三个预测是1、2、3，对",
+      "take": 1,
+      "scene": "loss",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "接着把b改成1，再算一遍。",
+      "take": 2,
+      "scene": "loss",
+      "step": 8,
+      "cam": "desk"
+    },
+    {
+      "from": "同样的样本，同样的比较办法，这个参数",
+      "take": 1,
+      "scene": "loss",
+      "step": 9,
+      "cam": "desk"
+    },
+    {
+      "from": "再把b改成2。",
+      "take": 2,
+      "scene": "loss",
+      "step": 10,
+      "cam": "desk"
+    },
+    {
+      "from": "图2  总绝对误差从6降到3，再降到",
+      "take": 1,
+      "scene": "loss",
+      "step": 11,
+      "cam": "desk"
+    },
+    {
+      "from": "图2里的损失一路下降，改动的却始终只",
+      "take": 2,
+      "scene": "loss",
+      "step": 12,
+      "cam": "desk"
+    },
+    {
+      "from": "预测和损失随着参数变化，并没有人为了",
+      "take": 1,
+      "scene": "loss",
+      "step": 13,
+      "cam": "desk"
+    },
+    {
+      "from": "再试一个图外的值：如果继续把b从2拧",
+      "take": 1,
+      "scene": "exercise",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "此时预测变成4、5、6，各比目标大1",
+      "take": 1,
+      "scene": "exercise",
+      "step": 1,
+      "cam": "desk",
+      "reveal": true
+    },
+    {
+      "from": "这里合适的是b＝2，而不是把参数越调",
+      "take": 2,
+      "scene": "loss",
+      "step": 14,
+      "cam": "desk"
+    },
+    {
+      "from": "如果反过来，把目标3、4、5改成最初",
+      "take": 1,
+      "scene": "loss",
+      "step": 15,
+      "cam": "desk"
+    },
+    {
+      "from": "可那等于换了比较标准，并没有完成原来",
+      "take": 2,
+      "scene": "loss",
+      "step": 16,
+      "cam": "desk"
+    },
+    {
+      "from": "从手动试数到自动更新",
+      "take": 1,
+      "scene": "search",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "刚才我们先后手动试数，再比较损失，选",
+      "take": 2,
+      "scene": "search",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "参数很多时，人没法逐个拧旋钮，训练程",
+      "take": 1,
+      "scene": "search",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "梯度下降是常用方法之一：先计算损失对",
+      "take": 1,
+      "scene": "search",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "步子并非越大越好，更新也不保证每一步",
+      "take": 1,
+      "scene": "search",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "这种自动调整比刚才手动试数复杂，但基",
+      "take": 1,
+      "scene": "search",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "当b＝2确定下来，遇到一个新的输入4",
+      "take": 1,
+      "scene": "search",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "此时只是用已有参数计算，没有再拿目标",
+      "take": 2,
+      "scene": "search",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "零误差还没有回答所有问题",
+      "take": 1,
+      "scene": "bounds",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "在这个人为设置的小例子里，“统一加2",
+      "take": 2,
+      "scene": "bounds",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "即使三个样本全对，也还不能证明所有新",
+      "take": 1,
+      "scene": "bounds",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "输入4得到6，目前只是模型的预测；放",
+      "take": 1,
+      "scene": "bounds",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "模型形式、样本和适用范围，都限制着这",
+      "take": 1,
+      "scene": "bounds",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "损失还代表了人选择的评价方式。",
+      "take": 2,
+      "scene": "bounds",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "可在某些任务里，两种错误的代价并不相",
+      "take": 1,
+      "scene": "bounds",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "比如为活动估算座位，少估会让人无座，",
+      "take": 1,
+      "scene": "bounds",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "只让一个数字变小，未必照顾到了所有实",
+      "take": 1,
+      "scene": "bounds",
+      "step": 8,
+      "cam": "desk"
+    },
+    {
+      "from": "现在，“从错误中学习”有了一个具体含",
+      "take": 1,
+      "scene": "bounds",
+      "step": 9,
+      "cam": "desk"
+    },
+    {
+      "from": "至于什么算错、哪一种错误更严重，仍要",
+      "take": 1,
+      "scene": "bounds",
+      "step": 10,
+      "cam": "desk"
+    },
+    {
+      "from": "看到损失变小，可以继续问：它是怎样变",
+      "take": 1,
+      "scene": "bounds",
+      "step": 11,
+      "cam": "desk"
+    },
+    {
+      "take": 0,
+      "scene": "refs",
+      "step": 0,
+      "cam": "desk",
+      "refs": true,
+      "quiet": true
+    }
+  ]
+}
