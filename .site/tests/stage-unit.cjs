@@ -1058,6 +1058,59 @@ test('全文链接识别修正后前19篇互动版仍与已交付文件逐字节
     assert.equal(result.html,fs.readFileSync(path.join(serial,name,'互动版.html'),'utf8'),name);
   }
 });
+const cacheRecords=require('../stage/cache-records.cjs');
+test('教学六七八位置保持旧前缀和连续位置，与保存十二token输入分开',()=>{
+  const six=cacheRecords.prefix(6),seven=cacheRecords.prefix(7),eight=cacheRecords.prefix(8);
+  assert.equal(six.map(r=>r.token).join(''),'<abce|');
+  assert.deepEqual(seven.slice(0,6),six);assert.deepEqual(eight.slice(0,7),seven);
+  assert.deepEqual(seven[6],{token:'a',position:6});assert.deepEqual(eight[7],{token:'b',position:7});
+  assert.equal(Array.from(cacheRecords.measuredInput).length,12);assert.notEqual(cacheRecords.measuredInput,eight.map(r=>r.token).join(''));
+});
+test('单个投影的累计位置数逐项相加，十二前缀为78和12，四前缀为10和4',()=>{
+  for(let n=1;n<=30;n++){
+    const c=cacheRecords.projections(n);assert.equal(c.full,Array.from({length:n},(_,i)=>i+1).reduce((a,b)=>a+b,0));assert.equal(c.incremental,n);
+  }
+  assert.deepEqual(cacheRecords.projections(12),{full:78,incremental:12,ratio:6.5});
+  assert.deepEqual(cacheRecords.projections(4),{full:10,incremental:4,ratio:2.5});
+  assert.ok(!Object.hasOwn(cacheRecords.projections(12),'speedup'));
+});
+test('空间同时包含K和V，净字节随长度、宽度与数值字节数分别变化',()=>{
+  assert.equal(cacheRecords.storage(1).perPosition,256);assert.equal(cacheRecords.storage(12).total,3072);
+  assert.equal(cacheRecords.storage(4).total,1024);assert.equal(cacheRecords.storage(0).total,0);
+  assert.equal(cacheRecords.storage(4,8,4).total,256);assert.equal(cacheRecords.storage(4).components,2);
+  assert.ok(!Object.hasOwn(cacheRecords.storage(12),'totalSystemMemory'));
+});
+test('首选相同仍可能其他候选分数不同，不能用argmax替代逐项核对',()=>{
+  const c=cacheRecords.counterexample,r=cacheRecords.compare(c.full,c.cached);
+  assert.equal(r.sameTop,true);assert.deepEqual(r.errors,[0,3,1]);assert.equal(r.maxError,3);assert.equal(r.withinTolerance,false);
+  const small=cacheRecords.compare([2,1],[2+1e-12,1],1e-10);assert.equal(small.withinTolerance,true);
+  assert.equal(cacheRecords.compare([2,1],[2+1e-12,1],0).withinTolerance,false);
+  assert.equal(cacheRecords.compare([-4,-2],[-4,-2],0).maxError,0);
+});
+test('36组比较与正负例误差来自保存的KV对照，不生成新的模型成绩',()=>{
+  const source=JSON.parse(fs.readFileSync(path.join(__dirname,'../../Python实现/source/continuation_mechanisms/outputs/reference/result.json'),'utf8')).kv_cache;
+  assert.deepEqual(cacheRecords.record,source);const r=cacheRecords.summary();
+  assert.equal(r.comparisons,36);assert.equal(r.maxError,7.105427357601002e-15);assert.ok(r.maxError<r.tolerance);
+  assert.equal(r.wrongPositionError,20.32918307056546);assert.ok(r.wrongPositionError>r.tolerance);
+  assert.equal(r.counts.full,78);assert.equal(r.space.total,source.final_kv_cache_bytes_per_model);
+  assert.ok(!Object.hasOwn(r,'generationQuality'));assert.ok(!Object.hasOwn(r,'wallTime'));
+});
+test('记录深层冻结，前缀与摘要独立返回，不修改调用方候选数组',()=>{
+  assert.ok(Object.isFrozen(cacheRecords.record.cache_components.K));assert.ok(Object.isFrozen(cacheRecords.counterexample.full));
+  const p=cacheRecords.prefix(7);p[0].token='X';assert.equal(cacheRecords.prefix(7)[0].token,'<');
+  const a=cacheRecords.summary();a.space.total=0;assert.equal(cacheRecords.summary().space.total,3072);
+  const x=[4,2],y=[4,1];cacheRecords.compare(x,y);assert.deepEqual(x,[4,2]);assert.deepEqual(y,[4,1]);
+});
+test('无效长度、候选分数、容差与超出安全整数的计数拒绝执行',()=>{
+  for(const n of [0,-1,1.5,true,NaN,Number.MAX_SAFE_INTEGER])assert.throws(()=>cacheRecords.projections(n));
+  for(const args of [[-1],[2,0],[2,4,0],[Number.MAX_SAFE_INTEGER]])assert.throws(()=>cacheRecords.storage(...args));
+  for(const n of [0,9,true])assert.throws(()=>cacheRecords.prefix(n));
+  for(const args of [[[],[]],[[1],[1,2]],[[NaN],[1]],[Array(1),[1]],[[1],[1],-1],[[1],[1],Infinity]])assert.throws(()=>cacheRecords.compare(...args));
+});
+test('形状、位置计数、净空间或误差与保存记录不一致时会报错',()=>{
+  const r=cacheRecords.record;
+  for(const change of [null,{}, {...r,prefixes_per_model:11},{...r,full_prefix_kv_token_projections:156},{...r,final_kv_cache_bytes_per_model:1536},{...r,float64_max_logit_error:NaN},{...r,cache_components:{...r.cache_components,bytes_per_scalar:undefined}},{...r,cache_components:{...r.cache_components,V:{tokens:12,width:8}}}])assert.throws(()=>cacheRecords.summary(change));
+});
 const sftRecords=require('../stage/sft-records.cjs');
 test('复制样本11个教学token对应10个下一片预测，回答含结束符',()=>{
   const a=sftRecords.summary();assert.equal(a.sample,'<abcd|abcd>');assert.equal(a.rows.length,10);
@@ -1110,4 +1163,4 @@ test('无效token、计分起点、因果位置与保存数值会报错',()=>{
   for(const [p,n] of [[-1,10],[10,10],[true,10],[0,0],[0,1.5]])assert.throws(()=>sftRecords.visible(p,n),/无效/);
   for(const saved of [null,{}, {...sftRecords.record,selected_target_positions:[6,7,8,9]},{...sftRecords.record,one_step_loss_before:NaN},{...sftRecords.record,masked_logit_gradient_max:-1}])assert.throws(()=>sftRecords.summary(saved),/不一致|无效/);
 });
-console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权、解码、存储、方案筛选、编码、关系、证据核对、校园流程、工具记录、多步场地路线、上下文卡片、任务验收与训练计分算例）`);
+console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权、解码、存储、方案筛选、编码、关系、证据核对、校园流程、工具记录、多步场地路线、上下文卡片、任务验收、训练计分与缓存计数算例）`);

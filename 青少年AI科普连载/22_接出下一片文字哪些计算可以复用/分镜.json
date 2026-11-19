@@ -1,0 +1,316 @@
+{
+  "complete": true,
+  "beats": [
+    {
+      "take": 1,
+      "scene": "cover",
+      "step": 0,
+      "cam": "all",
+      "quiet": true,
+      "from": "接出下一片文字时，哪些计算可以复用？"
+    },
+    {
+      "take": 3,
+      "scene": "open",
+      "step": 0,
+      "cam": "desk",
+      "from": "玩文字接龙时，新接上的字会成为下一步的线索。"
+    },
+    {
+      "take": 3,
+      "scene": "open",
+      "step": 1,
+      "cam": "desk",
+      "from": "上一期，我们圈出了抄写题里哪些位置要打分。"
+    },
+    {
+      "take": 2,
+      "scene": "open",
+      "step": 2,
+      "cam": "desk",
+      "from": "想想草稿纸：上一轮的算式里，哪些结果可以圈起来，下一"
+    },
+    {
+      "take": 1,
+      "scene": "prefix",
+      "step": 0,
+      "cam": "desk",
+      "from": "在末尾添一个字母，前面的计算会变吗"
+    },
+    {
+      "take": 2,
+      "scene": "prefix",
+      "step": 1,
+      "cam": "desk",
+      "from": "想象一个极小的复制任务：给模型 <abce|，让它接"
+    },
+    {
+      "take": 1,
+      "scene": "prefix",
+      "step": 2,
+      "cam": "desk",
+      "from": "第一轮，模型处理这六个位置，给下一片文字算分。"
+    },
+    {
+      "take": 1,
+      "scene": "prefix",
+      "step": 3,
+      "cam": "desk",
+      "from": "选出 a 以后，把它接回输入，第二轮面对七个位置；接"
+    },
+    {
+      "take": 3,
+      "scene": "prefix",
+      "step": 4,
+      "cam": "desk",
+      "from": "到目前为止已经有的这段文字，叫前缀。"
+    },
+    {
+      "take": 3,
+      "scene": "prefix",
+      "step": 5,
+      "cam": "desk",
+      "from": "这个小模型采用一种逐片生成的结构，叫因果 Trans"
+    },
+    {
+      "take": 2,
+      "scene": "prefix",
+      "step": 6,
+      "cam": "desk",
+      "from": "这里要保持模型参数、前缀和位置规则不变，计算设置也要"
+    },
+    {
+      "take": 2,
+      "scene": "prefix",
+      "step": 7,
+      "cam": "desk",
+      "from": "图 1  两条路线使用相同参数和前缀。"
+    },
+    {
+      "take": 1,
+      "scene": "cache",
+      "step": 0,
+      "cam": "desk",
+      "from": "把前面算过的两组数留下"
+    },
+    {
+      "take": 3,
+      "scene": "cache",
+      "step": 1,
+      "cam": "desk",
+      "from": "看图 1 里的 K 和 V。"
+    },
+    {
+      "take": 1,
+      "scene": "cache",
+      "step": 2,
+      "cam": "desk",
+      "from": "把旧位置的键和值存下来供下一轮使用，就叫键值缓存（K"
+    },
+    {
+      "take": 1,
+      "scene": "cache",
+      "step": 3,
+      "cam": "desk",
+      "from": "缓存路线先处理六个输入位置，把各位置的 K、V 存下"
+    },
+    {
+      "take": 1,
+      "scene": "cache",
+      "step": 4,
+      "cam": "desk",
+      "from": "下一轮只接入新来的 a，计算这个新位置的 Q、K、V"
+    },
+    {
+      "take": 2,
+      "scene": "cache",
+      "step": 5,
+      "cam": "desk",
+      "from": "新 Q 仍要与允许读取的历史 K 计算注意力分数，再"
+    },
+    {
+      "take": 2,
+      "scene": "cache",
+      "step": 6,
+      "cam": "desk",
+      "from": "缓存名里只有 K、V，也是这个原因：下一轮要用新位置"
+    },
+    {
+      "take": 1,
+      "scene": "verify",
+      "step": 0,
+      "cam": "desk",
+      "from": "留下来的数，还能不能接着用"
+    },
+    {
+      "take": 4,
+      "scene": "verify",
+      "step": 1,
+      "cam": "desk",
+      "from": "如果两条路线最终都选了 a，就说明缓存正确吗？"
+    },
+    {
+      "take": 2,
+      "scene": "verify",
+      "step": 2,
+      "cam": "desk",
+      "from": "本仓库用小 Transformer 实际作了这个比较"
+    },
+    {
+      "take": 2,
+      "scene": "verify",
+      "step": 3,
+      "cam": "desk",
+      "from": "还有一个很容易漏掉的细节：新 token 的位置要接"
+    },
+    {
+      "take": 3,
+      "scene": "verify",
+      "step": 4,
+      "cam": "desk",
+      "from": "配套实验故意把新位置编号重置，再作比较，两条路线的分"
+    },
+    {
+      "take": 1,
+      "scene": "counts",
+      "step": 0,
+      "cam": "desk",
+      "from": "用十二个位置算一笔账"
+    },
+    {
+      "take": 4,
+      "scene": "counts",
+      "step": 1,
+      "cam": "desk",
+      "from": "来核对配套实验里的一个计数。"
+    },
+    {
+      "take": 1,
+      "scene": "counts",
+      "step": 2,
+      "cam": "desk",
+      "from": "完整前缀路线每次从头做 K 投影，处理的位置次数是："
+    },
+    {
+      "take": 3,
+      "scene": "counts",
+      "step": 3,
+      "cam": "desk",
+      "from": "缓存路线每次只为新增的一个位置做 K 投影，合计 1"
+    },
+    {
+      "take": 4,
+      "scene": "counts",
+      "step": 4,
+      "cam": "desk",
+      "from": "历史位置的投影确实减少了。"
+    },
+    {
+      "take": 2,
+      "scene": "counts",
+      "step": 5,
+      "cam": "desk",
+      "from": "图 2  位置计数与 K/V 数组空间的教学算例。"
+    },
+    {
+      "take": 1,
+      "scene": "space",
+      "step": 0,
+      "cam": "desk",
+      "from": "计算少重复，空间却要多留"
+    },
+    {
+      "take": 2,
+      "scene": "space",
+      "step": 1,
+      "cam": "desk",
+      "from": "这次小模型是单层、单头，每个 K、V 都有 16 个"
+    },
+    {
+      "take": 3,
+      "scene": "space",
+      "step": 2,
+      "cam": "desk",
+      "from": "增加到十二个位置，K/V 数组净占 12×256＝3"
+    },
+    {
+      "take": 1,
+      "scene": "space",
+      "step": 3,
+      "cam": "desk",
+      "from": "可以自己检查：如果只比较长度为 1 至 4 的前缀，"
+    },
+    {
+      "take": 0,
+      "scene": "exercise",
+      "step": 0,
+      "cam": "desk",
+      "quiet": true
+    },
+    {
+      "take": 3,
+      "scene": "exercise",
+      "step": 1,
+      "cam": "desk",
+      "reveal": true,
+      "from": "答案是完整前缀 1＋2＋3＋4＝10，缓存 4 次；"
+    },
+    {
+      "take": 2,
+      "scene": "space",
+      "step": 4,
+      "cam": "desk",
+      "from": "最后，缓存也没有把这段话变成跨会话记忆。"
+    },
+    {
+      "take": 2,
+      "scene": "space",
+      "step": 5,
+      "cam": "desk",
+      "from": "这次我们看到一种取舍：留住一部分中间结果，少做重复计"
+    },
+    {
+      "take": 1,
+      "scene": "lab",
+      "step": 0,
+      "cam": "desk",
+      "from": "选读：配套程序具体比较了什么"
+    },
+    {
+      "take": 2,
+      "scene": "lab",
+      "step": 1,
+      "cam": "desk",
+      "from": "程序固定一段 12 个 token 的输入，依次比较"
+    },
+    {
+      "take": 2,
+      "scene": "lab",
+      "step": 2,
+      "cam": "desk",
+      "from": "比较的是下一 token 的原始候选分数，也叫 lo"
+    },
+    {
+      "take": 2,
+      "scene": "lab",
+      "step": 3,
+      "cam": "desk",
+      "from": "这些检查没有测续写质量，也没有测设备上的实际耗时。"
+    },
+    {
+      "take": 0,
+      "scene": "lab",
+      "step": 4,
+      "cam": "desk",
+      "quiet": true
+    },
+    {
+      "take": 0,
+      "scene": "refs",
+      "step": 0,
+      "cam": "desk",
+      "quiet": true,
+      "refs": true
+    }
+  ]
+}
