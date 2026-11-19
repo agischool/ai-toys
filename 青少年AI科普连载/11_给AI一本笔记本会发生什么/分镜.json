@@ -1,0 +1,337 @@
+{
+  "complete": true,
+  "beats": [
+    {
+      "from": "给 AI 一本笔记本，它就不会忘了吗？",
+      "take": 1,
+      "scene": "cover",
+      "step": 0,
+      "cam": "all",
+      "quiet": true
+    },
+    {
+      "from": "刚告诉一台机器“红、蓝、黄”，过一会儿再",
+      "take": 2,
+      "scene": "open",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "给它加一个能读写的存储区，先记下再查找，",
+      "take": 2,
+      "scene": "open",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "上一期沿着已有输入，追到下一片文字。",
+      "take": 2,
+      "scene": "open",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "借助外部存储，任务信息不必全放在同一份内",
+      "take": 2,
+      "scene": "open",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "阅读提示：先看五格存储的读写，再看加权读",
+      "take": 2,
+      "scene": "open",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "先分清三种会变化的东西",
+      "take": 1,
+      "scene": "types",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "模型参数是在训练中调整的一组数值，影响怎",
+      "take": 1,
+      "scene": "types",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "本篇介绍的记忆网络里，有一部分神经网络负",
+      "take": 2,
+      "scene": "types",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "外部记忆，是另设的一块能按位置或内容查找",
+      "take": 2,
+      "scene": "types",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "参数、内部状态、外部存储都保存数字，作用",
+      "take": 2,
+      "scene": "types",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "五个格子走完一次读写",
+      "take": 1,
+      "scene": "store",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "看图1，把存储区想成五个编号抽屉。",
+      "take": 2,
+      "scene": "store",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "take": 0,
+      "scene": "store",
+      "step": 2,
+      "cam": "desk",
+      "quiet": true
+    },
+    {
+      "take": 0,
+      "scene": "store",
+      "step": 3,
+      "cam": "desk",
+      "quiet": true
+    },
+    {
+      "from": "按规则依次把“红”“蓝”“黄”写进第1、",
+      "take": 2,
+      "scene": "store",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "第一次读取指定第2格。",
+      "take": 2,
+      "scene": "store",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "读取后，五格内容仍然是“红、蓝、黄、空、",
+      "take": 1,
+      "scene": "store",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "接着，程序把“绿”写到第2格，并约定覆盖",
+      "take": 3,
+      "scene": "store",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "再去读第2格，拿到的就是“绿”。",
+      "take": 2,
+      "scene": "store",
+      "step": 8,
+      "cam": "desk"
+    },
+    {
+      "from": "图1把写入、读取、覆盖、再读取这四步排在",
+      "take": 2,
+      "scene": "store",
+      "step": 9,
+      "cam": "desk"
+    },
+    {
+      "from": "这段手写规则演示了“存在哪里”与“存了什",
+      "take": 2,
+      "scene": "store",
+      "step": 10,
+      "cam": "desk"
+    },
+    {
+      "from": "保存着也可能取错",
+      "take": 1,
+      "scene": "errors",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "还有一种错误，和“忘掉”不一样：要求读第",
+      "take": 2,
+      "scene": "errors",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "多加几个空抽屉，并不能直接修好找错位置的",
+      "take": 1,
+      "scene": "errors",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "另一种情况是想找回覆盖前的“蓝”。",
+      "take": 2,
+      "scene": "errors",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "存多少、怎样找、旧记录怎么处理，是不同的",
+      "take": 1,
+      "scene": "errors",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "“长期保存”也不是外部记忆一词自带的承诺",
+      "take": 3,
+      "scene": "errors",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "从指定一格到分配读写权重",
+      "take": 1,
+      "scene": "weights",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "2014年的神经图灵机，简称 NTM，把",
+      "take": 2,
+      "scene": "weights",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "NTM 与五格演示的差别，在于读写不必每",
+      "take": 2,
+      "scene": "weights",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "训练时，程序可以计算哪些参数稍作调整会让",
+      "take": 1,
+      "scene": "weights",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "为看清“连续”，再把两个位置的内容简化为",
+      "take": 1,
+      "scene": "weights",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "返回值是2×0.75＋10×0.25＝4",
+      "take": 1,
+      "scene": "weights",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "4是组合结果，不是“随机挑中某一格”之后",
+      "take": 2,
+      "scene": "weights",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "这次算式只展示加权读取。",
+      "take": 3,
+      "scene": "weights",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "几种常被混在一起的记忆",
+      "take": 1,
+      "scene": "kinds",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "检索增强生成，也叫 RAG，常把问题用于",
+      "take": 2,
+      "scene": "kinds",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "它与外部记忆共享“从参数之外取得信息”的",
+      "take": 1,
+      "scene": "kinds",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "联网搜索还涉及外部信息源是否及时、可信；",
+      "take": 2,
+      "scene": "kinds",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "所以，遇到“AI 怎么又忘了”，可以把问",
+      "take": 2,
+      "scene": "kinds",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "换一张请求卡试试",
+      "take": 1,
+      "scene": "task",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "在覆盖完成后的五格存储中，先读第 3 格",
+      "take": 2,
+      "scene": "exercise",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "自检时可把五格重新写一遍：红、绿、黄、空",
+      "take": 1,
+      "scene": "task",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "前两次读取依次得到黄和绿；最后的请求无法",
+      "take": 1,
+      "scene": "exercise",
+      "step": 1,
+      "cam": "desk",
+      "reveal": true
+    },
+    {
+      "from": "这分别检查了读取顺序和历史记录是否保留，",
+      "take": 1,
+      "scene": "task",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "take": 0,
+      "scene": "refs",
+      "step": 0,
+      "cam": "desk",
+      "refs": true,
+      "quiet": true
+    }
+  ]
+}

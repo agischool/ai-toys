@@ -529,4 +529,42 @@ test('换选吗产生另一上下文，接回片段不修改原数组',()=>{
   assert.deepEqual(before,['今天','下雨']);
   for(const args of [[[],'了'],[before,''],[[1],'了']]) assert.throws(()=>decoder.append(...args),/文字/);
 });
-console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权与解码算例）`);
+const storage=require('../stage/storage.cjs');
+test('五格依次写入红蓝黄，第四五格为空且原数组不变',()=>{
+  const d=storage.demonstration();
+  assert.deepEqual(d.red,['红',null,null,null,null]);
+  assert.deepEqual(d.blue,['红','蓝',null,null,null]);
+  assert.deepEqual(d.written,['红','蓝','黄',null,null]);
+  assert.deepEqual(storage.initial,[null,null,null,null,null]);
+  assert.ok(Object.isFrozen(storage.initial));
+});
+test('读取不取走内容，读空格得到空值',()=>{
+  const d=storage.demonstration(),before=[...d.written];
+  assert.equal(storage.read(d.written,2),'蓝');
+  assert.equal(storage.read(d.written,2),'蓝');
+  assert.equal(storage.read(d.written,4),null);
+  assert.deepEqual(d.written,before);
+});
+test('覆盖只改第2格，先读3再读2得到黄绿而没有留下旧蓝',()=>{
+  const d=storage.demonstration();
+  assert.deepEqual(d.overwritten,['红','绿','黄',null,null]);
+  assert.equal(d.first,'蓝'); assert.equal(d.second,'绿'); assert.equal(d.wrong,'黄');
+  assert.deepEqual(d.requests,[{address:3,value:'黄'},{address:2,value:'绿'}]);
+  assert.equal(d.written[1],'蓝');
+  assert.ok(!d.overwritten.includes('蓝'));
+});
+test('加权读取组合为4，既不是2也不是10，逐项乘积可核对',()=>{
+  const d=storage.weightedRead();
+  assert.deepEqual(d.values,[2,10]);assert.deepEqual(d.weights,[.75,.25]);
+  assert.deepEqual(d.products,[1.5,2.5]);assert.equal(d.result,4);
+  assert.ok(!d.values.includes(d.result));
+});
+test('五格存储拒绝非法地址、形状与内容，不隐式扩容或换格',()=>{
+  for(const n of [0,6,1.5,NaN,'2']) {
+    assert.throws(()=>storage.read(storage.initial,n),/格号/);
+    assert.throws(()=>storage.write(storage.initial,n,'绿'),/格号/);
+  }
+  for(const memory of [[],[null,null],Array(5),[1,null,null,null,null]]) assert.throws(()=>storage.read(memory,1),/存储/);
+  for(const v of ['',null,1]) assert.throws(()=>storage.write(storage.initial,2,v),/内容/);
+});
+console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权、解码与存储算例）`);
