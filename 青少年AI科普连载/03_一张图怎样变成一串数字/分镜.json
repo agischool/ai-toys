@@ -1,0 +1,435 @@
+{
+  "complete": true,
+  "beats": [
+    {
+      "from": "一张图片，怎样变成一串数字？",
+      "take": 1,
+      "scene": "cover",
+      "step": 0,
+      "cam": "all",
+      "quiet": true
+    },
+    {
+      "from": "照片上没有算式，只有猫的耳朵、胡须和",
+      "take": 2,
+      "scene": "open",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "因为数字照片可以用一张网格来表示。",
+      "take": 2,
+      "scene": "open",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "把照片放大时常见到的小色块，就能帮助",
+      "take": 1,
+      "scene": "open",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "先把猫放在一边。",
+      "take": 2,
+      "scene": "open",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "九个格子装下一个十字",
+      "take": 1,
+      "scene": "binary",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "在白底上画一个黑色十字，放进3行3列",
+      "take": 1,
+      "scene": "binary",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "先订规则：黑格记作1，白格记作0。",
+      "take": 1,
+      "scene": "binary",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "于是，第一行是0、1、0，第二行是1",
+      "take": 2,
+      "scene": "binary",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "再从左到右读完一行，接着读下一行，就",
+      "take": 1,
+      "scene": "binary",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "一共3×3＝9个数，每个数都有自己的",
+      "take": 1,
+      "scene": "binary",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "但“有几个黑格”还不够。",
+      "take": 2,
+      "scene": "binary",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "行列关系保存的正是位置：数字的数量不",
+      "take": 1,
+      "scene": "binary",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "图1  按同一规则编码与还原。",
+      "take": 2,
+      "scene": "binary",
+      "step": 8,
+      "cam": "desk"
+    },
+    {
+      "from": "现在试着往回读图1。",
+      "take": 2,
+      "scene": "binary",
+      "step": 9,
+      "cam": "desk"
+    },
+    {
+      "from": "遇到1涂黑，遇到0留白，十字就回来了",
+      "take": 1,
+      "scene": "binary",
+      "step": 10,
+      "cam": "desk"
+    },
+    {
+      "from": "如果把第5个数，也就是中心的1改成0",
+      "take": 1,
+      "scene": "binary",
+      "step": 11,
+      "cam": "desk"
+    },
+    {
+      "from": "重新涂格子，十字中央便出现一个白洞。",
+      "take": 2,
+      "scene": "binary",
+      "step": 12,
+      "cam": "desk"
+    },
+    {
+      "from": "要还原成功，还得带上读数的约定。",
+      "take": 1,
+      "scene": "binary",
+      "step": 13,
+      "cam": "desk"
+    },
+    {
+      "from": "同样九个数，排成3行3列，还是1行9",
+      "take": 1,
+      "scene": "binary",
+      "step": 14,
+      "cam": "desk"
+    },
+    {
+      "from": "尺寸、顺序和数值含义，缺一项都可能读",
+      "take": 1,
+      "scene": "binary",
+      "step": 15,
+      "cam": "desk"
+    },
+    {
+      "from": "现在可以试画两个新图案：仍按3行3列",
+      "take": 1,
+      "scene": "exercise",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "两张图都有三个黑格，第一张从左上连到",
+      "take": 1,
+      "scene": "exercise",
+      "step": 1,
+      "cam": "desk",
+      "reveal": true
+    },
+    {
+      "from": "如果只记“有三个黑格”，就分不清它们",
+      "take": 1,
+      "scene": "binary",
+      "step": 16,
+      "cam": "desk"
+    },
+    {
+      "from": "黑白之间还能放进多少灰",
+      "take": 1,
+      "scene": "gray",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "刚才每格只有黑白两种选择，云朵的明暗",
+      "take": 2,
+      "scene": "gray",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "一种常见的8位灰度表示，用0到255",
+      "take": 1,
+      "scene": "gray",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "这里0代表黑，255代表白，128代",
+      "take": 1,
+      "scene": "gray",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "注意：它与前面特意约定的“1黑0白”",
+      "take": 1,
+      "scene": "gray",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "数字的意义来自表示规则。〔2〕",
+      "take": 1,
+      "scene": "gray",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "“8位”说的是八个二进制位，可以想成",
+      "take": 1,
+      "scene": "gray",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "因此，一共有2×2×2×2×2×2×",
+      "take": 1,
+      "scene": "gray",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "它告诉我们有多少档可选，不能把128",
+      "take": 1,
+      "scene": "gray",
+      "step": 8,
+      "cam": "desk"
+    },
+    {
+      "from": "彩色通常怎样记录？",
+      "take": 2,
+      "scene": "rgb",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "采用每通道8位的常见表示时，三者各取",
+      "take": 1,
+      "scene": "rgb",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "这里讲的是光的颜色组合，不能照搬混颜",
+      "take": 1,
+      "scene": "rgb",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "图2  灰度示例用0表示黑、255表",
+      "take": 1,
+      "scene": "rgb",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "这样，3×3的 RGB 小图，仅像素",
+      "take": 1,
+      "scene": "rgb",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "数值从每格一个变成每格三个，行列位置",
+      "take": 1,
+      "scene": "rgb",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "实际处理还可能使用透明度通道或其他颜",
+      "take": 1,
+      "scene": "rgb",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "这些数还能用来比较相邻位置。",
+      "take": 1,
+      "scene": "rgb",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "这里暗一点，那里亮一点，中间可能有一",
+      "take": 1,
+      "scene": "rgb",
+      "step": 8,
+      "cam": "desk"
+    },
+    {
+      "from": "不过，找出亮暗变化，还不等于认出了猫",
+      "take": 1,
+      "scene": "rgb",
+      "step": 9,
+      "cam": "desk"
+    },
+    {
+      "from": "缩小以后细节去了哪里",
+      "take": 1,
+      "scene": "shrink",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "如果把画面缩成很少的像素，会怎样？",
+      "take": 2,
+      "scene": "shrink",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "假设左上和右下为黑色0，另两格为白色",
+      "take": 1,
+      "scene": "shrink",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "平均数是（0＋255＋255＋0）÷",
+      "take": 1,
+      "scene": "shrink",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "若把黑白位置全部交换，平均结果仍是1",
+      "take": 1,
+      "scene": "shrink",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "两种不同排列变成了同一个数。",
+      "take": 1,
+      "scene": "shrink",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "只凭这个灰格，无法确定原来黑格在哪一",
+      "take": 1,
+      "scene": "shrink",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "这是我们设定的简化缩小方法，不代表所",
+      "take": 1,
+      "scene": "shrink",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "这里说的分辨率，指画面有多少行、多少",
+      "take": 2,
+      "scene": "shrink",
+      "step": 8,
+      "cam": "desk"
+    },
+    {
+      "from": "照片是否清晰，还受对焦、噪声等因素影",
+      "take": 1,
+      "scene": "shrink",
+      "step": 9,
+      "cam": "desk"
+    },
+    {
+      "from": "数字有了含义还得另学",
+      "take": 1,
+      "scene": "meaning",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "再看那个十字：九个数足够让我们重画它",
+      "take": 2,
+      "scene": "meaning",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "存下图案和判断含义，需要分别检查。",
+      "take": 1,
+      "scene": "meaning",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "图像分类模型会对这些数字继续计算，利",
+      "take": 1,
+      "scene": "meaning",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "若关键细节在这些步骤中已经丢失，仅凭",
+      "take": 1,
+      "scene": "meaning",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "本文讲的是方便处理的像素表示，图片文",
+      "take": 2,
+      "scene": "meaning",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "图像变成数字，靠的是明确的表示规则。",
+      "take": 3,
+      "scene": "meaning",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "take": 0,
+      "scene": "refs",
+      "step": 0,
+      "cam": "desk",
+      "refs": true,
+      "quiet": true
+    }
+  ]
+}

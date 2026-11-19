@@ -259,4 +259,31 @@ test('颜色规则与轮廓规则在换色样本上逐项分歧，原训练数�
   assert.deepEqual(blocks.supplemented.slice(0, 8), blocks.training);
   assert.deepEqual(blocks.supplemented.slice(8), [{ color: 'blue', shape: 'circle' }, { color: 'red', shape: 'square' }]);
 });
-console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木算例）`);
+const pixels = require('../stage/pixels.cjs');
+test('九格按行编码，中心一格改变只影响第五位', () => {
+  assert.equal(pixels.encode(pixels.cross), '010111010');
+  assert.equal(pixels.encode(pixels.hollow), '010101010');
+  assert.deepEqual(pixels.rows(pixels.cross, 3), [[0,1,0],[1,1,1],[0,1,0]]);
+  assert.deepEqual(pixels.cross.flatMap((v,i) => v !== pixels.hollow[i] ? [i] : []), [4]);
+});
+test('两个对角线黑格数量相同但位置不同，练习答案可还原', () => {
+  assert.equal(pixels.encode(pixels.down), '100010001');
+  assert.equal(pixels.encode(pixels.up), '001010100');
+  assert.equal(pixels.down.reduce((a,b) => a+b), 3);
+  assert.equal(pixels.up.reduce((a,b) => a+b), 3);
+  assert.notDeepEqual(pixels.rows(pixels.down,3), pixels.rows(pixels.up,3));
+});
+test('交换黑白对角线仍平均为 127.5，取整后同为 128，原数组不变', () => {
+  for (const values of [pixels.checker, pixels.inverse]) {
+    const before = [...values];
+    assert.equal(pixels.mean(values), 127.5);
+    assert.equal(pixels.shrink(values), 128);
+    assert.deepEqual(values, before);
+  }
+  assert.notDeepEqual(pixels.checker, pixels.inverse);
+});
+test('同样九个像素，单通道为 9 个值，RGB 为 27 个值', () => {
+  assert.equal(pixels.channelCount(3,3,1), 9);
+  assert.equal(pixels.channelCount(3,3,3), 27);
+});
+console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木与像素算例）`);
