@@ -1,0 +1,372 @@
+{
+  "complete": true,
+  "beats": [
+    {
+      "from": "读到故事结尾，AI 怎样记住开头的红",
+      "take": 1,
+      "scene": "cover",
+      "step": 0,
+      "cam": "all",
+      "quiet": true
+    },
+    {
+      "from": "“小岚带着红伞出门。",
+      "take": 2,
+      "scene": "open",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "现在问：伞是什么颜色？",
+      "take": 2,
+      "scene": "open",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "假设你一次只能看一句，看完就要盖住，",
+      "take": 2,
+      "scene": "open",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "先用一张便签看清问题",
+      "take": 1,
+      "scene": "notes",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "先用便签作类比。",
+      "take": 2,
+      "scene": "notes",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "第一步，读到“小岚带着红伞出门”，便",
+      "take": 1,
+      "scene": "notes",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "第二步，读到“天渐渐阴下来”；第三步",
+      "take": 1,
+      "scene": "notes",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "如果规定每次都擦掉旧记录，只留下最新",
+      "take": 1,
+      "scene": "notes",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "换一个规则：便签专门保留伞的颜色，遇",
+      "take": 1,
+      "scene": "notes",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "第一步记下“红”，第二步仍是“红”，",
+      "take": 1,
+      "scene": "notes",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "第四步问“伞是什么颜色”，凭留下的记",
+      "take": 1,
+      "scene": "notes",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "图1  便签类比中，天气覆盖旧记录会",
+      "take": 1,
+      "scene": "notes",
+      "step": 8,
+      "cam": "desk"
+    },
+    {
+      "from": "图1中，两条路线读到的故事完全一样。",
+      "take": 3,
+      "scene": "notes",
+      "step": 9,
+      "cam": "desk"
+    },
+    {
+      "from": "不过，“保留颜色”这条规则是人特意安",
+      "take": 2,
+      "scene": "notes",
+      "step": 10,
+      "cam": "desk"
+    },
+    {
+      "from": "若问题换成“路上有没有风”，只有一个",
+      "take": 1,
+      "scene": "notes",
+      "step": 11,
+      "cam": "desk"
+    },
+    {
+      "from": "便签怎样换成数值状态",
+      "take": 1,
+      "scene": "state",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "有一种处理先后顺序的模型叫循环神经网",
+      "take": 3,
+      "scene": "state",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "“红伞”并不真的写在某张便签上，也未",
+      "take": 2,
+      "scene": "state",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "每一步都用到当前输入和上一刻的状态。",
+      "take": 2,
+      "scene": "state",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "怎样用新文字更新这组数，由网络的结构",
+      "take": 2,
+      "scene": "state",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "把四步展开画，像是四个单元排成一列；",
+      "take": 1,
+      "scene": "state",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "训练要调整参数，使更新方式更适合任务",
+      "take": 1,
+      "scene": "state",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "就像同一个记事规则可以处理红伞故事，",
+      "take": 1,
+      "scene": "state",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "这样，模型即使只在当前一步接收新输入",
+      "take": 1,
+      "scene": "state",
+      "step": 8,
+      "cam": "desk"
+    },
+    {
+      "from": "但线索要经过一次次更新。",
+      "take": 2,
+      "scene": "state",
+      "step": 9,
+      "cam": "desk"
+    },
+    {
+      "from": "循环连接提供了传递路径，但不保证模型",
+      "take": 1,
+      "scene": "state",
+      "step": 10,
+      "cam": "desk"
+    },
+    {
+      "from": "给状态通道装上可调的门",
+      "take": 1,
+      "scene": "gates",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "LSTM 是循环神经网络的一种，中文",
+      "take": 3,
+      "scene": "gates",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "可以把“门”想成调节比例的旋钮，图2",
+      "take": 2,
+      "scene": "gates",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "不同时间、状态中的不同数，都可以得到",
+      "take": 1,
+      "scene": "gates",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "先把其中的乘加关系缩成一道示意算式，",
+      "take": 1,
+      "scene": "gates",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "新状态＝旧状态×保留系数＋新写入量",
+      "take": 1,
+      "scene": "gates",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "代入之后，新状态＝2×0.5＋1＝2",
+      "take": 1,
+      "scene": "gates",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "新的2里，有1来自保留下的旧状态，另",
+      "take": 2,
+      "scene": "gates",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "图2  简化乘加关系中，新旧结果都为",
+      "take": 2,
+      "scene": "gates",
+      "step": 8,
+      "cam": "desk"
+    },
+    {
+      "from": "仍取旧状态2和新写入量1，把保留系数",
+      "take": 1,
+      "scene": "gates",
+      "step": 9,
+      "cam": "desk"
+    },
+    {
+      "from": "只改这一项，旧状态的影响就从1变为1",
+      "take": 2,
+      "scene": "gates",
+      "step": 10,
+      "cam": "desk"
+    },
+    {
+      "from": "完整 LSTM 还要计算写入内容，并",
+      "take": 2,
+      "scene": "gates",
+      "step": 11,
+      "cam": "desk"
+    },
+    {
+      "from": "门值由当前输入、先前状态和已学参数计",
+      "take": 2,
+      "scene": "gates",
+      "step": 12,
+      "cam": "desk"
+    },
+    {
+      "from": "“门”是对数值调节的比喻。〔3〕",
+      "take": 1,
+      "scene": "gates",
+      "step": 13,
+      "cam": "desk"
+    },
+    {
+      "from": "能传过去也可能慢慢变弱",
+      "take": 1,
+      "scene": "fade",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "沿用刚才的简化规则，假设后续三步都没",
+      "take": 2,
+      "scene": "fade",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "信息的影响可以在反复更新中衰减。",
+      "take": 2,
+      "scene": "fade",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "颜色变了，便签也该更新吗",
+      "take": 1,
+      "scene": "revised",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "回到人为设计的便签规则。",
+      "take": 2,
+      "scene": "revised",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "如果便签永远保留第一次写下的“红”，",
+      "take": 1,
+      "scene": "exercise",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "按这段故事，现在应记“蓝”。",
+      "take": 3,
+      "scene": "exercise",
+      "step": 1,
+      "cam": "desk",
+      "reveal": true
+    },
+    {
+      "from": "这仍是便签练习，并不表示真实 LST",
+      "take": 1,
+      "scene": "revised",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "LSTM 让保留与更新更容易分开控制",
+      "take": 2,
+      "scene": "revised",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "所以，这里的“记忆”是一份不断更新的",
+      "take": 3,
+      "scene": "revised",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "take": 0,
+      "scene": "refs",
+      "step": 0,
+      "cam": "desk",
+      "refs": true,
+      "quiet": true
+    }
+  ]
+}

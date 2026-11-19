@@ -324,6 +324,37 @@ test('残差算例拒绝非有限数，固定输入保持不可变', () => {
   assert.throws(()=>residual.change(2,NaN),/有限数/);
   assert.ok(Object.isFrozen(residual.inputs));
 });
+const recurrent = require('../stage/recurrent.cjs');
+test('相同故事下，最新一句规则覆盖颜色，保留颜色规则不受天气覆盖', () => {
+  assert.deepEqual(recurrent.trace('latest').map(r=>r.state), ['红伞','阴天','风']);
+  assert.deepEqual(recurrent.trace('color').map(r=>r.state), ['红','红','红']);
+});
+test('换蓝伞后应更新颜色；永远保留第一次的红会得到不同记录', () => {
+  const events=[...recurrent.story,recurrent.exchange];
+  assert.equal(recurrent.trace('color',events).at(-1).state,'蓝');
+  assert.equal(recurrent.trace('first',events).at(-1).state,'红');
+  assert.deepEqual(recurrent.story.map(e=>e.text), ['带红伞','天转阴','刮起风']);
+  assert.ok(Object.isFrozen(recurrent.story) && recurrent.story.every(Object.isFrozen));
+});
+test('简化状态更新同时计入旧状态保留量和新写入量', () => {
+  assert.deepEqual(recurrent.update(2,.5,1), {previous:2,retain:.5,write:1,kept:1,next:2});
+  near(recurrent.update(2,.9,1).kept,1.8);
+  near(recurrent.update(2,.9,1).next,2.8);
+  assert.equal(recurrent.update(2,0,1).next,1);
+  assert.equal(recurrent.update(2,1,1).next,3);
+});
+test('无新写入时连续保留一半得到 2、1、0.5、0.25', () => {
+  assert.deepEqual(recurrent.decay(2,.5), [2,1,.5,.25]);
+  assert.deepEqual(recurrent.decay(2,1), [2,2,2,2]);
+  assert.deepEqual(recurrent.decay(2,.5,0), [2]);
+});
+test('状态算例拒绝非法系数、非有限数、未知规则及过多步数', () => {
+  for(const f of [-.1,1.1,NaN,Infinity,'0.5']) assert.throws(()=>recurrent.update(2,f,1),/有限数/);
+  assert.throws(()=>recurrent.update(NaN,.5,1),/有限数/);
+  assert.throws(()=>recurrent.update(2,.5,Infinity),/有限数/);
+  assert.throws(()=>recurrent.trace('unknown'),/未知/);
+  for(const n of [-1,.5,21]) assert.throws(()=>recurrent.decay(2,.5,n),/步数/);
+});
 const windows = require('../stage/window.cjs');
 test('同一竖线模板对竖线、黑点、横线、全黑分别响应 3、1、1、3', () => {
   assert.deepEqual([windows.vertical, windows.dot, windows.horizontal, windows.black].map(v => windows.response(v).score), [3,1,1,3]);
@@ -392,4 +423,4 @@ test('手动试数支持有限小数，拒绝无效参数和目标', () => {
   for (const b of [NaN, Infinity, '2']) assert.throws(() => parameter.trial(b), /有限数/);
   for (const answers of [[3,4], [3,4,NaN]]) assert.throws(() => parameter.trial(2,answers), /目标/);
 });
-console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗与残差算例）`);
+console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差与状态算例）`);
