@@ -158,6 +158,8 @@ def build():
                 local_number = i + 2 - unit['from']
                 body += '<p class="unit-description">' + link(page, series_page, '本系列目录 · ' + unit['name']) + '</p>'
                 body += '<div class="actions">' + link(page, directory / '公众号_排版.html', '阅读 / 复制排版正文', 'button') + link(page, directory / '正文.md', '查看正文 Markdown', 'button secondary') + '</div><p class="hint">打开排版页后点击「选中正文」，再复制到公众号正文编辑区。</p>'
+                if (directory / '互动版.html').is_file():
+                    body += '<div class="actions">' + link(page, directory / '互动版.html', '打开互动版', 'button') + '</div>'
             body += '<div class="section-head"><h2>发布文案</h2><span class="meta">点击按钮复制纯文本</span></div><div class="copy-grid">'
             body += copy_panel('标题', post['title'], 0) + copy_panel(field, post['fields'][field], 1) + '</div>'
             if field == '正文':

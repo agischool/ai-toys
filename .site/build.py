@@ -11,6 +11,7 @@ PYTHON = ROOT / 'Python实现'
 
 def main():
     subprocess.run(["node", str(ROOT / ".site/render_articles.cjs")], check=True)
+    subprocess.run(["node", str(ROOT / ".site/render_stage.cjs")], check=True)
     subprocess.run([sys.executable, str(PYTHON / 'scripts/build.py')], check=True)
     pages = build_library.build()
     subprocess.run(["node", str(ROOT / ".site/render_readmes.cjs")], check=True)
@@ -23,6 +24,8 @@ def main():
              ROOT / '.gitignore', ROOT / '.nojekyll']
     for slug, *_ in build_library.SERIES:
         files.append(ROOT / slug / 'README.md')
+    for board in (ROOT / '青少年AI科普连载').glob('[0-9][0-9]_*/分镜.json'):
+        files.extend([board, board.with_name('互动版.html')])
     for path in files:
         manifest.append((path.relative_to(ROOT).as_posix(), hashlib.sha256(path.read_bytes()).hexdigest()))
     (ROOT / 'MANIFEST.sha256').write_text(''.join(f'{digest}  {name}\n' for name, digest in sorted(manifest)), encoding='utf-8')
