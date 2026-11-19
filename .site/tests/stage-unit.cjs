@@ -1058,6 +1058,63 @@ test('全文链接识别修正后前19篇互动版仍与已交付文件逐字节
     assert.equal(result.html,fs.readFileSync(path.join(serial,name,'互动版.html'),'utf8'),name);
   }
 });
+const moeRecords=require('../stage/moe-records.cjs');
+test('路由按原始分数稳定选出第二第三项，仅在选中项内重新归一',()=>{
+  const r=moeRecords.record,s=moeRecords.summary();assert.deepEqual(s.selected,[1,2]);
+  near(s.weights[0],.6);near(s.weights[1],.4);near(s.weights.reduce((a,b)=>a+b,0),1);
+  assert.ok(Math.abs(s.routerWeights[1]-.6)>.1);
+  const selectedMass=s.routerWeights[1]+s.routerWeights[2];near(s.routerWeights[1]/selectedMass,.6);
+  assert.deepEqual(moeRecords.select([2,2,1],2),[0,1]);
+  assert.deepEqual(moeRecords.select(r.router_logits,1),[1]);
+  const shifted=moeRecords.softmax(r.router_logits.map(x=>x+1000));s.routerWeights.forEach((x,i)=>near(x,shifted[i]));
+});
+test('四项完整核算表按行向量乘矩阵得到倍数，连同零核对所有系数',()=>{
+  const r=moeRecords.record;
+  assert.deepEqual(r.all_expert_matrices.map(m=>moeRecords.project(r.input,m)),[[1,2],[2,4],[3,6],[4,8]]);
+  assert.deepEqual(moeRecords.project([2,3],[[1,2],[4,5]]),[14,19]);
+  assert.equal(r.all_expert_matrices.flat(2).filter(x=>x===0).length,8);
+});
+test('稀疏路线不先执行未选模块，即使它们投影会溢出也不参与本次计算',()=>{
+  const r=moeRecords.record,matrices=JSON.parse(JSON.stringify(r.all_expert_matrices));
+  matrices[0]=[[Number.MAX_VALUE,0],[0,Number.MAX_VALUE]];matrices[3]=matrices[0];
+  assert.throws(()=>moeRecords.project([2,2],matrices[0]));
+  const s=moeRecords.run([2,2],matrices,r.router_logits);assert.deepEqual(s.selected,[1,2]);assert.deepEqual(s.outputs,[[4,4],[6,6]]);
+  s.output.forEach(x=>near(x,4.8));
+});
+test('逐项贡献分别为1.2和2.4，加权后得到2.4与4.8',()=>{
+  const s=moeRecords.summary();s.contributions.forEach(row=>{near(row[0],1.2);near(row[1],2.4);});
+  near(s.output[0],2.4);near(s.output[1],4.8);
+  const left=moeRecords.combine([[2,4],[3,6]],[1,0]);assert.deepEqual(left.output,[2,4]);
+});
+test('选中项不变，等权合并得到2.5与5，不由数值大小给出质量结论',()=>{
+  const s=moeRecords.summary(),p=moeRecords.combine(s.outputs,[.5,.5]);assert.deepEqual(p.output,[2.5,5]);
+  assert.deepEqual(s.selected,[1,2]);assert.ok(p.output[0]>s.output[0]);assert.ok(!Object.hasOwn(p,'quality'));
+});
+test('参数统计包含零，存储16而本次选中8，改为选一项仍须保存16',()=>{
+  const r=moeRecords.record,s=moeRecords.summary();assert.equal(s.stored,16);assert.equal(s.used,8);
+  const one=moeRecords.run(r.input,r.all_expert_matrices,r.router_logits,1);assert.equal(one.stored,16);assert.equal(one.used,4);assert.deepEqual(one.output,[2,4]);
+  assert.ok(!Object.hasOwn(s,'hardwareSpeedup'));assert.ok(!Object.hasOwn(s,'wholeModelParameters'));
+});
+test('保存的原始分数、完整softmax、选中权重、输出与矩阵计数可重建',()=>{
+  const raw=JSON.parse(fs.readFileSync(path.join(__dirname,'../../Python实现/source/continuation_mechanisms/outputs/reference/result.json'),'utf8')).moe;
+  assert.deepEqual(moeRecords.record,raw);const s=moeRecords.summary();
+  assert.deepEqual(s.output,raw.output);assert.deepEqual(s.outputs,raw.selected_expert_outputs);
+  assert.equal(s.output[0].toFixed(1),'2.4');assert.equal(s.output[1].toFixed(1),'4.8');
+  const clone=JSON.parse(JSON.stringify(raw));clone.renormalized_weights=[.6,.4];assert.doesNotThrow(()=>moeRecords.summary(clone));
+});
+test('专家记录深层冻结，复算不修改输入，返回的贡献及选择彼此独立',()=>{
+  const r=moeRecords.record,before=JSON.stringify(r);assert.ok(Object.isFrozen(r.all_expert_matrices[0][0]));
+  const s=moeRecords.summary();s.selected[0]=3;s.outputs[0][0]=999;s.contributions[0][0]=999;
+  assert.equal(JSON.stringify(r),before);assert.deepEqual(moeRecords.summary().selected,[1,2]);near(moeRecords.summary().contributions[0][0],1.2);
+});
+test('非法路由、形状、非归一权重或篡改保存结果会报错',()=>{
+  for(const scores of [[],[NaN],Array(2),[Infinity]])assert.throws(()=>moeRecords.select(scores));
+  for(const k of [0,5,true,1.5])assert.throws(()=>moeRecords.select([1,2,3,4],k));
+  for(const [input,m] of [[[1,2],[[1]]],[[1],[[1,2],[3]]],[[NaN],[[1]]]])assert.throws(()=>moeRecords.project(input,m));
+  for(const [rows,weights] of [[[[1],[2]],[.6,.6]],[[[1],[2]],[-.5,1.5]],[[[1],[2,3]],[.5,.5]],[[[1]],[NaN]]])assert.throws(()=>moeRecords.combine(rows,weights));
+  const r=moeRecords.record;
+  for(const saved of [null,{}, {...r,selected_expert_ids_zero_based:[2,1]},{...r,expert_parameters_stored:8},{...r,output:[2.5,5]},{...r,router_probabilities:[.1,.6,.2,.1]},{...r,renormalized_weights:[.6+1e-8,.4]}])assert.throws(()=>moeRecords.summary(saved));
+});
 const cacheRecords=require('../stage/cache-records.cjs');
 test('教学六七八位置保持旧前缀和连续位置，与保存十二token输入分开',()=>{
   const six=cacheRecords.prefix(6),seven=cacheRecords.prefix(7),eight=cacheRecords.prefix(8);
@@ -1163,4 +1220,4 @@ test('无效token、计分起点、因果位置与保存数值会报错',()=>{
   for(const [p,n] of [[-1,10],[10,10],[true,10],[0,0],[0,1.5]])assert.throws(()=>sftRecords.visible(p,n),/无效/);
   for(const saved of [null,{}, {...sftRecords.record,selected_target_positions:[6,7,8,9]},{...sftRecords.record,one_step_loss_before:NaN},{...sftRecords.record,masked_logit_gradient_max:-1}])assert.throws(()=>sftRecords.summary(saved),/不一致|无效/);
 });
-console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权、解码、存储、方案筛选、编码、关系、证据核对、校园流程、工具记录、多步场地路线、上下文卡片、任务验收、训练计分与缓存计数算例）`);
+console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态、生成、加权、解码、存储、方案筛选、编码、关系、证据核对、校园流程、工具记录、多步场地路线、上下文卡片、任务验收、训练计分、缓存计数与专家路由算例）`);

@@ -1,0 +1,274 @@
+{
+  "complete": true,
+  "beats": [
+    {
+      "take": 1,
+      "scene": "cover",
+      "step": 0,
+      "cam": "all",
+      "quiet": true,
+      "from": "每片文字，为什么只交给部分「专家」？"
+    },
+    {
+      "take": 2,
+      "scene": "open",
+      "step": 0,
+      "cam": "desk",
+      "from": "手机里的一句提问送进大模型后，模型是不是每次都要动用"
+    },
+    {
+      "take": 4,
+      "scene": "open",
+      "step": 1,
+      "cam": "desk",
+      "from": "前一篇通过缓存省去重复计算。"
+    },
+    {
+      "take": 3,
+      "scene": "open",
+      "step": 2,
+      "cam": "desk",
+      "from": "我们先把真实模型缩成一个可以手算的小例子。"
+    },
+    {
+      "take": 1,
+      "scene": "experts",
+      "step": 0,
+      "cam": "desk",
+      "from": "四个模块，先各算一次"
+    },
+    {
+      "take": 2,
+      "scene": "experts",
+      "step": 1,
+      "cam": "desk",
+      "from": "输入用两个数字表示，写成 [1, 2]。"
+    },
+    {
+      "take": 2,
+      "scene": "experts",
+      "step": 2,
+      "cam": "desk",
+      "from": "因此，它们分别会给出 [1, 2]、[2, 4]、["
+    },
+    {
+      "take": 3,
+      "scene": "experts",
+      "step": 3,
+      "cam": "desk",
+      "from": "还缺一个决定由谁处理的部分，叫路由器。"
+    },
+    {
+      "take": 2,
+      "scene": "experts",
+      "step": 4,
+      "cam": "desk",
+      "from": "要注意，分数是用于路由的数值，不是「这个专家回答正确"
+    },
+    {
+      "take": 1,
+      "scene": "route",
+      "step": 0,
+      "cam": "desk",
+      "from": "选中两个，再把权重算清"
+    },
+    {
+      "take": 1,
+      "scene": "route",
+      "step": 1,
+      "cam": "desk",
+      "from": "本例按分数选中第二、第三个模块。"
+    },
+    {
+      "take": 2,
+      "scene": "route",
+      "step": 2,
+      "cam": "desk",
+      "from": "只在这两个选中项之间重新分配权重，分别取 0.6 和"
+    },
+    {
+      "take": 1,
+      "scene": "route",
+      "step": 3,
+      "cam": "desk",
+      "from": "把第二个模块的 [2, 4] 乘 0.6，再把第三个"
+    },
+    {
+      "take": 1,
+      "scene": "route",
+      "step": 4,
+      "cam": "desk",
+      "from": "最终得到 [2.4, 4.8]。"
+    },
+    {
+      "take": 1,
+      "scene": "route",
+      "step": 5,
+      "cam": "desk",
+      "from": "图 1　先选择，再计算选中模块的输出并加权；这是一组"
+    },
+    {
+      "take": 2,
+      "scene": "route",
+      "step": 6,
+      "cam": "desk",
+      "from": "可以沿图 1 倒着检查：要得到 2.4，第二、第三个"
+    },
+    {
+      "take": 2,
+      "scene": "route",
+      "step": 7,
+      "cam": "desk",
+      "from": "下一片文字的数字表示变化，路由器就可能选择不同模块。"
+    },
+    {
+      "take": 3,
+      "scene": "route",
+      "step": 8,
+      "cam": "desk",
+      "from": "这里的两个专家也没有先商量、再投票。"
+    },
+    {
+      "take": 3,
+      "scene": "route",
+      "step": 9,
+      "cam": "desk",
+      "from": "本例把选中两项的权重重新调整，使它们相加为 1，这叫"
+    },
+    {
+      "take": 1,
+      "scene": "parameters",
+      "step": 0,
+      "cam": "desk",
+      "from": "少用一部分，为什么还要存全部"
+    },
+    {
+      "take": 2,
+      "scene": "parameters",
+      "step": 1,
+      "cam": "desk",
+      "from": "在图 2 里，每个模块的参数排成两行两列，这样的数字"
+    },
+    {
+      "take": 3,
+      "scene": "parameters",
+      "step": 2,
+      "cam": "desk",
+      "from": "四个专家总共保存 16 个数；本次选中两个，使用其中"
+    },
+    {
+      "take": 1,
+      "scene": "parameters",
+      "step": 3,
+      "cam": "desk",
+      "from": "图 2　这里只统计专家矩阵，不包括路由器和共享层；保"
+    },
+    {
+      "take": 3,
+      "scene": "parameters",
+      "step": 4,
+      "cam": "desk",
+      "from": "真正的语言模型还有注意力层、路由器以及其他共享计算。"
+    },
+    {
+      "take": 1,
+      "scene": "research",
+      "step": 0,
+      "cam": "desk",
+      "from": "真实研究比这个例子多了什么"
+    },
+    {
+      "take": 3,
+      "scene": "research",
+      "step": 1,
+      "cam": "desk",
+      "from": "Mixtral 论文描述的结构，在相关层中设有八个前"
+    },
+    {
+      "take": 2,
+      "scene": "research",
+      "step": 2,
+      "cam": "desk",
+      "from": "专家和路由怎样训练、是否总挤向少数专家、不同设备怎样"
+    },
+    {
+      "take": 1,
+      "scene": "practice",
+      "step": 0,
+      "cam": "desk",
+      "from": "改一个权重，自己复算"
+    },
+    {
+      "take": 2,
+      "scene": "practice",
+      "step": 1,
+      "cam": "desk",
+      "from": "仍选第二、第三个模块，如果把权重改为各 0.5，输出"
+    },
+    {
+      "take": 0,
+      "scene": "exercise",
+      "step": 0,
+      "cam": "desk",
+      "quiet": true
+    },
+    {
+      "take": 3,
+      "scene": "exercise",
+      "step": 1,
+      "cam": "desk",
+      "reveal": true,
+      "from": "第一项是 2×0.5＋3×0.5＝2.5，第二项是 "
+    },
+    {
+      "take": 3,
+      "scene": "practice",
+      "step": 2,
+      "cam": "desk",
+      "from": "这道题没有证明哪个答案更好。"
+    },
+    {
+      "take": 1,
+      "scene": "lab",
+      "step": 0,
+      "cam": "desk",
+      "from": "选读：到程序里核对这组算式"
+    },
+    {
+      "take": 1,
+      "scene": "lab",
+      "step": 1,
+      "cam": "desk",
+      "from": "配套程序保存全部路由分数、选中项、合并权重与四个专家"
+    },
+    {
+      "take": 1,
+      "scene": "lab",
+      "step": 2,
+      "cam": "desk",
+      "from": "第二、第三个模块的权重约为 0.6 和 0.4，输出"
+    },
+    {
+      "take": 1,
+      "scene": "lab",
+      "step": 3,
+      "cam": "desk",
+      "from": "实现与原记录见训练、缓存与专家路由实验说明。"
+    },
+    {
+      "take": 2,
+      "scene": "lab",
+      "step": 4,
+      "cam": "desk",
+      "from": "这次没有训练路由器或专家，也没有测硬件性能。"
+    },
+    {
+      "take": 0,
+      "scene": "refs",
+      "step": 0,
+      "cam": "desk",
+      "quiet": true,
+      "refs": true
+    }
+  ]
+}

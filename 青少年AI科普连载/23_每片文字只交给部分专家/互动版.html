@@ -1,0 +1,860 @@
+<!doctype html>
+<html lang="zh-CN" data-mode="read">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#fffdf6">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Ccircle cx='10' cy='10' r='8.25' fill='none' stroke='%23185b46' stroke-width='1.5'/%3E%3Ccircle cx='10' cy='10' r='3.4' fill='%23185b46'/%3E%3C/svg%3E">
+<title>每片文字，为什么只交给部分「专家」？ · 互动版 · 看得见的 AI</title>
+<meta name="description" content="准备四个计算模块，这次只选两个，结果怎样合起来？从两个数的乘加算起，看懂路由和权重，再分清本次选中多少参数、全部需要保存多少参数。">
+<style data-stage-source="stage.css">/* 互动版样式。
+ * 控件沿用 library.css 的纸色、墨绿、焦点色与 250ms ease-out；
+ * 画面沿用连载图解的 #fffdf6 底与 #203845 描边。不加阴影、发光和渐变。 */
+
+:root {
+  color-scheme: light;
+  --paper: #f6f5ef;
+  --ink: #22352d;
+  --muted: #5c6d63;
+  --line: #d8ded5;
+  --accent: #185b46;
+  --focus: #ba651f;
+  --white: #fffef9;
+  --serif: "Songti SC", "Noto Serif CJK SC", serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+
+  --art-paper: #fffdf6;
+  --art-ink: #203845;
+  --art-muted: #586e79;
+  --art-teal: #168f94;
+  --art-mint: #def3ee;
+  --art-coral: #ee6a58;
+  --art-peach: #ffe7df;
+  --art-yellow: #ffcf62;
+  --art-cream: #fff1d2;
+  --art-blue: #e3efff;
+  /* 文字或白字底用的深色变体：原色青 / 珊瑚与白字、纸色分别只有 3.9 / 3.1 比 1，压深后 5.0 比 1。 */
+  --art-teal-ink: #137a7f;
+  --art-coral-ink: #d42c16;
+
+  --move: 700ms cubic-bezier(.22, 1, .36, 1);
+}
+
+* { box-sizing: border-box }
+html, body { margin: 0; height: 100% }
+body {
+  background: var(--art-paper);
+  color: var(--art-ink);
+  font: 16px/1.75 var(--sans);
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+}
+button { font: inherit; color: inherit }
+a { color: inherit }
+:lang(zh) { text-autospace: normal; text-spacing-trim: trim-start }
+p, li { text-wrap: pretty }
+h1, h2, h3 { text-wrap: balance }
+[hidden] { display: none !important }
+
+a:focus-visible, button:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.skip {
+  position: fixed; left: 12px; top: -64px; z-index: 20;
+  padding: 9px 16px; background: var(--white); border: 1px solid var(--line); border-radius: 9px;
+  font-size: 14px; font-weight: 600; text-decoration: none;
+  transition: top 250ms ease-out;
+}
+.skip:focus { top: 12px }
+
+/* ---------------- 模式 ---------------- */
+
+html[data-mode="stage"], html[data-mode="stage"] body { overflow: hidden }
+html[data-mode="read"] #stage, html[data-mode="read"] #toc { display: none }
+html[data-mode="stage"] #readwrap { display: none }
+html[data-mode="read"] body { background: var(--paper); color: var(--ink) }
+.hit { pointer-events: auto; cursor: pointer }
+.scene:not(.is-active) .hit, .s:not(.on) .hit, .solo .s:not(.focus) .hit { pointer-events: none }
+.hit:focus-visible { outline: 4px solid var(--art-coral-ink); outline-offset: 6px }
+
+/* ---------------- 舞台 ---------------- */
+
+/* 翻页由脚本接管：禁掉浏览器自己的拖动、缩放和橡皮筋，滚轮与滑动才不会同时触发两套行为。 */
+html[data-mode="stage"], html[data-mode="stage"] body { overscroll-behavior: none }
+#stage { position: fixed; inset: 0; background: var(--art-paper); overflow: hidden; touch-action: none }
+#stage button, #stage a, #stage .hit { touch-action: manipulation }
+#stage:not(.ready) * { transition: none !important; animation: none !important }
+
+.scene {
+  position: absolute; inset: 0; width: 100%; height: 100%; display: block;
+  pointer-events: none;
+  opacity: 0; visibility: hidden;
+  transition: opacity 250ms ease-out, visibility 0s linear 250ms;
+}
+.scene.is-active { opacity: 1; visibility: visible; transition-delay: 0s }
+.cam { transition: transform var(--move) }
+
+/* 画面元素：外层 .s 只管出现动画，内层 .pos 只管摆位（横屏用 --l*，竖屏用 --p*）。 */
+.s {
+  opacity: 0; transform: translateY(14px);
+  transition: opacity 250ms ease-out var(--d, 0ms), transform 250ms ease-out var(--d, 0ms);
+}
+.s.on { opacity: 1; transform: none }
+.s.pop { transform: scale(.86); transform-box: fill-box; transform-origin: center }
+.s.pop.on { transform: none }
+.s.fade, .s.fade.on { transform: none }
+.snap .s { transition: none !important }
+.has-focus .s.on:not(.focus) { opacity: .22 }
+.solo .s.on:not(.focus) { opacity: 0 }
+
+.pos { transform: translate(var(--lx, 0), var(--ly, 0)) rotate(var(--lr, 0deg)) scale(var(--ls, 1)) }
+#stage[data-orient="portrait"] .pos { transform: translate(var(--px, 0), var(--py, 0)) rotate(var(--pr, 0deg)) scale(var(--ps, 1)) }
+#stage[data-orient="portrait"] .only-l, #stage[data-orient="landscape"] .only-p { display: none }
+
+/* 可翻转的卡：翻面时正反两层交换。 */
+.flip .front, .flip .back { transition: opacity 250ms ease-out }
+.flip .back { opacity: 0 }
+.flip.is-flipped .front { opacity: 0 }
+.flip.is-flipped .back { opacity: 1 }
+
+.cap.quiet {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+
+
+/* ---------------- 顶栏 ---------------- */
+
+.hud {
+  position: absolute; z-index: 3; left: 0; right: 0; top: 0;
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+  padding: calc(12px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) 0 calc(14px + env(safe-area-inset-left));
+  pointer-events: none;
+}
+.hud-l, .hud-r { display: flex; gap: 8px; min-width: 0; pointer-events: auto }
+.hud-l { flex: 0 1 auto }
+
+.pill {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 34px; padding: 0 14px;
+  border: 1px solid var(--line); border-radius: 12px;
+  background: rgba(255, 254, 249, .94); color: var(--ink);
+  font: 600 13px/1 var(--sans); text-decoration: none; white-space: nowrap; cursor: pointer;
+  touch-action: manipulation;
+  transition: border-color 250ms ease-out, background 250ms ease-out, color 250ms ease-out;
+}
+.pill:hover { border-color: var(--accent); color: var(--accent) }
+.pill:active { transform: translateY(1px) }
+.pill:disabled { opacity: .4; cursor: default; border-color: var(--line); color: var(--ink) }
+.pill[data-playing="true"] { background: var(--accent); border-color: var(--accent); color: #fff }
+.pill svg { width: 14px; height: 14px; flex: none; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round }
+.pill.icon { width: 34px; padding: 0 }
+
+.sec { cursor: default; min-width: 0 }
+.sec:hover { border-color: var(--line); color: var(--ink) }
+#sec-num { color: var(--art-teal-ink); font-variant-numeric: tabular-nums }
+#sec-num:empty { display: none }
+#sec-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; max-width: min(46vw, 380px) }
+
+/* ---------------- 字幕与底栏 ---------------- */
+
+.cap {
+  position: absolute; z-index: 2; left: 50%; transform: translateX(-50%);
+  bottom: calc(56px + env(safe-area-inset-bottom));
+  width: min(calc(100% - 28px), 900px);
+  padding: 16px 22px;
+  background: var(--art-paper); border: 3px solid var(--art-ink); border-radius: 22px;
+  pointer-events: none;
+}
+.cap p { margin: 0; font-size: clamp(18px, 2.3vw, 24px); line-height: 1.65; font-weight: 600 }
+.cap p[data-kind="caption"] { font-weight: 500 }
+.cap p[data-kind="title"] { font-size: clamp(20px, 2.8vw, 30px); text-align: center }
+.cap p[data-kind="h2"] {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  font-size: clamp(22px, 3vw, 32px); font-weight: 800; line-height: 1.4;
+}
+.cap .no {
+  flex: none; display: inline-grid; place-items: center; min-width: 36px; height: 36px; padding: 0 8px;
+  border-radius: 18px; background: var(--art-coral-ink); color: #fff; font: 800 20px/1 var(--sans);
+}
+.cap .fig { color: var(--art-teal-ink); font-weight: 800 }
+.cap p.in { animation: cap-in 250ms ease-out both }
+@keyframes cap-in { from { opacity: 0; transform: translateY(8px) } to { opacity: 1; transform: none } }
+.cite { color: #b15b21; font-weight: 600 }
+
+.foot {
+  position: absolute; z-index: 3; left: 0; right: 0; bottom: 0;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 0 calc(14px + env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left));
+  pointer-events: none;
+}
+.foot > * { pointer-events: auto }
+#bar { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--art-teal); transform-origin: left; transform: scaleX(0); transition: transform 250ms ease-out; pointer-events: none }
+#hint { margin: 0; font-size: 13px; color: var(--art-muted); pointer-events: none }
+#count { font-size: 12px; color: var(--art-muted); font-variant-numeric: tabular-nums; min-width: 4.6em; text-align: center }
+.steps { display: flex; align-items: center; gap: 8px; margin-left: auto }
+
+/* ---------------- 目录 ---------------- */
+
+#toc {
+  width: min(960px, calc(100% - 28px)); max-height: calc(100% - 28px);
+  padding: 0; border: 3px solid var(--art-ink); border-radius: 24px;
+  background: var(--art-paper); color: var(--art-ink);
+}
+#toc[open] { display: flex; flex-direction: column }
+#toc::backdrop { background: rgba(32, 56, 69, .5) }
+.toc-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--line) }
+.toc-head h2 { margin: 0; font-size: 16px; line-height: 1.5 }
+#toc-list { list-style: none; margin: 0; padding: 20px; overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px }
+.toc-foot { margin: 0; padding: 12px 20px 16px; border-top: 1px solid var(--line); font-size: 13px; line-height: 1.7; color: var(--art-muted) }
+.toc-card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+  width: 100%; height: 100%; padding: 14px; text-align: left;
+  background: var(--white); border: 1px solid var(--line); border-radius: 18px; cursor: pointer;
+  transition: border-color 250ms ease-out, transform 250ms ease-out;
+}
+.toc-card:hover { border-color: var(--accent) }
+.toc-card:active { transform: translateY(1px) }
+.toc-thumb { display: block; width: 100%; height: 115px; flex: none }
+.toc-no {
+  display: inline-grid; place-items: center; min-width: 30px; height: 30px; padding: 0 8px;
+  border-radius: 15px; background: var(--art-coral-ink); color: #fff; font: 700 14px/1 var(--sans);
+}
+.toc-name { font-size: 15px; font-weight: 600; line-height: 1.5 }
+
+/* ---------------- 全文 ---------------- */
+
+.read-bar {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 10px 20px; background: var(--paper); border-bottom: 1px solid var(--line);
+}
+#read { max-width: 680px; margin: 0 auto; padding: 8px 20px 96px; font-size: 17px; line-height: 1.9; color: var(--ink) }
+#read:focus { outline: none }
+#read h1 { margin: 32px 0 24px; font: 650 28px/1.4 var(--serif); letter-spacing: -.01em }
+#read h1 .tl { display: inline-block }
+#read h2 { margin: 40px 0 16px; font-size: 20px; line-height: 1.5 }
+#read p { margin: 0 0 18px }
+#read .pic { margin: 24px 0 8px }
+#read img { display: block; max-width: 100%; height: auto; margin: 0 auto; border: 1px solid var(--line); border-radius: 12px; background: #fff }
+#read .figcap { margin: 0 0 24px; font-size: 14px; line-height: 1.7; color: var(--muted) }
+#read .figcap em { font-style: normal }
+.read-note { margin: 24px 0 0; font-size: 14px; line-height: 1.7; color: var(--muted) }
+#read .refs p { font-size: 14px; line-height: 1.75; overflow-wrap: anywhere }
+#read a { color: var(--accent); text-underline-offset: 3px }
+.read-end { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 40px }
+
+/* ---------------- 小屏与矮屏 ---------------- */
+
+@media (max-width: 560px) {
+  .hud { gap: 8px }
+  .lbl { display: none }
+  .cap { padding: 12px 16px; border-radius: 18px }
+  .cap p { font-size: 18px }
+}
+@media (max-width: 420px) {
+  #sec-name { max-width: 34vw }
+  .pill { padding: 0 11px }
+}
+@media (max-height: 560px) {
+  .cap { padding: 8px 16px }
+  .cap p { font-size: 17px; line-height: 1.55 }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene, .cam, .s, .flip .front, .flip .back, .pill, .toc-card, #bar, .skip { transition: none }
+  .cap p.in { animation: none }
+}
+</style>
+<script>(function(){var q=new URLSearchParams(location.search),r=matchMedia('(prefers-reduced-motion: reduce)').matches;if(!(q.has('read')||(r&&!q.has('stage'))))document.documentElement.setAttribute('data-mode','stage')})()</script>
+</head>
+<body>
+<a class="skip" href="?read" data-action="read">跳到全文</a>
+<main id="stage" data-orient="landscape">
+<svg class="scene" data-scene="cover" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s fade bleed" data-at="0" data-n="wash"><g class="pos" style="--lx:1300px;--ly:500px;--ls:1;--lr:0deg;--px:700px;--py:1180px;--ps:1;--pr:0deg"><ellipse cx="0" cy="0" rx="470" ry="520" fill="#def3ee"/></g></g><g class="s rise" data-at="0" data-n="series"><g class="pos" style="--lx:350px;--ly:155px;--ls:1;--lr:0deg;--px:310px;--py:170px;--ps:1;--pr:0deg"><rect x="-240" y="-33" width="480" height="66" rx="33" fill="#137a7f" stroke="#203845" stroke-width="5" stroke-linejoin="round"/><text x="0" y="2" font-size="36" fill="#ffffff" text-anchor="middle" font-weight="800" dominant-baseline="central"><tspan x="0" dy="0">语言模型怎样训练和运行</tspan></text></g></g><g class="s rise" data-at="0" data-n="nth"><g class="pos" style="--lx:110px;--ly:235px;--ls:1;--lr:0deg;--px:70px;--py:270px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="32" fill="#586e79" text-anchor="start" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">第 3 篇 / 共 4 篇</tspan></text></g></g><g class="s rise only-l" data-at="0" data-n="title"><g class="pos" style="--lx:110px;--ly:400px;--ls:1;--lr:0deg;--px:110px;--py:400px;--ps:1;--pr:0deg"><text x="0" y="-51.3" font-size="76" fill="#203845" text-anchor="start" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">每片文字，为什么</tspan><tspan x="0" dy="102.6">只交给部分「专家」？</tspan></text></g></g><g class="s rise only-p" data-at="0" data-n="title"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:70px;--py:470px;--ps:1;--pr:0deg"><text x="0" y="-46.2" font-size="66" fill="#203845" text-anchor="start" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">每片文字，为什么</tspan><tspan x="0" dy="92.4">只交给部分「专家」？</tspan></text></g></g><g class="s rise" data-at="0" data-n="rule"><g class="pos" style="--lx:114px;--ly:555px;--ls:1;--lr:0deg;--px:74px;--py:625px;--ps:1;--pr:0deg"><path d="M0 0 L145 0" fill="none" stroke="#ee6a58" stroke-width="10" stroke-linecap="round"/></g></g><g class="s rise" data-at="0" data-n="mechanism"><g class="pos" style="--lx:1240px;--ly:445px;--ls:0.85;--lr:0deg;--px:450px;--py:990px;--ps:1;--pr:0deg"><g transform="translate(0 0) rotate(0) scale(1.05)"><g transform="translate(-100 -65) rotate(0) scale(1)"><rect x="-85" y="-50" width="170" height="100" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E1</tspan></text></g><g transform="translate(100 -65) rotate(0) scale(1)"><rect x="-85" y="-50" width="170" height="100" rx="12" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E2</tspan></text></g><g transform="translate(-100 65) rotate(0) scale(1)"><rect x="-85" y="-50" width="170" height="100" rx="12" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E3</tspan></text></g><g transform="translate(100 65) rotate(0) scale(1)"><rect x="-85" y="-50" width="170" height="100" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E4</tspan></text></g></g></g></g><g class="s rise" data-at="0" data-n="robot"><g class="pos" style="--lx:105px;--ly:625px;--ls:1;--lr:0deg;--px:70px;--py:1160px;--ps:1;--pr:0deg"><image href="../../.site/assets/serial-robot-480.png" x="0" y="0" width="240" height="219.5" preserveAspectRatio="xMidYMid meet"/></g></g><g class="s rise" data-at="0" data-n="question"><g class="pos" style="--lx:1230px;--ly:800px;--ls:1;--lr:0deg;--px:620px;--py:1350px;--ps:0.85;--pr:0deg"><rect x="-220" y="-38" width="440" height="76" rx="38" fill="#137a7f" stroke="#203845" stroke-width="5" stroke-linejoin="round"/><text x="0" y="2" font-size="40" fill="#ffffff" text-anchor="middle" font-weight="800" dominant-baseline="central"><tspan x="0" dy="0">选了谁，怎样合并？</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="open" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">四个候选计算模块</tspan></text><text x="0" y="45" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本次只请两个？</tspan></text></g></g><g class="s pop" data-at="0" data-until="1" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><circle cx="0" cy="0" r="100" fill="#d42c16" stroke="#203845" stroke-width="5"/><g transform="translate(0 0.66) rotate(0) scale(2.63)"><path d="M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="0" cy="16" r="3.5" fill="#ffffff"/></g></g></g><g class="s pop" data-at="1" data-until="2" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">稀疏混合专家 MoE</tspan></text><text x="0" y="45" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">按输入选择部分模块</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-285" y="-125" width="570" height="250" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-29.04" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">这里的专家是数值模块</tspan><tspan x="0" dy="58.08">不等同于人的学科</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><g transform="translate(-100 -65) rotate(0) scale(1)"><rect x="-85" y="-50" width="170" height="100" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E1</tspan></text></g><g transform="translate(100 -65) rotate(0) scale(1)"><rect x="-85" y="-50" width="170" height="100" rx="12" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E2</tspan></text></g><g transform="translate(-100 65) rotate(0) scale(1)"><rect x="-85" y="-50" width="170" height="100" rx="12" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E3</tspan></text></g><g transform="translate(100 65) rotate(0) scale(1)"><rect x="-85" y="-50" width="170" height="100" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E4</tspan></text></g></g></g><g class="s pop" data-at="2" data-until="3" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-290" y="-140" width="580" height="280" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-55.44" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">输入、分数、模块均预设</tspan><tspan x="0" dy="55.44">没有训练专家</tspan><tspan x="0" dy="55.44">没有比较模型能力</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="experts" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="chapter.art"><g class="pos" style="--lx:600px;--ly:275px;--ls:1;--lr:0deg;--px:400px;--py:370px;--ps:1;--pr:0deg"><g transform="translate(-100 -65) rotate(0) scale(1)"><rect x="-85" y="-50" width="170" height="100" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E1</tspan></text></g><g transform="translate(100 -65) rotate(0) scale(1)"><rect x="-85" y="-50" width="170" height="100" rx="12" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E2</tspan></text></g><g transform="translate(-100 65) rotate(0) scale(1)"><rect x="-85" y="-50" width="170" height="100" rx="12" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E3</tspan></text></g><g transform="translate(100 65) rotate(0) scale(1)"><rect x="-85" y="-50" width="170" height="100" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E4</tspan></text></g></g></g><g class="s pop" data-at="0" data-until="1" data-n="chapter.note" style="--d:140ms"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:880px;--ps:1;--pr:0deg"><text x="0" y="-35.64" font-size="54" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">四个模块</tspan><tspan x="0" dy="71.28">先列算术核对表</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">同一组输入</tspan></text><text x="0" y="45" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">[1, 2]</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-285" y="-125" width="570" height="250" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">四个模块分别</tspan><tspan x="0" dy="60.72">各乘 1 / 2 / 3 / 4</tspan></text></g></g><g class="s pop only-l" data-at="2" data-until="3" data-n="all-outputs"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(170 310) rotate(0) scale(1)"><rect x="-130" y="-130" width="260" height="260" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-22.44" font-size="34" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 1 · 各乘 1</tspan><tspan x="0" dy="44.88">[1, 2]</tspan></text></g><g transform="translate(455 310) rotate(0) scale(1)"><rect x="-130" y="-130" width="260" height="260" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-22.44" font-size="34" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 2 · 各乘 2</tspan><tspan x="0" dy="44.88">[2, 4]</tspan></text></g><g transform="translate(740 310) rotate(0) scale(1)"><rect x="-130" y="-130" width="260" height="260" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-22.44" font-size="34" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 3 · 各乘 3</tspan><tspan x="0" dy="44.88">[3, 6]</tspan></text></g><g transform="translate(1025 310) rotate(0) scale(1)"><rect x="-130" y="-130" width="260" height="260" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-22.44" font-size="34" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 4 · 各乘 4</tspan><tspan x="0" dy="44.88">[4, 8]</tspan></text></g></g></g><g class="s pop only-p" data-at="2" data-until="3" data-n="all-outputs"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(210 240) rotate(0) scale(1)"><rect x="-170" y="-120" width="340" height="240" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-25.08" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 1 · 各乘 1</tspan><tspan x="0" dy="50.16">[1, 2]</tspan></text></g><g transform="translate(590 240) rotate(0) scale(1)"><rect x="-170" y="-120" width="340" height="240" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-25.08" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 2 · 各乘 2</tspan><tspan x="0" dy="50.16">[2, 4]</tspan></text></g><g transform="translate(210 650) rotate(0) scale(1)"><rect x="-170" y="-120" width="340" height="240" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-25.08" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 3 · 各乘 3</tspan><tspan x="0" dy="50.16">[3, 6]</tspan></text></g><g transform="translate(590 650) rotate(0) scale(1)"><rect x="-170" y="-120" width="340" height="240" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-25.08" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 4 · 各乘 4</tspan><tspan x="0" dy="50.16">[4, 8]</tspan></text></g></g></g><g class="s pop" data-at="2" data-until="3" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:940px;--ps:1;--pr:0deg"><text x="0" y="-29.04" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">四项全列仅为核对算术</tspan><tspan x="0" dy="58.08">稀疏路线先选择，再执行选中项</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">路由器</tspan></text><text x="0" y="45" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">给候选模块计算分数</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-285" y="-140" width="570" height="280" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-55.44" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">真实路由可由训练得到</tspan><tspan x="0" dy="55.44">本例固定分数</tspan><tspan x="0" dy="55.44">只演示后续选择</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">路由分数</tspan></text><text x="0" y="45" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">用来选择计算模块</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-285" y="-125" width="570" height="250" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-29.04" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">不是回答正确的概率</tspan><tspan x="0" dy="58.08">最高分不能推为最懂题目</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="route" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="chapter.art"><g class="pos" style="--lx:600px;--ly:275px;--ls:1;--lr:0deg;--px:400px;--py:370px;--ps:1;--pr:0deg"><g transform="translate(-100 -65) rotate(0) scale(1)"><rect x="-85" y="-50" width="170" height="100" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E1</tspan></text></g><g transform="translate(100 -65) rotate(0) scale(1)"><rect x="-85" y="-50" width="170" height="100" rx="12" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E2</tspan></text></g><g transform="translate(-100 65) rotate(0) scale(1)"><rect x="-85" y="-50" width="170" height="100" rx="12" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E3</tspan></text></g><g transform="translate(100 65) rotate(0) scale(1)"><rect x="-85" y="-50" width="170" height="100" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E4</tspan></text></g></g></g><g class="s pop" data-at="0" data-until="1" data-n="chapter.note" style="--d:140ms"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:880px;--ps:1;--pr:0deg"><text x="0" y="-35.64" font-size="54" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">选中两个</tspan><tspan x="0" dy="71.28">再把权重算清</tspan></text></g></g><g class="s pop only-l" data-at="1" data-until="2" data-n="selected-route"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(600 130) rotate(0) scale(1)"><rect x="-225" y="-75" width="450" height="150" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-26.4" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">路由器</tspan><tspan x="0" dy="52.8">选择第二、第三个</tspan></text></g><g transform="translate(150 460) rotate(0) scale(1)"><rect x="-115" y="-105" width="230" height="210" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-60" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 1</tspan></text><text x="0" y="0" font-size="34" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">分数 0</tspan></text><text x="0" y="65" font-size="34" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">未选，不执行</tspan></text></g><g transform="translate(450 460) rotate(0) scale(1)"><rect x="-115" y="-105" width="230" height="210" rx="14" fill="#def3ee" stroke="#137a7f" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-60" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 2</tspan></text><text x="0" y="0" font-size="34" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">分数 1.099</tspan></text><text x="0" y="65" font-size="34" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本次选中</tspan></text></g><g transform="translate(750 460) rotate(0) scale(1)"><rect x="-115" y="-105" width="230" height="210" rx="14" fill="#def3ee" stroke="#137a7f" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-60" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 3</tspan></text><text x="0" y="0" font-size="34" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">分数 0.693</tspan></text><text x="0" y="65" font-size="34" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本次选中</tspan></text></g><g transform="translate(1050 460) rotate(0) scale(1)"><rect x="-115" y="-105" width="230" height="210" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-60" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 4</tspan></text><text x="0" y="0" font-size="34" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">分数 -2</tspan></text><text x="0" y="65" font-size="34" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">未选，不执行</tspan></text></g><g fill="none" stroke="#137a7f" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M600 220 L450 220 L450 331"/><path d="M458.63 324.2 L450 340 L441.37 324.2"/></g><g fill="none" stroke="#137a7f" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M600 220 L750 220 L750 331"/><path d="M758.63 324.2 L750 340 L741.37 324.2"/></g></g></g><g class="s pop only-p" data-at="1" data-until="2" data-n="selected-route"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(400 100) rotate(0) scale(1)"><rect x="-230" y="-75" width="460" height="150" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-26.4" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">路由器</tspan><tspan x="0" dy="52.8">选择第二、第三个</tspan></text></g><g transform="translate(200 380) rotate(0) scale(1)"><rect x="-115" y="-105" width="230" height="210" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-60" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 1</tspan></text><text x="0" y="0" font-size="34" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">分数 0</tspan></text><text x="0" y="65" font-size="32" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">未选，不执行</tspan></text></g><g transform="translate(600 380) rotate(0) scale(1)"><rect x="-115" y="-105" width="230" height="210" rx="14" fill="#def3ee" stroke="#137a7f" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-60" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 2</tspan></text><text x="0" y="0" font-size="34" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">分数 1.099</tspan></text><text x="0" y="65" font-size="32" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本次选中</tspan></text></g><g transform="translate(200 700) rotate(0) scale(1)"><rect x="-115" y="-105" width="230" height="210" rx="14" fill="#def3ee" stroke="#137a7f" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-60" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 3</tspan></text><text x="0" y="0" font-size="34" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">分数 0.693</tspan></text><text x="0" y="65" font-size="32" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本次选中</tspan></text></g><g transform="translate(600 700) rotate(0) scale(1)"><rect x="-115" y="-105" width="230" height="210" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-60" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 4</tspan></text><text x="0" y="0" font-size="34" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">分数 -2</tspan></text><text x="0" y="65" font-size="32" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">未选，不执行</tspan></text></g><g fill="none" stroke="#137a7f" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M400 190 L600 190 L600 251"/><path d="M608.63 244.2 L600 260 L591.37 244.2"/></g><g fill="none" stroke="#137a7f" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M400 190 L65 190 L65 700 L66 700"/><path d="M59.2 691.37 L75 700 L59.2 708.63"/></g></g></g><g class="s pop" data-at="1" data-until="2" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:940px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">只连向选中项，尚未执行模块</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">选中项内重新归一</tspan></text><text x="0" y="14.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">第二模块：0.6</tspan><tspan x="0" dy="60.72">第三模块：0.4</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-285" y="-140" width="570" height="280" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-58.08" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0.6 ＋ 0.4 ＝ 1</tspan><tspan x="0" dy="58.08">第一、第四模块</tspan><tspan x="0" dy="58.08">不贡献本次输出</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">第一项</tspan></text><text x="0" y="14.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2 × 0.6 ＋ 3 × 0.4</tspan><tspan x="0" dy="60.72">＝ 2.4</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">第二项</tspan></text><text x="0" y="14.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">4 × 0.6 ＋ 6 × 0.4</tspan><tspan x="0" dy="60.72">＝ 4.8</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">合并后的输出</tspan></text><text x="0" y="45" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">[2.4, 4.8]</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-275" y="-120" width="550" height="240" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">两项分别加权</tspan><tspan x="0" dy="60.72">得到一个数值向量</tspan></text></g></g><g class="s pop only-l" data-at="5" data-until="6" data-n="execution-order"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(200 300) rotate(0) scale(1)"><rect x="-175" y="-135" width="350" height="270" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-23.76" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">先选中</tspan><tspan x="0" dy="47.52">第二、第三模块</tspan></text></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M383 300 L406 300"/><path d="M399.2 291.37 L415 300 L399.2 308.63"/></g><g transform="translate(600 300) rotate(0) scale(1)"><rect x="-175" y="-135" width="350" height="270" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-47.52" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">只执行选中项</tspan><tspan x="0" dy="47.52">[2, 4]</tspan><tspan x="0" dy="47.52">[3, 6]</tspan></text></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M783 300 L806 300"/><path d="M799.2 291.37 L815 300 L799.2 308.63"/></g><g transform="translate(1000 300) rotate(0) scale(1)"><rect x="-175" y="-135" width="350" height="270" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-23.76" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">按权重合并</tspan><tspan x="0" dy="47.52">[2.4, 4.8]</tspan></text></g></g></g><g class="s pop only-p" data-at="5" data-until="6" data-n="execution-order"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(400 160) rotate(0) scale(1)"><rect x="-350" y="-110" width="700" height="220" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-29.04" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">先选中</tspan><tspan x="0" dy="58.08">第二、第三模块</tspan></text></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M400 285 L400 356"/><path d="M408.63 349.2 L400 365 L391.37 349.2"/></g><g transform="translate(400 490) rotate(0) scale(1)"><rect x="-350" y="-110" width="700" height="220" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-58.08" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">只执行选中项</tspan><tspan x="0" dy="58.08">[2, 4]</tspan><tspan x="0" dy="58.08">[3, 6]</tspan></text></g><g fill="none" stroke="#203845" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M400 615 L400 686"/><path d="M408.63 679.2 L400 695 L391.37 679.2"/></g><g transform="translate(400 820) rotate(0) scale(1)"><rect x="-350" y="-110" width="700" height="220" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-29.04" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">按权重合并</tspan><tspan x="0" dy="58.08">[2.4, 4.8]</tspan></text></g></g></g><g class="s pop" data-at="6" data-until="7" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">第二模块贡献</tspan></text><text x="0" y="14.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">[2, 4] × 0.6</tspan><tspan x="0" dy="60.72">＝ [1.2, 2.4]</tspan></text></g></g><g class="s pop" data-at="6" data-until="7" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">第三模块贡献</tspan></text><text x="0" y="14.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">[3, 6] × 0.4</tspan><tspan x="0" dy="60.72">＝ [1.2, 2.4]</tspan></text></g></g><g class="s pop" data-at="6" data-until="7" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:940px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">逐项相加得到 [2.4, 4.8]</tspan></text></g></g><g class="s pop" data-at="7" data-until="8" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">下一片的数字表示变了</tspan></text><text x="0" y="45" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">路由选择可能改变</tspan></text></g></g><g class="s pop" data-at="7" data-until="8" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-285" y="-125" width="570" height="250" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-29.04" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">也可能连续多片</tspan><tspan x="0" dy="58.08">继续选中同一组模块</tspan></text></g></g><g class="s pop" data-at="8" data-until="9" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">两个模块分别算数值</tspan></text><text x="0" y="45" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">按权重合在一起</tspan></text></g></g><g class="s pop" data-at="8" data-until="9" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-285" y="-125" width="570" height="250" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-29.04" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">没有先商量再投票</tspan><tspan x="0" dy="58.08">与两个助手各写答案分开</tspan></text></g></g><g class="s pop" data-at="9" data-until="10" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本例的重新归一</tspan></text><text x="0" y="14.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">只在选中项间</tspan><tspan x="0" dy="60.72">令权重之和等于 1</tspan></text></g></g><g class="s pop" data-at="9" data-until="10" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-285" y="-140" width="570" height="280" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-55.44" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">其他路由可能约定不同</tspan><tspan x="0" dy="55.44">选中谁、怎样合并</tspan><tspan x="0" dy="55.44">都要分别检查</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="parameters" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="chapter.art"><g class="pos" style="--lx:600px;--ly:275px;--ls:1;--lr:0deg;--px:400px;--py:370px;--ps:1;--pr:0deg"><g transform="translate(-100 -65) rotate(0) scale(1)"><rect x="-85" y="-50" width="170" height="100" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E1</tspan></text></g><g transform="translate(100 -65) rotate(0) scale(1)"><rect x="-85" y="-50" width="170" height="100" rx="12" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E2</tspan></text></g><g transform="translate(-100 65) rotate(0) scale(1)"><rect x="-85" y="-50" width="170" height="100" rx="12" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E3</tspan></text></g><g transform="translate(100 65) rotate(0) scale(1)"><rect x="-85" y="-50" width="170" height="100" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">E4</tspan></text></g></g></g><g class="s pop" data-at="0" data-until="1" data-n="chapter.note" style="--d:140ms"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:880px;--ps:1;--pr:0deg"><text x="0" y="-35.64" font-size="54" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">少用一部分</tspan><tspan x="0" dy="71.28">为什么还要存全部</tspan></text></g></g><g class="s pop only-l" data-at="1" data-until="2" data-n="four-matrices"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(165 300) rotate(0) scale(1)"><rect x="-130" y="-155" width="260" height="310" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-110" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 1</tspan></text><g transform="translate(-65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">1</tspan></text></g><g transform="translate(65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(-65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">1</tspan></text></g></g><g transform="translate(455 300) rotate(0) scale(1)"><rect x="-130" y="-155" width="260" height="310" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-110" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 2</tspan></text><g transform="translate(-65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2</tspan></text></g><g transform="translate(65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(-65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2</tspan></text></g></g><g transform="translate(745 300) rotate(0) scale(1)"><rect x="-130" y="-155" width="260" height="310" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-110" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 3</tspan></text><g transform="translate(-65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">3</tspan></text></g><g transform="translate(65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(-65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">3</tspan></text></g></g><g transform="translate(1035 300) rotate(0) scale(1)"><rect x="-130" y="-155" width="260" height="310" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-110" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 4</tspan></text><g transform="translate(-65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">4</tspan></text></g><g transform="translate(65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(-65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">4</tspan></text></g></g></g></g><g class="s pop only-p" data-at="1" data-until="2" data-n="four-matrices"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(210 250) rotate(0) scale(1)"><rect x="-170" y="-155" width="340" height="310" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-110" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 1</tspan></text><g transform="translate(-65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">1</tspan></text></g><g transform="translate(65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(-65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">1</tspan></text></g></g><g transform="translate(590 250) rotate(0) scale(1)"><rect x="-170" y="-155" width="340" height="310" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-110" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 2</tspan></text><g transform="translate(-65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2</tspan></text></g><g transform="translate(65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(-65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2</tspan></text></g></g><g transform="translate(210 690) rotate(0) scale(1)"><rect x="-170" y="-155" width="340" height="310" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-110" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 3</tspan></text><g transform="translate(-65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">3</tspan></text></g><g transform="translate(65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(-65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">3</tspan></text></g></g><g transform="translate(590 690) rotate(0) scale(1)"><rect x="-170" y="-155" width="340" height="310" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-110" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 4</tspan></text><g transform="translate(-65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">4</tspan></text></g><g transform="translate(65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(-65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">4</tspan></text></g></g></g></g><g class="s pop" data-at="1" data-until="2" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:940px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">每个 2 × 2 矩阵含零共四个数</tspan></text></g></g><g class="s pop only-l" data-at="2" data-until="3" data-n="stored-used"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(165 300) rotate(0) scale(1)"><rect x="-130" y="-155" width="260" height="310" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-110" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 1</tspan></text><g transform="translate(-65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">1</tspan></text></g><g transform="translate(65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(-65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">1</tspan></text></g><text x="0" y="115" font-size="34" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">仍需保存</tspan></text></g><g transform="translate(455 300) rotate(0) scale(1)"><rect x="-130" y="-155" width="260" height="310" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-110" font-size="38" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 2</tspan></text><g transform="translate(-65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2</tspan></text></g><g transform="translate(65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(-65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2</tspan></text></g><text x="0" y="115" font-size="34" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本次使用</tspan></text></g><g transform="translate(745 300) rotate(0) scale(1)"><rect x="-130" y="-155" width="260" height="310" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-110" font-size="38" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 3</tspan></text><g transform="translate(-65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">3</tspan></text></g><g transform="translate(65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(-65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">3</tspan></text></g><text x="0" y="115" font-size="34" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本次使用</tspan></text></g><g transform="translate(1035 300) rotate(0) scale(1)"><rect x="-130" y="-155" width="260" height="310" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-110" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 4</tspan></text><g transform="translate(-65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">4</tspan></text></g><g transform="translate(65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(-65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">4</tspan></text></g><text x="0" y="115" font-size="34" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">仍需保存</tspan></text></g></g></g><g class="s pop only-p" data-at="2" data-until="3" data-n="stored-used"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:0px;--py:0px;--ps:1;--pr:0deg"><g transform="translate(210 250) rotate(0) scale(1)"><rect x="-170" y="-155" width="340" height="310" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-110" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 1</tspan></text><g transform="translate(-65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">1</tspan></text></g><g transform="translate(65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(-65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">1</tspan></text></g><text x="0" y="115" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">仍需保存</tspan></text></g><g transform="translate(590 250) rotate(0) scale(1)"><rect x="-170" y="-155" width="340" height="310" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-110" font-size="42" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 2</tspan></text><g transform="translate(-65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2</tspan></text></g><g transform="translate(65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(-65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2</tspan></text></g><text x="0" y="115" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本次使用</tspan></text></g><g transform="translate(210 690) rotate(0) scale(1)"><rect x="-170" y="-155" width="340" height="310" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-110" font-size="42" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 3</tspan></text><g transform="translate(-65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">3</tspan></text></g><g transform="translate(65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(-65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">3</tspan></text></g><text x="0" y="115" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本次使用</tspan></text></g><g transform="translate(590 690) rotate(0) scale(1)"><rect x="-170" y="-155" width="340" height="310" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-110" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">模块 4</tspan></text><g transform="translate(-65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">4</tspan></text></g><g transform="translate(65 -20) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(-65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">0</tspan></text></g><g transform="translate(65 60) rotate(0) scale(1)"><text x="0" y="0" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">4</tspan></text></g><text x="0" y="115" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">仍需保存</tspan></text></g></g></g><g class="s pop" data-at="2" data-until="3" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:940px;--ps:1;--pr:0deg"><text x="0" y="-29.04" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">四个专家共保存 16 个数</tspan><tspan x="0" dy="58.08">本次两个选中项包含 8 个数</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本图的统计范围</tspan></text><text x="0" y="45" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">只计专家矩阵</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-285" y="-140" width="570" height="280" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-58.08" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">路由器、共享层另计</tspan><tspan x="0" dy="58.08">保存量与本次选中量</tspan><tspan x="0" dy="58.08">分别呈现</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">完整模型还有其他计算</tspan></text><text x="0" y="45" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">注意力、路由、共享部分</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-285" y="-140" width="570" height="280" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-58.08" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">某层只选一半专家</tspan><tspan x="0" dy="58.08">不能推出整机耗时</tspan><tspan x="0" dy="58.08">或内存必然减半</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="research" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="chapter.art"><g class="pos" style="--lx:600px;--ly:275px;--ls:1;--lr:0deg;--px:400px;--py:370px;--ps:1;--pr:0deg"><path d="M79.2 79.2 L178.2 178.2" fill="none" stroke="#203845" stroke-width="16" stroke-linecap="round"/><path d="M79.2 79.2 L178.2 178.2" fill="none" stroke="#ee6a58" stroke-width="8" stroke-linecap="round"/><circle cx="0" cy="0" r="110" fill="rgba(222,243,238,.7)" stroke="#203845" stroke-width="7"/><path d="M-60.50000000000001 -11 C-49.5 -55 -16.5 -77 16.5 -74.80000000000001" fill="none" stroke="#ffffff" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/></g></g><g class="s pop" data-at="0" data-until="1" data-n="chapter.note" style="--d:140ms"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:880px;--ps:1;--pr:0deg"><text x="0" y="-35.64" font-size="54" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">真实研究</tspan><tspan x="0" dy="71.28">比本例多了什么</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">Mixtral 的相关层</tspan></text><text x="0" y="14.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">八个前馈专家</tspan><tspan x="0" dy="60.72">每 token 选择两个</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-285" y="-140" width="570" height="280" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-58.08" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">不同层、不同 token</tspan><tspan x="0" dy="58.08">可选择不同专家</tspan><tspan x="0" dy="58.08">本例不作性能复现</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本例没有研究</tspan></text><text x="0" y="14.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">专家与路由训练</tspan><tspan x="0" dy="60.72">分配不均、跨设备传输</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-285" y="-140" width="570" height="280" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-55.44" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">Switch Transformers</tspan><tspan x="0" dy="55.44">采用选择一个专家</tspan><tspan x="0" dy="55.44">MoE 选法不只一种</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="practice" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="chapter.art"><g class="pos" style="--lx:600px;--ly:275px;--ls:1;--lr:0deg;--px:400px;--py:370px;--ps:1;--pr:0deg"><circle cx="0" cy="0" r="110" fill="#d42c16" stroke="#203845" stroke-width="5"/><g transform="translate(0 0.72) rotate(0) scale(2.89)"><path d="M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="0" cy="16" r="3.5" fill="#ffffff"/></g></g></g><g class="s pop" data-at="0" data-until="1" data-n="chapter.note" style="--d:140ms"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:880px;--ps:1;--pr:0deg"><text x="0" y="-35.64" font-size="54" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">改一个权重</tspan><tspan x="0" dy="71.28">自己复算</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">还是第二、第三个模块</tspan></text><text x="0" y="14.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">输出 [2, 4]</tspan><tspan x="0" dy="60.72">与 [3, 6]</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-285" y="-125" width="570" height="250" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-29.04" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">现在各占 0.5</tspan><tspan x="0" dy="58.08">先算第一项、再算第二项</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">选中模块没变</tspan></text><text x="0" y="45" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">权重改变 → 输出改变</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-285" y="-125" width="570" height="250" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-29.04" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">没有证明答案质量更好</tspan><tspan x="0" dy="58.08">还需任务目标和评测资料</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="scope"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:940px;--ps:1;--pr:0deg"><text x="0" y="-29.04" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">选了谁、怎样合并</tspan><tspan x="0" dy="58.08">最后是否有用，分别检查</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="exercise" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="1" data-until="2" data-n="answer-note"><g class="pos" style="--lx:600px;--ly:50px;--ls:1;--lr:0deg;--px:400px;--py:22px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击卡片可翻回题目</tspan></text></g></g><g class="s rise only-l" data-at="0" data-until="2" data-n="quiz.first"><g class="pos" style="--lx:210px;--ly:350px;--ls:1;--lr:0deg;--px:210px;--py:350px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="first" role="button" tabindex="-1" aria-pressed="false" aria-label="两模块各占 0.5，第一项是多少？，点击翻面" data-front-label="两模块各占 0.5，第一项是多少？，点击翻面" data-back-label="2.5，点击翻回"><g class="front" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-63.76" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">两模块各占 0.5</tspan><tspan x="0" dy="47.52">第一项是多少？</tspan></text><text x="0" y="165" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击核对</tspan></text></g><g class="back" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-40" font-size="38" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2.5</tspan></text><text x="0" y="110" font-size="30" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2 ÷ 2 ＋ 3 ÷ 2</tspan></text></g></g></g></g><g class="s rise only-p" data-at="0" data-until="2" data-n="quiz.first"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:185px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="first" role="button" tabindex="-1" aria-pressed="false" aria-label="两模块各占 0.5，第一项是多少？，点击翻面" data-front-label="两模块各占 0.5，第一项是多少？，点击翻面" data-back-label="2.5，点击翻回"><g class="front" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-55.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">两模块各占 0.5</tspan><tspan x="0" dy="60.72">第一项是多少？</tspan></text><text x="0" y="90" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击核对</tspan></text></g><g class="back" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-25" font-size="48" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2.5</tspan></text><text x="0" y="65" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2 ÷ 2 ＋ 3 ÷ 2</tspan></text></g></g></g></g><g class="s rise only-l" data-at="0" data-until="2" data-n="quiz.second"><g class="pos" style="--lx:600px;--ly:350px;--ls:1;--lr:0deg;--px:600px;--py:350px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="second" role="button" tabindex="-1" aria-pressed="false" aria-label="两模块各占 0.5，第二项是多少？，点击翻面" data-front-label="两模块各占 0.5，第二项是多少？，点击翻面" data-back-label="5，点击翻回"><g class="front" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-63.76" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">两模块各占 0.5</tspan><tspan x="0" dy="47.52">第二项是多少？</tspan></text><text x="0" y="165" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击核对</tspan></text></g><g class="back" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-40" font-size="38" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">5</tspan></text><text x="0" y="110" font-size="30" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">4 ÷ 2 ＋ 6 ÷ 2</tspan></text></g></g></g></g><g class="s rise only-p" data-at="0" data-until="2" data-n="quiz.second"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:510px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="second" role="button" tabindex="-1" aria-pressed="false" aria-label="两模块各占 0.5，第二项是多少？，点击翻面" data-front-label="两模块各占 0.5，第二项是多少？，点击翻面" data-back-label="5，点击翻回"><g class="front" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-55.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">两模块各占 0.5</tspan><tspan x="0" dy="60.72">第二项是多少？</tspan></text><text x="0" y="90" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击核对</tspan></text></g><g class="back" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-25" font-size="48" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">5</tspan></text><text x="0" y="65" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">4 ÷ 2 ＋ 6 ÷ 2</tspan></text></g></g></g></g><g class="s rise only-l" data-at="0" data-until="2" data-n="quiz.quality"><g class="pos" style="--lx:990px;--ly:350px;--ls:1;--lr:0deg;--px:990px;--py:350px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="quality" role="button" tabindex="-1" aria-pressed="false" aria-label="2.5 比 2.4 大，就说明质量更好？，点击翻面" data-front-label="2.5 比 2.4 大，就说明质量更好？，点击翻面" data-back-label="不能这样判断，点击翻回"><g class="front" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-63.76" font-size="36" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2.5 比 2.4 大</tspan><tspan x="0" dy="47.52">就说明质量更好？</tspan></text><text x="0" y="165" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击核对</tspan></text></g><g class="back" aria-hidden="true"><rect x="-175" y="-215" width="350" height="430" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-40" font-size="38" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">不能这样判断</tspan></text><text x="0" y="110" font-size="30" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">还需任务目标与评测</tspan></text></g></g></g></g><g class="s rise only-p" data-at="0" data-until="2" data-n="quiz.quality"><g class="pos" style="--lx:0px;--ly:0px;--ls:1;--lr:0deg;--px:400px;--py:835px;--ps:1;--pr:0deg"><g class="flip hit" data-flip="quality" role="button" tabindex="-1" aria-pressed="false" aria-label="2.5 比 2.4 大，就说明质量更好？，点击翻面" data-front-label="2.5 比 2.4 大，就说明质量更好？，点击翻面" data-back-label="不能这样判断，点击翻回"><g class="front" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-55.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">2.5 比 2.4 大</tspan><tspan x="0" dy="60.72">就说明质量更好？</tspan></text><text x="0" y="90" font-size="36" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">点击核对</tspan></text></g><g class="back" aria-hidden="true"><rect x="-345" y="-125" width="690" height="250" rx="24" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-25" font-size="48" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">不能这样判断</tspan></text><text x="0" y="65" font-size="40" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">还需任务目标与评测</tspan></text></g></g></g></g></g></svg>
+<svg class="scene" data-scene="lab" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="chapter.art"><g class="pos" style="--lx:600px;--ly:275px;--ls:1;--lr:0deg;--px:400px;--py:370px;--ps:1;--pr:0deg"><path d="M79.2 79.2 L178.2 178.2" fill="none" stroke="#203845" stroke-width="16" stroke-linecap="round"/><path d="M79.2 79.2 L178.2 178.2" fill="none" stroke="#ee6a58" stroke-width="8" stroke-linecap="round"/><circle cx="0" cy="0" r="110" fill="rgba(222,243,238,.7)" stroke="#203845" stroke-width="7"/><path d="M-60.50000000000001 -11 C-49.5 -55 -16.5 -77 16.5 -74.80000000000001" fill="none" stroke="#ffffff" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/></g></g><g class="s pop" data-at="0" data-until="1" data-n="chapter.note" style="--d:140ms"><g class="pos" style="--lx:600px;--ly:635px;--ls:1;--lr:0deg;--px:400px;--py:880px;--ps:1;--pr:0deg"><text x="0" y="-35.64" font-size="54" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">选读：到程序里</tspan><tspan x="0" dy="71.28">核对这组算式</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">保存记录可核对</tspan></text><text x="0" y="14.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">路由分数 · 选中项</tspan><tspan x="0" dy="60.72">合并权重 · 四份矩阵</tspan></text></g></g><g class="s pop" data-at="1" data-until="2" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-285" y="-125" width="570" height="250" rx="14" fill="#e3efff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-27.72" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">从 0 起的 ID 为 [1, 2]</tspan><tspan x="0" dy="55.44">图中对应第二、第三模块</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">保存数值按正文舍入</tspan></text><text x="0" y="14.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">选中权重 [0.6, 0.4]</tspan><tspan x="0" dy="60.72">输出 [2.4, 4.8]</tspan></text></g></g><g class="s pop" data-at="2" data-until="3" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-285" y="-125" width="570" height="250" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-29.04" font-size="44" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">原始文件保留完整数值</tspan><tspan x="0" dy="58.08">可能有末位浮点误差</tspan></text></g></g><g class="s pop" data-at="3" data-until="4" data-n="experiment"><g class="pos" style="--lx:600px;--ly:300px;--ls:1;--lr:0deg;--px:400px;--py:420px;--ps:1;--pr:0deg"><a class="hit" href="../../Python实现/source/continuation_mechanisms/README.md" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-label="训练、缓存与专家路由实验说明，打开本地文件"><rect x="-350" y="-135" width="700" height="270" rx="14" fill="#def3ee" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-30.36" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">训练、缓存与专家路由</tspan><tspan x="0" dy="60.72">实验说明 · 点击打开</tspan></text></a></g></g><g class="s pop" data-at="4" data-until="5" data-n="left"><g class="pos" style="--lx:300px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><rect x="-275" y="-165" width="550" height="330" rx="12" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><path d="M-240 -65 L240 -65" fill="none" stroke="#203845" stroke-width="3" stroke-linecap="round"/><text x="0" y="-115" font-size="44" fill="#137a7f" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">本次没有进行</tspan></text><text x="0" y="14.64" font-size="46" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">路由器或专家的训练</tspan><tspan x="0" dy="60.72">硬件性能测量</tspan></text></g></g><g class="s pop" data-at="4" data-until="5" data-n="right" style="--d:140ms"><g class="pos" style="--lx:900px;--ly:280px;--ls:1;--lr:0deg;--px:400px;--py:660px;--ps:1;--pr:0deg"><rect x="-285" y="-140" width="570" height="280" rx="14" fill="#fff1d2" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="-55.44" font-size="42" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">16 / 8 仅为专家矩阵</tspan><tspan x="0" dy="55.44">其他模块另计</tspan><tspan x="0" dy="55.44">不是完整模型参数总量</tspan></text></g></g></g></svg>
+<svg class="scene" data-scene="refs" xmlns="http://www.w3.org/2000/svg" role="group" aria-label="分镜画面" aria-hidden="true" focusable="false"><g class="cam"><g class="s pop" data-at="0" data-until="1" data-n="title"><g class="pos" style="--lx:600px;--ly:75px;--ls:1;--lr:0deg;--px:400px;--py:100px;--ps:1;--pr:0deg"><text x="0" y="0" font-size="62" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">资料来源</tspan></text></g></g><g class="s pop" data-at="0" data-until="1" data-n="scope"><g class="pos" style="--lx:600px;--ly:155px;--ls:1;--lr:0deg;--px:400px;--py:220px;--ps:1;--pr:0deg"><text x="0" y="-25.08" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">未训练的构造算例</tspan><tspan x="0" dy="50.16">不作为模型能力或硬件性能测评</tspan></text></g></g><g class="s pop only-l" data-at="0" data-until="1" data-n="source0"><g class="pos" style="--lx:600px;--ly:255px;--ls:1;--lr:0deg;--px:400px;--py:360px;--ps:1;--pr:0deg"><a class="hit" href="https://arxiv.org/html/2401.04088v1#S2.SS1" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-label="〔1〕Mixtral 相关层的选择与合并，打开原始资料"><rect x="-475" y="-42" width="950" height="84" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">〔1〕Mixtral 相关层的选择与合并</tspan></text></a></g></g><g class="s pop only-p" data-at="0" data-until="1" data-n="source0"><g class="pos" style="--lx:600px;--ly:255px;--ls:1;--lr:0deg;--px:400px;--py:360px;--ps:1;--pr:0deg"><a class="hit" href="https://arxiv.org/html/2401.04088v1#S2.SS1" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-label="〔1〕Mixtral 相关层的选择与合并，打开原始资料"><rect x="-375" y="-42" width="750" height="84" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">〔1〕Mixtral 相关层的选择与合并</tspan></text></a></g></g><g class="s pop only-l" data-at="0" data-until="1" data-n="source1"><g class="pos" style="--lx:600px;--ly:355px;--ls:1;--lr:0deg;--px:400px;--py:490px;--ps:1;--pr:0deg"><a class="hit" href="https://arxiv.org/html/2101.03961v3#S2.SS1" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-label="〔2〕Switch 的单专家选择设计，打开原始资料"><rect x="-475" y="-42" width="950" height="84" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">〔2〕Switch 的单专家选择设计</tspan></text></a></g></g><g class="s pop only-p" data-at="0" data-until="1" data-n="source1"><g class="pos" style="--lx:600px;--ly:355px;--ls:1;--lr:0deg;--px:400px;--py:490px;--ps:1;--pr:0deg"><a class="hit" href="https://arxiv.org/html/2101.03961v3#S2.SS1" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-label="〔2〕Switch 的单专家选择设计，打开原始资料"><rect x="-375" y="-42" width="750" height="84" rx="14" fill="#ffffff" stroke="#203845" stroke-width="6" stroke-linejoin="round"/><text x="0" y="0" font-size="38" fill="#203845" text-anchor="middle" font-weight="700" dominant-baseline="central"><tspan x="0" dy="0">〔2〕Switch 的单专家选择设计</tspan></text></a></g></g><g class="s pop" data-at="0" data-until="1" data-n="read"><g class="pos" style="--lx:600px;--ly:665px;--ls:1;--lr:0deg;--px:400px;--py:950px;--ps:1;--pr:0deg"><a class="hit" href="?read" data-action="read" tabindex="-1" aria-label="阅读全文与完整资料说明"><rect x="-310" y="-40" width="620" height="80" rx="40" fill="#137a7f" stroke="#203845" stroke-width="5" stroke-linejoin="round"/><text x="0" y="2" font-size="42" fill="#ffffff" text-anchor="middle" font-weight="800" dominant-baseline="central"><tspan x="0" dy="0">阅读全文与完整资料说明</tspan></text></a></g></g></g></svg>
+<header class="hud">
+<div class="hud-l">
+<button class="pill" id="btn-toc" type="button" aria-haspopup="dialog" aria-label="目录"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01"/></svg><span class="lbl" aria-hidden="true">目录</span></button>
+<span class="pill sec" id="sec"><span id="sec-num"></span><span id="sec-name"></span></span>
+</div>
+<div class="hud-r">
+<button class="pill" id="btn-play" type="button" data-playing="false">播放</button>
+<a class="pill" href="?read" data-action="read">全文</a>
+</div>
+</header>
+<div class="cap" id="capcard" role="status" aria-live="polite" aria-atomic="true"><p id="cap"></p></div>
+<footer class="foot">
+<p id="hint"></p>
+<div class="steps">
+<button class="pill icon" id="btn-prev" type="button" aria-label="上一拍"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 10.5 8 5.5l5 5"/></svg></button>
+<span id="count"></span>
+<button class="pill icon" id="btn-next" type="button" aria-label="下一拍"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 5.5 8 10.5l5-5"/></svg></button>
+</div>
+<div id="bar"></div>
+</footer>
+</main>
+<dialog id="toc" aria-labelledby="toc-title">
+<div class="toc-head"><h2 id="toc-title">每片文字，为什么只交给部分「专家」？</h2><button class="pill" id="toc-close" type="button">关闭</button></div>
+<ol id="toc-list"></ol>
+<p class="toc-foot">语言模型怎样训练和运行，第 3 篇 / 共 4 篇。机器人角色为 AI 辅助制作，场景与图解由代码绘制。</p>
+</dialog>
+<div id="readwrap">
+<div class="read-bar"><a class="pill" href="?stage" data-action="stage">看分镜版</a><a class="pill" href="index.html">返回本篇页面</a></div>
+<article id="read" lang="zh-CN">
+<h1><span class="tl">每片文字，</span> <span class="tl">为什么只交给部分「专家」？</span></h1>
+<p>手机里的一句提问送进大模型后，模型是不是每次都要动用全部计算模块？如果准备了四个模块，这次只请其中两个处理，最后又怎样把结果合起来？</p>
+<p>前一篇通过缓存省去重复计算。这一篇看另一种安排：把一些计算交给多个候选模块，再按输入选择其中一部分。它常被称为稀疏混合专家，简称 MoE。这里的「专家」是数值模块，不一定对应语文、数学等人的学科。</p>
+<p>我们先把真实模型缩成一个可以手算的小例子。所有输入、分数和模块都由我们设定，没有训练专家，也没有比较模型能力。配套程序只负责复算路由与合并。</p>
+<h2>四个模块，先各算一次</h2>
+<p>输入用两个数字表示，写成 <code>[1, 2]</code>。准备四个模块：第一个把两个数各乘 1，第二个各乘 2，第三个各乘 3，第四个各乘 4。</p>
+<p>因此，它们分别会给出 <code>[1, 2]</code>、<code>[2, 4]</code>、<code>[3, 6]</code>、<code>[4, 8]</code>。这里先全部写出，是为了核对算术；实际选择流程不需要每次都执行四个模块。</p>
+<p>还缺一个决定由谁处理的部分，叫路由器。可以把它想成一个会给候选模块打分的程序。在真实模型里，这些分数通常来自可训练的计算；本例直接固定分数，只演示后面的选择。</p>
+<p>要注意，分数是用于路由的数值，不是「这个专家回答正确的概率」。某模块得分最高，也不能直接翻译成它最懂这个话题。</p>
+<h2>选中两个，再把权重算清</h2>
+<p>本例按分数选中第二、第三个模块。只在这两个选中项之间重新分配权重，分别取 0.6 和 0.4，加起来等于 1。未选中的第一、第四个模块不贡献本次输出。</p>
+<p>把第二个模块的 <code>[2, 4]</code> 乘 0.6，再把第三个模块的 <code>[3, 6]</code> 乘 0.4，逐项相加：第一项为 2×0.6＋3×0.4＝2.4；第二项为 4×0.6＋6×0.4＝4.8。最终得到 <code>[2.4, 4.8]</code>。</p>
+<p class="pic"><img alt="输入经过路由选中第二、第三个专家，以 0.6 和 0.4 合并，得到 2.4 与 4.8" src="23_%E8%B7%AF%E7%94%B1%E9%80%89%E6%8B%A9%E5%92%8C%E5%8A%A0%E6%9D%83%E8%BE%93%E5%87%BA.png" loading="lazy"></p>
+<p class="figcap"><em>图 1　先选择，再计算选中模块的输出并加权；这是一组未训练的构造算例。</em></p>
+<p>可以沿图 1 倒着检查：要得到 2.4，第二、第三个模块分别贡献了 1.2 和 1.2；要得到 4.8，两边分别贡献 2.4 和 2.4。选中两个以后，仍要知道各自给出了什么、占多少比重，才能复原最后的结果。</p>
+<p>下一片文字的数字表示变化，路由器就可能选择不同模块。但「可能换路」不等于每片文字必须走不同路线，连续多片也可能选中同一组。</p>
+<p>这里的两个专家也没有先商量、再投票。它们各自算出数值，按权重合在一起。模型内部的这种计算，和两个独立助手各写一份答案，是不同的过程。</p>
+<p>本例把选中两项的权重重新调整，使它们相加为 1，这叫重新归一。其他稀疏路由可能有不同约定，不能直接照搬。因此，看一张专家分工图，不只要看哪两条线亮了，还要看它们怎样合并。</p>
+<h2>少用一部分，为什么还要存全部</h2>
+<p>在图 2 里，每个模块的参数排成两行两列，这样的数字表叫 2×2 矩阵。数一数，连同表里的零，每个模块都要存四个数。四个专家总共保存 16 个数；本次选中两个，使用其中 8 个数。</p>
+<p>16 个数是四个专家都要存下来的；8 个数是这次选中的两个专家所包含的。第一、第四个模块这次虽然没用，下次可能会选中，所以仍要保存。</p>
+<p class="pic"><img alt="四个专家矩阵共保存 16 个数，本次两个选中专家涉及 8 个数，其他组件另计" src="23_%E6%80%BB%E5%8F%82%E6%95%B0%E4%B8%8E%E6%BF%80%E6%B4%BB%E5%8F%82%E6%95%B0.png" loading="lazy"></p>
+<p class="figcap"><em>图 2　这里只统计专家矩阵，不包括路由器和共享层；保存量与本次选中量不能混用。</em></p>
+<p>真正的语言模型还有注意力层、路由器以及其他共享计算。所以，某层只选一半专家，不等于整个模型只用一半参数，更不意味着耗时或内存必然减半。数据怎样分配、模块放在哪里，也会影响实际代价。</p>
+<h2>真实研究比这个例子多了什么</h2>
+<p>Mixtral 论文描述的结构，在相关层中设有八个前馈专家，每个 token 选择两个，再组合输出。不同层、不同 token 的选择可以不同。<span class="cite">〔1〕</span>我们的四个线性模块，只借用了选择与合并的思路，不能当作该模型的缩小性能复现。</p>
+<p>专家和路由怎样训练、是否总挤向少数专家、不同设备怎样传递数据，都超出了手算例子。另一项研究 Switch Transformers 采用选择一个专家的设计，也说明 MoE 并不只有一种固定选法。<span class="cite">〔2〕</span></p>
+<h2>改一个权重，自己复算</h2>
+<p>仍选第二、第三个模块，如果把权重改为各 0.5，输出是多少？先计算，再和原来的 <code>[2.4, 4.8]</code> 比较。</p>
+<p>第一项是 2×0.5＋3×0.5＝2.5，第二项是 4×0.5＋6×0.5＝5。结果变成 <code>[2.5, 5]</code>。选中的专家没变，合并权重变了，输出也会变。</p>
+<p>这道题没有证明哪个答案更好。要判断质量，需要任务目标与评测资料；这里只有能核对的数值运算。把「选了谁」「怎样合并」「最后是否有用」分开，才能看清专家分工实际完成了哪一步。</p>
+<h2>选读：到程序里核对这组算式</h2>
+<p>配套程序保存全部路由分数、选中项、合并权重与四个专家矩阵。第二、第三个模块的权重约为 0.6 和 0.4，输出约为 <code>[2.4, 4.8]</code>；计算机保存的小数可能有末位浮点误差。实现与原记录见<a href="../../Python%E5%AE%9E%E7%8E%B0/source/continuation_mechanisms/README.md" rel="noopener noreferrer">训练、缓存与专家路由实验说明</a>。</p>
+<p>这次没有训练路由器或专家，也没有测硬件性能。程序里的 16 和 8 只数专家矩阵中的参数，路由器等其他模块另计；它们不是完整模型的参数总量。</p>
+<h2>资料来源</h2><div class="refs">
+<p>四专家输入、路由及矩阵均为原创构造，程序没有训练路由或专家。对应实验见本仓库 <code>Python实现/source/continuation_mechanisms/</code>。</p>
+<p><span class="cite">〔1〕</span> Jiang 等，2024，Mixtral of Experts，§2.1。参考每 token 选择部分前馈专家及组合输出的机制。</p>
+<p><a href="https://arxiv.org/html/2401.04088v1#S2.SS1" rel="noopener noreferrer">https://arxiv.org/html/2401.04088v1#S2.SS1</a></p>
+<p><span class="cite">〔2〕</span> Fedus、Zoph、Shazeer，2021/2022，Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity。作为不同稀疏路由设计的参照，不引用性能倍数。</p>
+<p><a href="https://arxiv.org/html/2101.03961v3#S2.SS1" rel="noopener noreferrer">https://arxiv.org/html/2101.03961v3#S2.SS1</a></p>
+</div>
+<div class="read-end"><a class="pill" href="?stage" data-action="stage">看分镜版</a><a class="pill" href="正文.md">查看正文 Markdown</a></div>
+<p class="read-note">语言模型怎样训练和运行，第 3 篇 / 共 4 篇。机器人角色为 AI 辅助制作，场景与图解由代码绘制。</p>
+</article>
+</div>
+<script type="application/json" id="stage-data">{"total":38,"sectionCount":6,"sections":[{"num":0,"label":"导读","mark":"导","first":0,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003ccircle cx=\"0\" cy=\"0\" r=\"110\" fill=\"#d42c16\" stroke=\"#203845\" stroke-width=\"5\"/>\u003cg transform=\"translate(0 0.72) rotate(0) scale(2.89)\">\u003cpath d=\"M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\u003ccircle cx=\"0\" cy=\"16\" r=\"3.5\" fill=\"#ffffff\"/>\u003c/g>\u003c/svg>"},{"num":1,"label":"四个模块，先各算一次","first":4,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003cg transform=\"translate(-100 -65) rotate(0) scale(1)\">\u003crect x=\"-85\" y=\"-50\" width=\"170\" height=\"100\" rx=\"12\" fill=\"#ffffff\" stroke=\"#203845\" stroke-width=\"6\" stroke-linejoin=\"round\"/>\u003ctext x=\"0\" y=\"0\" font-size=\"46\" fill=\"#203845\" text-anchor=\"middle\" font-weight=\"700\" dominant-baseline=\"central\">\u003ctspan x=\"0\" dy=\"0\">E1\u003c/tspan>\u003c/text>\u003c/g>\u003cg transform=\"translate(100 -65) rotate(0) scale(1)\">\u003crect x=\"-85\" y=\"-50\" width=\"170\" height=\"100\" rx=\"12\" fill=\"#def3ee\" stroke=\"#203845\" stroke-width=\"6\" stroke-linejoin=\"round\"/>\u003ctext x=\"0\" y=\"0\" font-size=\"46\" fill=\"#137a7f\" text-anchor=\"middle\" font-weight=\"700\" dominant-baseline=\"central\">\u003ctspan x=\"0\" dy=\"0\">E2\u003c/tspan>\u003c/text>\u003c/g>\u003cg transform=\"translate(-100 65) rotate(0) scale(1)\">\u003crect x=\"-85\" y=\"-50\" width=\"170\" height=\"100\" rx=\"12\" fill=\"#def3ee\" stroke=\"#203845\" stroke-width=\"6\" stroke-linejoin=\"round\"/>\u003ctext x=\"0\" y=\"0\" font-size=\"46\" fill=\"#137a7f\" text-anchor=\"middle\" font-weight=\"700\" dominant-baseline=\"central\">\u003ctspan x=\"0\" dy=\"0\">E3\u003c/tspan>\u003c/text>\u003c/g>\u003cg transform=\"translate(100 65) rotate(0) scale(1)\">\u003crect x=\"-85\" y=\"-50\" width=\"170\" height=\"100\" rx=\"12\" fill=\"#ffffff\" stroke=\"#203845\" stroke-width=\"6\" stroke-linejoin=\"round\"/>\u003ctext x=\"0\" y=\"0\" font-size=\"46\" fill=\"#203845\" text-anchor=\"middle\" font-weight=\"700\" dominant-baseline=\"central\">\u003ctspan x=\"0\" dy=\"0\">E4\u003c/tspan>\u003c/text>\u003c/g>\u003c/svg>"},{"num":2,"label":"选中两个，再把权重算清","first":9,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003cg transform=\"translate(-100 -65) rotate(0) scale(1)\">\u003crect x=\"-85\" y=\"-50\" width=\"170\" height=\"100\" rx=\"12\" fill=\"#ffffff\" stroke=\"#203845\" stroke-width=\"6\" stroke-linejoin=\"round\"/>\u003ctext x=\"0\" y=\"0\" font-size=\"46\" fill=\"#203845\" text-anchor=\"middle\" font-weight=\"700\" dominant-baseline=\"central\">\u003ctspan x=\"0\" dy=\"0\">E1\u003c/tspan>\u003c/text>\u003c/g>\u003cg transform=\"translate(100 -65) rotate(0) scale(1)\">\u003crect x=\"-85\" y=\"-50\" width=\"170\" height=\"100\" rx=\"12\" fill=\"#def3ee\" stroke=\"#203845\" stroke-width=\"6\" stroke-linejoin=\"round\"/>\u003ctext x=\"0\" y=\"0\" font-size=\"46\" fill=\"#137a7f\" text-anchor=\"middle\" font-weight=\"700\" dominant-baseline=\"central\">\u003ctspan x=\"0\" dy=\"0\">E2\u003c/tspan>\u003c/text>\u003c/g>\u003cg transform=\"translate(-100 65) rotate(0) scale(1)\">\u003crect x=\"-85\" y=\"-50\" width=\"170\" height=\"100\" rx=\"12\" fill=\"#def3ee\" stroke=\"#203845\" stroke-width=\"6\" stroke-linejoin=\"round\"/>\u003ctext x=\"0\" y=\"0\" font-size=\"46\" fill=\"#137a7f\" text-anchor=\"middle\" font-weight=\"700\" dominant-baseline=\"central\">\u003ctspan x=\"0\" dy=\"0\">E3\u003c/tspan>\u003c/text>\u003c/g>\u003cg transform=\"translate(100 65) rotate(0) scale(1)\">\u003crect x=\"-85\" y=\"-50\" width=\"170\" height=\"100\" rx=\"12\" fill=\"#ffffff\" stroke=\"#203845\" stroke-width=\"6\" stroke-linejoin=\"round\"/>\u003ctext x=\"0\" y=\"0\" font-size=\"46\" fill=\"#203845\" text-anchor=\"middle\" font-weight=\"700\" dominant-baseline=\"central\">\u003ctspan x=\"0\" dy=\"0\">E4\u003c/tspan>\u003c/text>\u003c/g>\u003c/svg>"},{"num":3,"label":"少用一部分，为什么还要存全部","first":19,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003cg transform=\"translate(-100 -65) rotate(0) scale(1)\">\u003crect x=\"-85\" y=\"-50\" width=\"170\" height=\"100\" rx=\"12\" fill=\"#ffffff\" stroke=\"#203845\" stroke-width=\"6\" stroke-linejoin=\"round\"/>\u003ctext x=\"0\" y=\"0\" font-size=\"46\" fill=\"#203845\" text-anchor=\"middle\" font-weight=\"700\" dominant-baseline=\"central\">\u003ctspan x=\"0\" dy=\"0\">E1\u003c/tspan>\u003c/text>\u003c/g>\u003cg transform=\"translate(100 -65) rotate(0) scale(1)\">\u003crect x=\"-85\" y=\"-50\" width=\"170\" height=\"100\" rx=\"12\" fill=\"#def3ee\" stroke=\"#203845\" stroke-width=\"6\" stroke-linejoin=\"round\"/>\u003ctext x=\"0\" y=\"0\" font-size=\"46\" fill=\"#137a7f\" text-anchor=\"middle\" font-weight=\"700\" dominant-baseline=\"central\">\u003ctspan x=\"0\" dy=\"0\">E2\u003c/tspan>\u003c/text>\u003c/g>\u003cg transform=\"translate(-100 65) rotate(0) scale(1)\">\u003crect x=\"-85\" y=\"-50\" width=\"170\" height=\"100\" rx=\"12\" fill=\"#def3ee\" stroke=\"#203845\" stroke-width=\"6\" stroke-linejoin=\"round\"/>\u003ctext x=\"0\" y=\"0\" font-size=\"46\" fill=\"#137a7f\" text-anchor=\"middle\" font-weight=\"700\" dominant-baseline=\"central\">\u003ctspan x=\"0\" dy=\"0\">E3\u003c/tspan>\u003c/text>\u003c/g>\u003cg transform=\"translate(100 65) rotate(0) scale(1)\">\u003crect x=\"-85\" y=\"-50\" width=\"170\" height=\"100\" rx=\"12\" fill=\"#ffffff\" stroke=\"#203845\" stroke-width=\"6\" stroke-linejoin=\"round\"/>\u003ctext x=\"0\" y=\"0\" font-size=\"46\" fill=\"#203845\" text-anchor=\"middle\" font-weight=\"700\" dominant-baseline=\"central\">\u003ctspan x=\"0\" dy=\"0\">E4\u003c/tspan>\u003c/text>\u003c/g>\u003c/svg>"},{"num":4,"label":"真实研究比这个例子多了什么","first":24,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003cpath d=\"M79.2 79.2 L178.2 178.2\" fill=\"none\" stroke=\"#203845\" stroke-width=\"16\" stroke-linecap=\"round\"/>\u003cpath d=\"M79.2 79.2 L178.2 178.2\" fill=\"none\" stroke=\"#ee6a58\" stroke-width=\"8\" stroke-linecap=\"round\"/>\u003ccircle cx=\"0\" cy=\"0\" r=\"110\" fill=\"rgba(222,243,238,.7)\" stroke=\"#203845\" stroke-width=\"7\"/>\u003cpath d=\"M-60.50000000000001 -11 C-49.5 -55 -16.5 -77 16.5 -74.80000000000001\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\u003c/svg>"},{"num":5,"label":"改一个权重，自己复算","first":27,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003ccircle cx=\"0\" cy=\"0\" r=\"110\" fill=\"#d42c16\" stroke=\"#203845\" stroke-width=\"5\"/>\u003cg transform=\"translate(0 0.72) rotate(0) scale(2.89)\">\u003cpath d=\"M-10 -7 C-10 -21 10 -21 10 -7 C10 0 0 0 0 7\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"5\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\u003ccircle cx=\"0\" cy=\"16\" r=\"3.5\" fill=\"#ffffff\"/>\u003c/g>\u003c/svg>"},{"num":6,"label":"选读：到程序里核对这组算式","first":32,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003cpath d=\"M79.2 79.2 L178.2 178.2\" fill=\"none\" stroke=\"#203845\" stroke-width=\"16\" stroke-linecap=\"round\"/>\u003cpath d=\"M79.2 79.2 L178.2 178.2\" fill=\"none\" stroke=\"#ee6a58\" stroke-width=\"8\" stroke-linecap=\"round\"/>\u003ccircle cx=\"0\" cy=\"0\" r=\"110\" fill=\"rgba(222,243,238,.7)\" stroke=\"#203845\" stroke-width=\"7\"/>\u003cpath d=\"M-60.50000000000001 -11 C-49.5 -55 -16.5 -77 16.5 -74.80000000000001\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\u003c/svg>"},{"num":0,"mark":"源","label":"资料来源","first":37,"thumbnail":"\u003csvg class=\"toc-thumb\" viewBox=\"-230 -190 460 380\" aria-hidden=\"true\" focusable=\"false\">\u003cpath d=\"M79.2 79.2 L178.2 178.2\" fill=\"none\" stroke=\"#203845\" stroke-width=\"16\" stroke-linecap=\"round\"/>\u003cpath d=\"M79.2 79.2 L178.2 178.2\" fill=\"none\" stroke=\"#ee6a58\" stroke-width=\"8\" stroke-linecap=\"round\"/>\u003ccircle cx=\"0\" cy=\"0\" r=\"110\" fill=\"rgba(222,243,238,.7)\" stroke=\"#203845\" stroke-width=\"7\"/>\u003cpath d=\"M-60.50000000000001 -11 C-49.5 -55 -16.5 -77 16.5 -74.80000000000001\" fill=\"none\" stroke=\"#ffffff\" stroke-width=\"6\" stroke-linejoin=\"round\" stroke-linecap=\"round\"/>\u003c/svg>"}],"scenes":{"cover":{"cams":{"all":{"l":[0,0,1600,900],"p":[0,0,900,1500]}}},"open":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"experts":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"route":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"parameters":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"research":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"practice":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"exercise":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"lab":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}},"refs":{"cams":{"desk":{"l":[0,0,1200,720],"p":[0,0,800,1000]}}}},"beats":[{"scene":"cover","step":0,"cam":"all","html":"每片文字，为什么只交给部分「专家」？","kind":"title","chars":18,"section":0,"quiet":true},{"scene":"open","step":0,"cam":"desk","html":"手机里的一句提问送进大模型后，模型是不是每次都要动用全部计算模块？如果准备了四个模块，这次只请其中两个处理，最后又怎样把结果合起来？","kind":"text","chars":66,"section":0},{"scene":"open","step":1,"cam":"desk","html":"前一篇通过缓存省去重复计算。这一篇看另一种安排：把一些计算交给多个候选模块，再按输入选择其中一部分。它常被称为稀疏混合专家，简称 MoE。这里的「专家」是数值模块，不一定对应语文、数学等人的学科。","kind":"text","chars":97,"section":0},{"scene":"open","step":2,"cam":"desk","html":"我们先把真实模型缩成一个可以手算的小例子。所有输入、分数和模块都由我们设定，没有训练专家，也没有比较模型能力。配套程序只负责复算路由与合并。","kind":"text","chars":70,"section":0},{"scene":"experts","step":0,"cam":"desk","html":"\u003cb class=\"no\">1\u003c/b>\u003cspan>四个模块，先各算一次\u003c/span>","kind":"h2","chars":10,"section":1},{"scene":"experts","step":1,"cam":"desk","html":"输入用两个数字表示，写成 [1, 2]。准备四个模块：第一个把两个数各乘 1，第二个各乘 2，第三个各乘 3，第四个各乘 4。","kind":"text","chars":57,"section":1},{"scene":"experts","step":2,"cam":"desk","html":"因此，它们分别会给出 [1, 2]、[2, 4]、[3, 6]、[4, 8]。这里先全部写出，是为了核对算术；实际选择流程不需要每次都执行四个模块。","kind":"text","chars":69,"section":1},{"scene":"experts","step":3,"cam":"desk","html":"还缺一个决定由谁处理的部分，叫路由器。可以把它想成一个会给候选模块打分的程序。在真实模型里，这些分数通常来自可训练的计算；本例直接固定分数，只演示后面的选择。","kind":"text","chars":79,"section":1},{"scene":"experts","step":4,"cam":"desk","html":"要注意，分数是用于路由的数值，不是「这个专家回答正确的概率」。某模块得分最高，也不能直接翻译成它最懂这个话题。","kind":"text","chars":55,"section":1},{"scene":"route","step":0,"cam":"desk","html":"\u003cb class=\"no\">2\u003c/b>\u003cspan>选中两个，再把权重算清\u003c/span>","kind":"h2","chars":11,"section":2},{"scene":"route","step":1,"cam":"desk","html":"本例按分数选中第二、第三个模块。","kind":"text","chars":16,"section":2},{"scene":"route","step":2,"cam":"desk","html":"只在这两个选中项之间重新分配权重，分别取 0.6 和 0.4，加起来等于 1。未选中的第一、第四个模块不贡献本次输出。","kind":"text","chars":55,"section":2},{"scene":"route","step":3,"cam":"desk","html":"把第二个模块的 [2, 4] 乘 0.6，再把第三个模块的 [3, 6] 乘 0.4，逐项相加：第一项为 2×0.6＋3×0.4＝2.4；第二项为 4×0.6＋6×0.4＝4.8。","kind":"text","chars":80,"section":2},{"scene":"route","step":4,"cam":"desk","html":"最终得到 [2.4, 4.8]。","kind":"text","chars":14,"section":2},{"scene":"route","step":5,"cam":"desk","html":"图 1　先选择，再计算选中模块的输出并加权；这是一组未训练的构造算例。","kind":"caption","chars":33,"section":2},{"scene":"route","step":6,"cam":"desk","html":"可以沿图 1 倒着检查：要得到 2.4，第二、第三个模块分别贡献了 1.2 和 1.2；要得到 4.8，两边分别贡献 2.4 和 2.4。选中两个以后，仍要知道各自给出了什么、占多少比重，才能复原最后的结果。","kind":"text","chars":94,"section":2},{"scene":"route","step":7,"cam":"desk","html":"下一片文字的数字表示变化，路由器就可能选择不同模块。但「可能换路」不等于每片文字必须走不同路线，连续多片也可能选中同一组。","kind":"text","chars":61,"section":2},{"scene":"route","step":8,"cam":"desk","html":"这里的两个专家也没有先商量、再投票。它们各自算出数值，按权重合在一起。模型内部的这种计算，和两个独立助手各写一份答案，是不同的过程。","kind":"text","chars":66,"section":2},{"scene":"route","step":9,"cam":"desk","html":"本例把选中两项的权重重新调整，使它们相加为 1，这叫重新归一。其他稀疏路由可能有不同约定，不能直接照搬。因此，看一张专家分工图，不只要看哪两条线亮了，还要看它们怎样合并。","kind":"text","chars":84,"section":2},{"scene":"parameters","step":0,"cam":"desk","html":"\u003cb class=\"no\">3\u003c/b>\u003cspan>少用一部分，为什么还要存全部\u003c/span>","kind":"h2","chars":14,"section":3},{"scene":"parameters","step":1,"cam":"desk","html":"在图 2 里，每个模块的参数排成两行两列，这样的数字表叫 2×2 矩阵。数一数，连同表里的零，每个模块都要存四个数。","kind":"text","chars":54,"section":3},{"scene":"parameters","step":2,"cam":"desk","html":"四个专家总共保存 16 个数；本次选中两个，使用其中 8 个数。16 个数是四个专家都要存下来的；8 个数是这次选中的两个专家所包含的。第一、第四个模块这次虽然没用，下次可能会选中，所以仍要保存。","kind":"text","chars":92,"section":3},{"scene":"parameters","step":3,"cam":"desk","html":"图 2　这里只统计专家矩阵，不包括路由器和共享层；保存量与本次选中量不能混用。","kind":"caption","chars":37,"section":3},{"scene":"parameters","step":4,"cam":"desk","html":"真正的语言模型还有注意力层、路由器以及其他共享计算。所以，某层只选一半专家，不等于整个模型只用一半参数，更不意味着耗时或内存必然减半。数据怎样分配、模块放在哪里，也会影响实际代价。","kind":"text","chars":90,"section":3},{"scene":"research","step":0,"cam":"desk","html":"\u003cb class=\"no\">4\u003c/b>\u003cspan>真实研究比这个例子多了什么\u003c/span>","kind":"h2","chars":13,"section":4},{"scene":"research","step":1,"cam":"desk","html":"Mixtral 论文描述的结构，在相关层中设有八个前馈专家，每个 token 选择两个，再组合输出。不同层、不同 token 的选择可以不同。\u003cspan class=\"cite\">〔1〕\u003c/span>我们的四个线性模块，只借用了选择与合并的思路，不能当作该模型的缩小性能复现。","kind":"text","chars":107,"section":4},{"scene":"research","step":2,"cam":"desk","html":"专家和路由怎样训练、是否总挤向少数专家、不同设备怎样传递数据，都超出了手算例子。另一项研究 Switch Transformers 采用选择一个专家的设计，也说明 MoE 并不只有一种固定选法。\u003cspan class=\"cite\">〔2〕\u003c/span>","kind":"text","chars":95,"section":4},{"scene":"practice","step":0,"cam":"desk","html":"\u003cb class=\"no\">5\u003c/b>\u003cspan>改一个权重，自己复算\u003c/span>","kind":"h2","chars":10,"section":5},{"scene":"practice","step":1,"cam":"desk","html":"仍选第二、第三个模块，如果把权重改为各 0.5，输出是多少？先计算，再和原来的 [2.4, 4.8] 比较。","kind":"text","chars":50,"section":5},{"scene":"exercise","step":0,"cam":"desk","html":"","kind":"text","chars":0,"section":5,"quiet":true},{"scene":"exercise","step":1,"cam":"desk","html":"第一项是 2×0.5＋3×0.5＝2.5，第二项是 4×0.5＋6×0.5＝5。结果变成 [2.5, 5]。选中的专家没变，合并权重变了，输出也会变。","kind":"text","chars":71,"section":5,"reveal":true},{"scene":"practice","step":2,"cam":"desk","html":"这道题没有证明哪个答案更好。要判断质量，需要任务目标与评测资料；这里只有能核对的数值运算。把「选了谁」「怎样合并」「最后是否有用」分开，才能看清专家分工实际完成了哪一步。","kind":"text","chars":85,"section":5},{"scene":"lab","step":0,"cam":"desk","html":"\u003cb class=\"no\">6\u003c/b>\u003cspan>选读：到程序里核对这组算式\u003c/span>","kind":"h2","chars":13,"section":6},{"scene":"lab","step":1,"cam":"desk","html":"配套程序保存全部路由分数、选中项、合并权重与四个专家矩阵。","kind":"text","chars":29,"section":6},{"scene":"lab","step":2,"cam":"desk","html":"第二、第三个模块的权重约为 0.6 和 0.4，输出约为 [2.4, 4.8]；计算机保存的小数可能有末位浮点误差。","kind":"text","chars":53,"section":6},{"scene":"lab","step":3,"cam":"desk","html":"实现与原记录见训练、缓存与专家路由实验说明。","kind":"text","chars":22,"section":6},{"scene":"lab","step":4,"cam":"desk","html":"这次没有训练路由器或专家，也没有测硬件性能。程序里的 16 和 8 只数专家矩阵中的参数，路由器等其他模块另计；它们不是完整模型的参数总量。","kind":"text","chars":66,"section":6},{"scene":"refs","step":0,"cam":"desk","html":"","kind":"text","chars":0,"section":7,"quiet":true}]}</script>
+<script data-stage-source="stage.js">/* 互动版运行时：一次手势一拍的分镜阅读器。
+ * 经典脚本，无依赖，双击 file:// 也能运行。
+ * 不依赖浏览器的滚动：滚轮、触摸、键盘各自折算成「前进一拍 / 后退一拍」，画面固定不动，
+ * 所以触控板惯性、鼠标滚轮、手指轻划在各浏览器里表现一致。
+ * 纯函数在 Node 下经 module.exports 暴露，供单元测试。 */
+(function () {
+  'use strict';
+
+  /* ---------------- 纯函数 ---------------- */
+
+  /* 自动播放时每拍停留的秒数：按字数估读，已含 0.7s 的镜头移动。 */
+  function dwell(chars) {
+    return Math.min(12, Math.max(2.4, 1.4 + 0.14 * chars));
+  }
+
+  /* 把世界坐标里的矩形 rect=[x,y,w,h] 等比放进 area={x,y,w,h} 并居中。 */
+  function fitCamera(rect, area) {
+    var s = Math.min(area.w / rect[2], area.h / rect[3]);
+    return {
+      s: s,
+      x: area.x + (area.w - rect[2] * s) / 2 - rect[0] * s,
+      y: area.y + (area.h - rect[3] * s) / 2 - rect[1] * s
+    };
+  }
+
+  /* 元素在第 i 拍是否可见：at 起、until 前。 */
+  function visibleAt(at, until, i) {
+    return i >= at && (until == null || i < until);
+  }
+
+  /* 元素名 name 是否被聚焦列表点名：全等，或以 "<项>." 开头。 */
+  function focusHit(focus, name) {
+    for (var k = 0; k < focus.length; k++) {
+      if (name === focus[k] || name.indexOf(focus[k] + '.') === 0) return true;
+    }
+    return false;
+  }
+
+  /* '#b12' → 第 12 拍（下标 11）；无效返回 -1。 */
+  function parseBeatHash(hash, total) {
+    var m = /^#b(\d+)$/.exec(hash || '');
+    if (!m) return -1;
+    var n = Number(m[1]);
+    return n >= 1 && n <= total ? n - 1 : -1;
+  }
+  function formatBeatHash(i) { return '#b' + (i + 1); }
+
+  /* 滚轮手势限流：一次手势只前进一拍。feed(dy, t) 返回 +1 / -1 / 0；t 是毫秒时间戳，由调用方传入，
+   * 所以测试可以喂合成的事件序列。
+   * 触控板松手后还会有一两秒的惯性事件：翻页后锁住，直到事件流停顿 quiet 毫秒才解锁。
+   * 锁定期间有两种情况视为读者又发起了一次手势：
+   *   1) 锁定 minLock 毫秒后，增量突然比最近的平均值大得多（在惯性上又甩了一下）；
+   *   2) 锁定 restart 毫秒后，增量仍不小于本次手势峰值的 restartRatio（一直在匀速滚动的鼠标滚轮）。 */
+  function createWheelGate(options) {
+    var o = { threshold: 18, quiet: 130, minLock: 350, reaccel: 1.7, restart: 900, restartRatio: 0.7 };
+    for (var key in options) o[key] = options[key];
+    var sum = 0, locked = false, lastT = -1e9, lockedAt = 0, avg = 0, peak = 0;
+    return {
+      feed: function (dy, t) {
+        var a = Math.abs(dy);
+        if (!a) return 0;
+        if (t - lastT > o.quiet) { locked = false; sum = 0; avg = 0; peak = 0; }
+        lastT = t;
+        var prev = avg;
+        avg = prev ? prev * 0.6 + a * 0.4 : a;
+        if (locked) {
+          peak = Math.max(peak, a);
+          var since = t - lockedAt;
+          var surge = since > o.minLock && a > prev * o.reaccel + 8;
+          var steady = since > o.restart && a >= peak * o.restartRatio && a >= 20;
+          if (!surge && !steady) return 0;
+          locked = false; sum = 0;
+        }
+        sum += dy;
+        if (Math.abs(sum) < o.threshold) return 0;
+        var dir = sum > 0 ? 1 : -1;
+        sum = 0; locked = true; lockedAt = t; peak = a;
+        return dir;
+      }
+    };
+  }
+
+  /* 触摸滑动：手指上滑为前进。慢拖需要 48px，快速一划 24px 即可；斜着划不算。 */
+  function swipeStep(dx, dy, ms) {
+    var ay = Math.abs(dy), ax = Math.abs(dx);
+    if (ay < ax * 1.2) return 0;
+    if (ay >= 48 || (ay >= 24 && ms < 220)) return dy < 0 ? 1 : -1;
+    return 0;
+  }
+
+  /* 画面区：为顶栏和字幕卡留出位置。capH 是字幕卡实际占的高度（含它离底边的距离），
+   * 由页面量出，所以短句子给画面留更多地方；静默拍（封面）没有字幕卡，只留底栏。 */
+  function artArea(w, h, capH) {
+    var portrait = w / h < 0.85;
+    var top = portrait ? 56 : 64;
+    var bottom = capH ? capH + 14 : 64;
+    return { x: 0, y: top, w: w, h: Math.max(120, h - top - bottom), portrait: portrait };
+  }
+
+  var api = {
+    dwell: dwell, fitCamera: fitCamera, visibleAt: visibleAt, focusHit: focusHit,
+    parseBeatHash: parseBeatHash, formatBeatHash: formatBeatHash,
+    createWheelGate: createWheelGate, swipeStep: swipeStep, artArea: artArea
+  };
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  if (typeof document === 'undefined') return;
+
+  /* ---------------- 页面 ---------------- */
+
+  var dataEl = document.getElementById('stage-data');
+  if (!dataEl) return;
+  var data = JSON.parse(dataEl.textContent);
+  var beats = data.beats;
+  var total = beats.length;
+  var root = document.documentElement;
+  var $ = function (sel, scope) { return (scope || document).querySelector(sel); };
+  var $$ = function (sel, scope) { return Array.prototype.slice.call((scope || document).querySelectorAll(sel)); };
+
+  var stage = $('#stage');
+  var capText = $('#cap');
+  var capCard = $('#capcard');
+  var count = $('#count');
+  var hint = $('#hint');
+  var secNum = $('#sec-num');
+  var secName = $('#sec-name');
+  var secPill = $('#sec');
+  var bar = $('#bar');
+  var btnPrev = $('#btn-prev');
+  var btnNext = $('#btn-next');
+  var btnPlay = $('#btn-play');
+  var btnToc = $('#btn-toc');
+  var toc = $('#toc');
+  var readEl = $('#read');
+
+  var cur = -1;
+  var playing = false;
+  var timer = 0;
+  var lastScene = null;
+  var urlTimer = 0;
+  var flipState = {};
+
+  /* 每个场景自己编步号（0 起）；每一拍在分镜里声明自己对应哪一步。 */
+  var scenes = {};
+  $$('.scene').forEach(function (svg) {
+    var timed = $$('[data-at]', svg);
+    timed.forEach(function (el) {
+      el._at = Number(el.getAttribute('data-at'));
+      var un = el.getAttribute('data-until');
+      el._until = un == null ? null : Number(un);
+    });
+    scenes[svg.getAttribute('data-scene')] = { el: svg, cam: $('.cam', svg), timed: timed };
+  });
+
+  function mode() { return root.getAttribute('data-mode'); }
+
+  /* ---- 渲染：状态只由（场景、步号、镜头）决定，所以跳转和逐拍走得到同样的画面 ---- */
+
+  function setOn(sc, step) {
+    for (var k = 0; k < sc.timed.length; k++) {
+      var on = visibleAt(sc.timed[k]._at, sc.timed[k]._until, step);
+      sc.timed[k].classList.toggle('on', on);
+      sc.timed[k].setAttribute('aria-hidden', String(!on));
+    }
+  }
+
+  /* 聚焦：这一拍点名的元素保持原样，其余压暗（solo 时整个藏起来）。镜头放大时用，
+   * 免得露出一半的邻居显得像出错。名字用 data-n。 */
+  function setFocus(sc, focus, solo) {
+    var has = !!(focus && focus.length);
+    sc.el.classList.toggle('has-focus', has);
+    sc.el.classList.toggle('solo', has && !!solo);
+    for (var k = 0; k < sc.timed.length; k++) {
+      var e = sc.timed[k];
+      e.classList.toggle('focus', has && focusHit(focus, e.getAttribute('data-n') || ''));
+    }
+  }
+
+  /* how：'instant' 直接到位；'enter' 刚切入场景，先复位再让元素依次出现；'diff' 同场景内只动变化的元素。 */
+  function applyElements(i, how) {
+    var b = beats[i];
+    var sc = scenes[b.scene];
+    if (!sc) return;
+    if (how === 'instant') {
+      sc.el.classList.add('snap');
+      setOn(sc, b.step);
+      setFocus(sc, b.focus, b.solo);
+      void sc.el.getBoundingClientRect();
+      sc.el.classList.remove('snap');
+    } else if (how === 'enter') {
+      sc.el.classList.add('snap');
+      sc.timed.forEach(function (e) { e.classList.remove('on'); });
+      setFocus(sc, b.focus, b.solo);
+      void sc.el.getBoundingClientRect();
+      sc.el.classList.remove('snap');
+      setOn(sc, b.step);
+    } else {
+      setOn(sc, b.step);
+      setFocus(sc, b.focus, b.solo);
+    }
+  }
+
+  function applyCamera(i, instant) {
+    var b = beats[i];
+    var sc = scenes[b.scene];
+    if (!sc) return;
+    var cam = data.scenes[b.scene].cams[b.cam];
+    var area = artArea(innerWidth, innerHeight, b.quiet ? 0 : innerHeight - capCard.getBoundingClientRect().top);
+    var rect = area.portrait ? cam.p : cam.l;
+    var t = fitCamera(rect, area);
+    var g = sc.cam;
+    if (instant) g.style.transition = 'none';
+    g.style.transform = 'translate(' + t.x.toFixed(2) + 'px,' + t.y.toFixed(2) + 'px) scale(' + t.s.toFixed(4) + ')';
+    if (instant) { void g.getBoundingClientRect(); g.style.transition = ''; }
+  }
+
+  function applyScene(i) {
+    var id = beats[i].scene;
+    if (id === lastScene) return false;
+    Object.keys(scenes).forEach(function (key) {
+      scenes[key].el.classList.toggle('is-active', key === id);
+      scenes[key].el.setAttribute('aria-hidden', String(key !== id));
+    });
+    lastScene = id;
+    return true;
+  }
+
+  /* 静默拍（封面）：字幕卡不显示，但文字仍写进状态区，读屏照样播报。 */
+  function applyCaption(i) {
+    var b = beats[i];
+    capText.innerHTML = b.html || '';
+    capText.setAttribute('data-kind', b.kind || 'text');
+    capCard.classList.toggle('quiet', !!b.quiet);
+    capText.classList.remove('in');
+    void capText.offsetWidth;
+    capText.classList.add('in');
+  }
+
+  function applyHud(i) {
+    var b = beats[i];
+    var sec = data.sections[b.section];
+    secNum.textContent = sec.num ? sec.num + '/' + data.sectionCount : '';
+    secName.textContent = sec.label;
+    secPill.hidden = !sec.label;
+    bar.style.transform = 'scaleX(' + ((i + 1) / total).toFixed(4) + ')';
+    count.textContent = (i + 1) + ' / ' + total;
+    btnPrev.disabled = i <= 0;
+    btnNext.disabled = i >= total - 1;
+  }
+
+  function syncUrl(i) {
+    clearTimeout(urlTimer);
+    urlTimer = setTimeout(function () {
+      if (mode() !== 'stage') return;
+      try { history.replaceState(null, '', location.pathname + location.search + formatBeatHash(i)); } catch (e) { /* Safari 限频时忽略 */ }
+    }, 200);
+  }
+
+  function render(i, opts) {
+    opts = opts || {};
+    i = Math.max(0, Math.min(total - 1, i));
+    if (i === cur && !opts.force) return;
+    stage.setAttribute('data-orient', artArea(innerWidth, innerHeight).portrait ? 'portrait' : 'landscape');
+    var changed = applyScene(i);
+    cur = i;
+    applyCaption(i);   // 先排字幕：镜头要按字幕卡的实际高度留白
+    applyElements(i, opts.instant ? 'instant' : changed ? 'enter' : 'diff');
+    syncInteractions();
+    applyCamera(i, opts.instant || changed);
+    applyHud(i);
+    syncUrl(i);
+    if (i > 0 && hint) hint.hidden = true;
+    schedule();
+  }
+
+  function go(i, fromAuto) {
+    if (!fromAuto) stopPlay();
+    render(i);
+  }
+  function step(dir, fromAuto) { go(cur + dir, fromAuto); }
+
+  /* ---- 自动播放：读者一操作就停 ---- */
+
+  function stopPlay() {
+    if (!playing) return;
+    playing = false;
+    clearTimeout(timer);
+    btnPlay.setAttribute('data-playing', 'false');
+    btnPlay.textContent = '播放';
+  }
+  function startPlay() {
+    if (cur >= total - 1) render(0);
+    playing = true;
+    btnPlay.setAttribute('data-playing', 'true');
+    btnPlay.textContent = '暂停';
+    schedule();
+  }
+  function schedule() {
+    clearTimeout(timer);
+    if (!playing || document.hidden || mode() !== 'stage') return;
+    timer = setTimeout(function () {
+      if (cur >= total - 1) { stopPlay(); return; }
+      step(1, true);
+    }, dwell(beats[cur].chars || 0) * 1000);
+  }
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) clearTimeout(timer); else schedule();
+  });
+
+  /* ---- 输入：滚轮、触摸、键盘各自折算成一拍 ---- */
+
+  var gate = createWheelGate();
+  function inDialog(t) { return !!(t && t.closest && t.closest('dialog')); }
+
+  /* 挂在 document 上：光标停在顶栏按钮上时滚轮也要接管。 */
+  document.addEventListener('wheel', function (e) {
+    if (mode() !== 'stage' || e.ctrlKey || toc.open || inDialog(e.target)) return;
+    if (Math.abs(e.deltaX) > Math.abs(e.deltaY) * 1.5) return;   // 横向手势留给浏览器（后退/前进）
+    e.preventDefault();
+    if (e.deltaY) stopPlay();   // 自动播放中读者一动滚轮就接管，哪怕这一下没够翻页
+    var unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? innerHeight : 1;
+    var dir = gate.feed(e.deltaY * unit, e.timeStamp);
+    if (dir) step(dir);
+  }, { passive: false });
+
+  var touch = null;
+  document.addEventListener('touchstart', function (e) {
+    if (mode() !== 'stage' || inDialog(e.target) || e.touches.length !== 1) { touch = null; return; }
+    var p = e.touches[0];
+    touch = { x: p.clientX, y: p.clientY, t: e.timeStamp };
+  }, { passive: true });
+  document.addEventListener('touchmove', function (e) {
+    if (touch && e.cancelable) e.preventDefault();   // 不让页面跟着手指橡皮筋
+  }, { passive: false });
+  document.addEventListener('touchend', function (e) {
+    if (!touch) return;
+    var p = e.changedTouches[0], t0 = touch;
+    touch = null;
+    var dir = swipeStep(p.clientX - t0.x, p.clientY - t0.y, e.timeStamp - t0.t);
+    if (dir) step(dir);
+  });
+  document.addEventListener('touchcancel', function () { touch = null; });
+
+  /* 键盘：焦点在按钮或链接上时，空格和回车留给它们自己。 */
+  document.addEventListener('keydown', function (e) {
+    if (mode() !== 'stage' || e.ctrlKey || e.metaKey || e.altKey || toc.open) return;
+    var t = e.target;
+    if (t && t.closest && t.closest('input,textarea,select,[contenteditable]')) return;
+    var key = e.key;
+    var onControl = t && t.closest && t.closest('button,a,.hit');
+    if ((key === ' ' || key === 'Enter') && onControl) return;
+    var dir = 0, to = -1;
+    if (key === 'ArrowDown' || key === 'ArrowRight' || key === 'PageDown' || (key === ' ' && !e.shiftKey)) dir = 1;
+    else if (key === 'ArrowUp' || key === 'ArrowLeft' || key === 'PageUp' || (key === ' ' && e.shiftKey)) dir = -1;
+    else if (key === 'Home') to = 0;
+    else if (key === 'End') to = total - 1;
+    else return;
+    e.preventDefault();
+    if (e.repeat) return;
+    if (to >= 0) go(to); else step(dir);
+  });
+
+  btnPrev.addEventListener('click', function () { step(-1); });
+  btnNext.addEventListener('click', function () { step(1); });
+  btnPlay.addEventListener('click', function () { if (playing) stopPlay(); else startPlay(); });
+
+  /* 翻面是独立的阅读动作，不推动拍号；横竖屏共用同一张卡的状态。 */
+  function syncInteractions() {
+    Object.keys(scenes).forEach(function (id) {
+      var sc = scenes[id];
+      $$('.hit', sc.el).forEach(function (hit) {
+        var host = hit.closest('.s');
+        var shown = id === lastScene && host.classList.contains('on') && getComputedStyle(host).display !== 'none' &&
+          !(sc.el.classList.contains('solo') && !host.classList.contains('focus'));
+        hit.setAttribute('tabindex', shown ? '0' : '-1');
+        var key = hit.getAttribute('data-flip');
+        if (!key) return;
+        var reveal = !!(beats[cur] && beats[cur].reveal);
+        var stateKey = (reveal ? cur + ':' : '') + key;
+        var flipped = flipState[stateKey] == null ? reveal : flipState[stateKey];
+        hit.classList.toggle('is-flipped', flipped);
+        hit.setAttribute('aria-pressed', String(flipped));
+        hit.setAttribute('aria-label', hit.getAttribute(flipped ? 'data-back-label' : 'data-front-label'));
+      });
+    });
+    var focused = document.activeElement;
+    if (focused && focused.matches('.hit') && focused.getAttribute('tabindex') !== '0') {
+      stage.setAttribute('tabindex', '-1');
+      stage.focus({ preventScroll: true });
+    }
+  }
+  function flip(hit) {
+    if (!hit || hit.getAttribute('tabindex') !== '0') return;
+    stopPlay();
+    var key = (beats[cur].reveal ? cur + ':' : '') + hit.getAttribute('data-flip');
+    flipState[key] = !hit.classList.contains('is-flipped');
+    syncInteractions();
+  }
+  stage.addEventListener('click', function (e) {
+    var hit = e.target.closest && e.target.closest('[data-flip]');
+    if (hit) { e.preventDefault(); flip(hit); }
+  });
+  stage.addEventListener('keydown', function (e) {
+    var hit = e.target.closest && e.target.closest('[data-flip]');
+    if (!hit || (e.key !== 'Enter' && e.key !== ' ')) return;
+    e.preventDefault(); e.stopPropagation();
+    if (!e.repeat) flip(hit);
+  });
+
+  /* ---- 目录 ---- */
+
+  function buildToc() {
+    var list = $('#toc-list');
+    list.innerHTML = '';
+    data.sections.forEach(function (sec) {
+      var li = document.createElement('li');
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'toc-card';
+      b.innerHTML = '<span class="toc-no"></span><span class="toc-name"></span>';
+      if (sec.thumbnail) b.insertAdjacentHTML('afterbegin', sec.thumbnail);
+      $('.toc-no', b).textContent = sec.num || sec.mark || '';
+      $('.toc-name', b).textContent = sec.label;
+      b.addEventListener('click', function () { closeToc(); go(sec.first); });
+      li.appendChild(b);
+      list.appendChild(li);
+    });
+  }
+  function openToc() {
+    stopPlay();
+    if (toc.showModal) toc.showModal(); else toc.setAttribute('open', '');
+  }
+  function closeToc() {
+    if (toc.close) toc.close(); else toc.removeAttribute('open');
+  }
+  btnToc.addEventListener('click', openToc);
+  toc.addEventListener('click', function (e) { if (e.target === toc) closeToc(); });
+  toc.addEventListener('close', function () { btnToc.focus(); });
+  $('#toc-close').addEventListener('click', closeToc);
+
+  /* ---- 模式：分镜 / 全文 ---- */
+
+  /* 改查询参数：?read 与 ?stage 互斥；空值写成无等号的形式。 */
+  function queryWith(changes) {
+    var p = new URLSearchParams(location.search);
+    Object.keys(changes).forEach(function (name) {
+      if (changes[name]) p.set(name, ''); else p.delete(name);
+    });
+    var qs = p.toString().replace(/=(?=&|$)/g, '');
+    return location.pathname + (qs ? '?' + qs : '');
+  }
+  var startBeat = parseBeatHash(location.hash, total);
+
+  function setMode(next) {
+    root.setAttribute('data-mode', next);
+    if (next === 'read') {
+      stopPlay();
+      history.replaceState(null, '', queryWith({ read: true, stage: false }));
+      window.scrollTo(0, 0);
+      readEl.setAttribute('tabindex', '-1');
+      readEl.focus({ preventScroll: true });
+    } else {
+      /* 系统开了「减少动态效果」时，要用 ?stage 才能留在分镜版。 */
+      var reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      history.replaceState(null, '', queryWith({ read: false, stage: reduced }));
+      render(cur < 0 ? Math.max(startBeat, 0) : cur, { force: true, instant: true });
+    }
+  }
+  $$('[data-action="read"]').forEach(function (el) {
+    el.addEventListener('click', function (e) { e.preventDefault(); setMode('read'); });
+  });
+  $$('[data-action="stage"]').forEach(function (el) {
+    el.addEventListener('click', function (e) { e.preventDefault(); setMode('stage'); });
+  });
+
+  window.addEventListener('hashchange', function () {
+    var i = parseBeatHash(location.hash, total);
+    if (i >= 0 && mode() === 'stage') go(i);
+  });
+  var resizeTimer = 0;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      if (mode() === 'stage' && cur >= 0) render(cur, { force: true, instant: true });
+    }, 80);
+  });
+
+  /* ---- 启动 ---- */
+
+  buildToc();
+  if (hint) hint.textContent = matchMedia('(pointer: coarse)').matches ? '上滑翻页' : '滚动或按 ↓ 翻页';
+  var begin = function () {
+    if (mode() === 'stage') render(Math.max(startBeat, 0), { force: true, instant: true });
+    requestAnimationFrame(function () { requestAnimationFrame(function () { stage.classList.add('ready'); }); });
+  };
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(begin, begin); else begin();
+})();
+</script>
+</body>
+</html>
