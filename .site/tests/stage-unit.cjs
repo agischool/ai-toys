@@ -355,6 +355,47 @@ test('状态算例拒绝非法系数、非有限数、未知规则及过多步�
   assert.throws(()=>recurrent.trace('unknown'),/未知/);
   for(const n of [-1,.5,21]) assert.throws(()=>recurrent.decay(2,.5,n),/步数/);
 });
+const generation = require('../stage/generation.cjs');
+test('玩具贪心分两步接出读书和句号，并把新增片段接回上下文', () => {
+  const r=generation.generate();
+  assert.deepEqual(r.tokens,['我','读书','。']);
+  assert.deepEqual(r.steps.map(s=>s.context),[['我'],['我','读书']]);
+  assert.deepEqual(r.steps.map(s=>s.last),['我','读书']);
+  assert.equal(r.probability,.6);
+});
+test('十张等机会卡片中六张读书四张画画，8 号画画、3 号读书', () => {
+  assert.deepEqual(generation.tally(generation.tickets.map(t=>t.number)),{'读书':6,'画画':4});
+  assert.deepEqual(generation.generate(['我'],{method:'ticket',number:8}).tokens,['我','画画','。']);
+  assert.deepEqual(generation.generate(['我'],{method:'ticket',number:3}).tokens,['我','读书','。']);
+  assert.equal(generation.generate(['我'],{method:'ticket',number:8}).probability,.4);
+});
+test('采样边界在 0.6 处切换，两条活动路线的下一片均为概率 1 的句号', () => {
+  assert.equal(generation.sample('我',0).token,'读书');
+  assert.equal(generation.sample('我',.599999).token,'读书');
+  assert.equal(generation.sample('我',.6).token,'画画');
+  assert.equal(generation.sample('我',.999999).token,'画画');
+  for(const last of ['读书','画画']) assert.deepEqual(generation.candidates(last),[{token:'。',p:1}]);
+});
+test('玩具只查最后的我，两种更长前缀的贪心续写相同且不改原数组', () => {
+  for(const context of [['打开书本','，','我'],['拿起画笔','，','我']]) {
+    const before=[...context], r=generation.generate(context);
+    assert.deepEqual(r.tokens.slice(context.length),['读书','。']);
+    assert.deepEqual(context,before); assert.equal(r.steps[0].last,'我');
+  }
+  assert.ok(Object.isFrozen(generation.rules) && Object.isFrozen(generation.tickets));
+});
+test('预设的有放回抽取示意可出现七次或四次读书，六比四不是次数配额', () => {
+  assert.deepEqual(generation.demonstrations.map(generation.tally),[{'读书':7,'画画':3},{'读书':4,'画画':6}]);
+  assert.deepEqual(generation.generate(['我','读书','。']).steps,[]);
+});
+test('生成器拒绝错误卡号、采样值、选择方法与未知末片段', () => {
+  for(const n of [0,11,2.5,NaN]) assert.throws(()=>generation.ticket(n),/卡号/);
+  for(const roll of [-.1,1,NaN,Infinity,'0.5']) assert.throws(()=>generation.sample('我',roll),/抽取值/);
+  assert.throws(()=>generation.generate(['我'],{method:'unknown'}),/未知/);
+  assert.throws(()=>generation.generate(['我'],{method:'ticket',number:11}),/卡号/);
+  assert.throws(()=>generation.generate(['未知']),/末片段/);
+  assert.throws(()=>generation.generate([]),/前文/);
+});
 const windows = require('../stage/window.cjs');
 test('同一竖线模板对竖线、黑点、横线、全黑分别响应 3、1、1、3', () => {
   assert.deepEqual([windows.vertical, windows.dot, windows.horizontal, windows.black].map(v => windows.response(v).score), [3,1,1,3]);
@@ -423,4 +464,4 @@ test('手动试数支持有限小数，拒绝无效参数和目标', () => {
   for (const b of [NaN, Infinity, '2']) assert.throws(() => parameter.trial(b), /有限数/);
   for (const answers of [[3,4], [3,4,NaN]]) assert.throws(() => parameter.trial(2,answers), /目标/);
 });
-console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差与状态算例）`);
+console.log(`PASS: ${count} 项互动版纯函数检查（手势限流、触摸、镜头、哈希、切句、分镜覆盖、积木、像素、参数、滑窗、残差、状态与生成算例）`);

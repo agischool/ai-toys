@@ -1,0 +1,316 @@
+{
+  "complete": true,
+  "beats": [
+    {
+      "from": "一次接一片文字，AI 怎样写出一段话",
+      "take": 1,
+      "scene": "cover",
+      "step": 0,
+      "cam": "all",
+      "quiet": true
+    },
+    {
+      "from": "屏幕上的文字一小段一小段出现，最后连",
+      "take": 2,
+      "scene": "open",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "常见的自回归语言模型，会根据已有文字",
+      "take": 1,
+      "scene": "open",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "刚写出的内容，马上又成了下一步的依据",
+      "take": 2,
+      "scene": "open",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "先把生成器缩到只有两条路",
+      "take": 1,
+      "scene": "toy",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "先做一个小到可以手算的生成器。",
+      "take": 3,
+      "scene": "toy",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "开头的“我”由我们给定。",
+      "take": 1,
+      "scene": "toy",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "规则只有三条：“我”后面接“读书”的",
+      "take": 2,
+      "scene": "toy",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "先用一种最直接的选法：每步都选概率最",
+      "take": 1,
+      "scene": "toy",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "第一步，已有文字是“我”，比较0.6",
+      "take": 1,
+      "scene": "toy",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "第二步，依据刚添上的“读书”，选中概",
+      "take": 1,
+      "scene": "toy",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "“我读书。”",
+      "take": 3,
+      "scene": "toy",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "图1  贪心选择得到“我读书。”",
+      "take": 3,
+      "scene": "toy",
+      "step": 8,
+      "cam": "desk"
+    },
+    {
+      "from": "换一种选法会得到什么",
+      "take": 1,
+      "scene": "sample",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "也可以按概率抽取候选，这叫采样。",
+      "take": 2,
+      "scene": "sample",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "看图1下面的十张卡：1到6号写“读书",
+      "take": 2,
+      "scene": "sample",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "假设这次抽到8号，就在“我”后面接“",
+      "take": 1,
+      "scene": "sample",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "如果抽中3号，就会得到“我读书。”",
+      "take": 1,
+      "scene": "sample",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "因此，采样能走出两条路线，概率分别是",
+      "take": 1,
+      "scene": "sample",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "但0.6不是“每生成十次，必须有六次",
+      "take": 3,
+      "scene": "sample",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "卡片只用来解释抽取规则。",
+      "take": 3,
+      "scene": "sample",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "一片文字究竟有多大",
+      "take": 1,
+      "scene": "tokens",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "真实模型使用的基本单位通常叫 tok",
+      "take": 1,
+      "scene": "tokens",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "它是分词器按一定规则得到的单位，可能",
+      "take": 1,
+      "scene": "tokens",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "因此，把“读书”当成一片，只是本例词",
+      "take": 1,
+      "scene": "tokens",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "真实分词器未必这样切，“100个 t",
+      "take": 2,
+      "scene": "tokens",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "句号也不天然等于生成结束。",
+      "take": 2,
+      "scene": "tokens",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "真实模型看得比一张卡片远",
+      "take": 1,
+      "scene": "context",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "给开头加一点情境，会不会改变结果？",
+      "take": 2,
+      "scene": "context",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "这个玩具仍只查最后的“我”，所以两次",
+      "take": 1,
+      "scene": "context",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "真实的大语言模型可以看得更远。",
+      "take": 3,
+      "scene": "context",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "from": "因此，“一步只生成一片”说的是这里介",
+      "take": 2,
+      "scene": "context",
+      "step": 4,
+      "cam": "desk"
+    },
+    {
+      "from": "接出“读书”后，模型下一步看到的是“",
+      "take": 2,
+      "scene": "context",
+      "step": 5,
+      "cam": "desk"
+    },
+    {
+      "from": "每接上一片，上下文都会变化，下一步的",
+      "take": 3,
+      "scene": "context",
+      "step": 6,
+      "cam": "desk"
+    },
+    {
+      "from": "图2  选中的文字接回已有内容。",
+      "take": 2,
+      "scene": "context",
+      "step": 7,
+      "cam": "desk"
+    },
+    {
+      "from": "换个开头，检查规则有没有用上线索",
+      "take": 1,
+      "scene": "quiz",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "先别看答案：把同一套玩具规则分别接在",
+      "take": 1,
+      "scene": "exercise",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "两次都会在“我”后接上“读书。”",
+      "take": 3,
+      "scene": "exercise",
+      "step": 1,
+      "cam": "desk",
+      "reveal": true
+    },
+    {
+      "from": "这个练习检查的是程序究竟使用了哪些信",
+      "take": 1,
+      "scene": "quiz",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "选得顺还要查得实",
+      "take": 1,
+      "scene": "evidence",
+      "step": 0,
+      "cam": "desk"
+    },
+    {
+      "from": "回到“我读书。”",
+      "take": 3,
+      "scene": "evidence",
+      "step": 1,
+      "cam": "desk"
+    },
+    {
+      "from": "同样，真实语言模型给某段续写较高概率",
+      "take": 3,
+      "scene": "evidence",
+      "step": 2,
+      "cam": "desk"
+    },
+    {
+      "from": "每次只生成一片，并不妨碍模型利用前文",
+      "take": 2,
+      "scene": "evidence",
+      "step": 3,
+      "cam": "desk"
+    },
+    {
+      "take": 0,
+      "scene": "refs",
+      "step": 0,
+      "cam": "desk",
+      "refs": true,
+      "quiet": true
+    }
+  ]
+}
