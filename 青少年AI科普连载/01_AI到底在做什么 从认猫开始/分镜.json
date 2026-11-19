@@ -1,0 +1,528 @@
+{
+  "complete": true,
+  "beats": [
+    {
+      "scene": "cover",
+      "step": 0,
+      "cam": "all",
+      "take": 1,
+      "from": "AI 到底在做什么",
+      "quiet": true
+    },
+    {
+      "scene": "open",
+      "step": 0,
+      "cam": "all",
+      "take": 1,
+      "from": "把一张猫的照片交给电脑"
+    },
+    {
+      "scene": "open",
+      "step": 1,
+      "cam": "all",
+      "take": 1,
+      "from": "我们认猫时"
+    },
+    {
+      "scene": "open",
+      "step": 2,
+      "cam": "all",
+      "take": 1,
+      "from": "电脑没有这样"
+    },
+    {
+      "scene": "hub",
+      "step": 0,
+      "cam": "task",
+      "take": 1,
+      "from": "先从一个具体任务看起"
+    },
+    {
+      "scene": "hub",
+      "step": 1,
+      "cam": "route",
+      "take": 1,
+      "from": "它接收图片"
+    },
+    {
+      "scene": "hub",
+      "step": 2,
+      "cam": "route",
+      "take": 1,
+      "from": "沿着图1走一遍"
+    },
+    {
+      "scene": "hub",
+      "step": 3,
+      "cam": "model",
+      "take": 1,
+      "from": "图1",
+      "focus": [
+        "p2",
+        "ring"
+      ],
+      "solo": true
+    },
+    {
+      "scene": "hub",
+      "step": 3,
+      "cam": "route",
+      "take": 1,
+      "from": "拿到新照片时"
+    },
+    {
+      "scene": "hub",
+      "step": 4,
+      "cam": "route",
+      "take": 1,
+      "from": "先说清楚要它做什么",
+      "focus": [
+        "p0",
+        "p4",
+        "ring",
+        "tag"
+      ]
+    },
+    {
+      "scene": "task",
+      "step": 0,
+      "cam": "c1",
+      "take": 2,
+      "from": "“认猫”其实并不够具体"
+    },
+    {
+      "scene": "task",
+      "step": 1,
+      "cam": "c23",
+      "take": 1,
+      "from": "玩具猫",
+      "focus": [
+        "c1",
+        "c2"
+      ],
+      "solo": true
+    },
+    {
+      "scene": "task",
+      "step": 2,
+      "cam": "c4",
+      "take": 1,
+      "from": "猫藏在沙发后面",
+      "focus": [
+        "c3"
+      ],
+      "solo": true
+    },
+    {
+      "scene": "task",
+      "step": 3,
+      "cam": "desk",
+      "take": 1,
+      "from": "这些边界"
+    },
+    {
+      "scene": "task",
+      "step": 4,
+      "cam": "desk",
+      "take": 1,
+      "from": "这里把任务"
+    },
+    {
+      "scene": "task",
+      "step": 5,
+      "cam": "desk",
+      "take": 1,
+      "from": "画出猫的位置"
+    },
+    {
+      "scene": "task",
+      "step": 6,
+      "cam": "desk",
+      "take": 1,
+      "from": "能自动完成"
+    },
+    {
+      "scene": "task",
+      "step": 7,
+      "cam": "desk",
+      "take": 1,
+      "from": "闹钟可以"
+    },
+    {
+      "scene": "task",
+      "step": 8,
+      "cam": "desk",
+      "take": 1,
+      "from": "AI 还有"
+    },
+    {
+      "scene": "hub",
+      "step": 2,
+      "cam": "route",
+      "take": 1,
+      "from": "一张照片经过",
+      "focus": [
+        "p1",
+        "p2",
+        "p3"
+      ]
+    },
+    {
+      "scene": "pixels",
+      "step": 0,
+      "cam": "desk",
+      "take": 1,
+      "from": "对人而言"
+    },
+    {
+      "scene": "pixels",
+      "step": 1,
+      "cam": "desk",
+      "take": 1,
+      "from": "亮暗"
+    },
+    {
+      "scene": "pixels",
+      "step": 2,
+      "cam": "desk",
+      "take": 1,
+      "from": "数字接着"
+    },
+    {
+      "scene": "pixels",
+      "step": 3,
+      "cam": "desk",
+      "take": 1,
+      "from": "可以先把模型"
+    },
+    {
+      "scene": "pixels",
+      "step": 4,
+      "cam": "desk",
+      "take": 1,
+      "from": "图像识别模型"
+    },
+    {
+      "scene": "pixels",
+      "step": 5,
+      "cam": "desk",
+      "take": 1,
+      "from": "有些线索"
+    },
+    {
+      "scene": "pixels",
+      "step": 6,
+      "cam": "desk",
+      "take": 1,
+      "from": "算到最后"
+    },
+    {
+      "scene": "pixels",
+      "step": 7,
+      "cam": "desk",
+      "take": 1,
+      "from": "比如在示意图"
+    },
+    {
+      "scene": "hub",
+      "step": 2,
+      "cam": "route",
+      "take": 1,
+      "from": "从一张图"
+    },
+    {
+      "scene": "hub",
+      "step": 2,
+      "cam": "model",
+      "take": 1,
+      "from": "那些参数",
+      "focus": [
+        "p2"
+      ],
+      "solo": true
+    },
+    {
+      "scene": "train",
+      "step": 0,
+      "cam": "desk",
+      "take": 1,
+      "from": "参数怎样"
+    },
+    {
+      "scene": "train",
+      "step": 1,
+      "cam": "desk",
+      "take": 2,
+      "from": "在这个例子"
+    },
+    {
+      "scene": "train",
+      "step": 3,
+      "cam": "desk",
+      "take": 1,
+      "from": "模型先猜"
+    },
+    {
+      "scene": "train",
+      "step": 4,
+      "cam": "desk",
+      "take": 1,
+      "from": "这样反复"
+    },
+    {
+      "scene": "train",
+      "step": 5,
+      "cam": "desk",
+      "take": 1,
+      "from": "训练方法"
+    },
+    {
+      "scene": "train",
+      "step": 6,
+      "cam": "desk",
+      "take": 1,
+      "from": "训练和使用"
+    },
+    {
+      "scene": "train",
+      "step": 7,
+      "cam": "desk",
+      "take": 1,
+      "from": "训练时要"
+    },
+    {
+      "scene": "train",
+      "step": 8,
+      "cam": "desk",
+      "take": 2,
+      "from": "通常"
+    },
+    {
+      "scene": "train",
+      "step": 9,
+      "cam": "desk",
+      "take": 2,
+      "from": "可以把两个阶段"
+    },
+    {
+      "scene": "train",
+      "step": 10,
+      "cam": "desk",
+      "take": 1,
+      "from": "还要用模型"
+    },
+    {
+      "scene": "train",
+      "step": 11,
+      "cam": "desk",
+      "take": 1,
+      "from": "开发者会"
+    },
+    {
+      "scene": "train",
+      "step": 12,
+      "cam": "desk",
+      "take": 1,
+      "from": "把练习图片"
+    },
+    {
+      "scene": "hub",
+      "step": 2,
+      "cam": "route",
+      "take": 1,
+      "from": "高分为什么",
+      "focus": [
+        "p3",
+        "p4"
+      ]
+    },
+    {
+      "scene": "bias",
+      "step": 0,
+      "cam": "desk",
+      "take": 1,
+      "from": "想象训练"
+    },
+    {
+      "scene": "bias",
+      "step": 1,
+      "cam": "desk",
+      "take": 1,
+      "from": "模型可能"
+    },
+    {
+      "scene": "bias",
+      "step": 2,
+      "cam": "desk",
+      "take": 1,
+      "from": "后来"
+    },
+    {
+      "scene": "bias",
+      "step": 3,
+      "cam": "desk",
+      "take": 1,
+      "from": "这个猫狗"
+    },
+    {
+      "scene": "bias",
+      "step": 4,
+      "cam": "desk",
+      "take": 1,
+      "from": "还有更直接"
+    },
+    {
+      "scene": "bias",
+      "step": 5,
+      "cam": "desk",
+      "take": 1,
+      "from": "它给出答案"
+    },
+    {
+      "scene": "bias",
+      "step": 6,
+      "cam": "desk",
+      "take": 1,
+      "from": "图2"
+    },
+    {
+      "scene": "bias",
+      "step": 7,
+      "cam": "desk",
+      "take": 1,
+      "from": "分数很高"
+    },
+    {
+      "scene": "bias",
+      "step": 8,
+      "cam": "desk",
+      "take": 1,
+      "from": "前面例子"
+    },
+    {
+      "scene": "bias",
+      "step": 9,
+      "cam": "desk",
+      "take": 1,
+      "from": "要知道分数"
+    },
+    {
+      "scene": "bias",
+      "step": 10,
+      "cam": "desk",
+      "take": 1,
+      "from": "换到陌生"
+    },
+    {
+      "scene": "bias",
+      "step": 11,
+      "cam": "desk",
+      "take": 1,
+      "from": "神经网络"
+    },
+    {
+      "scene": "bias",
+      "step": 12,
+      "cam": "desk",
+      "take": 1,
+      "from": "因此，一次"
+    },
+    {
+      "scene": "bias",
+      "step": 13,
+      "cam": "desk",
+      "take": 1,
+      "from": "图像分类的成绩"
+    },
+    {
+      "scene": "hub",
+      "step": 5,
+      "cam": "full",
+      "take": 1,
+      "from": "输出之后",
+      "focus": [
+        "p4",
+        "p5"
+      ]
+    },
+    {
+      "scene": "human",
+      "step": 0,
+      "cam": "desk",
+      "take": 1,
+      "from": "“猫”这个标签"
+    },
+    {
+      "scene": "human",
+      "step": 1,
+      "cam": "desk",
+      "take": 1,
+      "from": "相册分错"
+    },
+    {
+      "scene": "human",
+      "step": 2,
+      "cam": "desk",
+      "take": 1,
+      "from": "用途一变"
+    },
+    {
+      "scene": "human",
+      "step": 3,
+      "cam": "desk",
+      "take": 1,
+      "from": "因此，系统"
+    },
+    {
+      "scene": "human",
+      "step": 4,
+      "cam": "desk",
+      "take": 1,
+      "from": "模型算出"
+    },
+    {
+      "scene": "human",
+      "step": 5,
+      "cam": "desk",
+      "take": 1,
+      "from": "可以用三个动作"
+    },
+    {
+      "scene": "human",
+      "step": 6,
+      "cam": "desk",
+      "take": 1,
+      "from": "第一个",
+      "reveal": true
+    },
+    {
+      "scene": "human",
+      "step": 7,
+      "cam": "desk",
+      "take": 1,
+      "from": "核查可能"
+    },
+    {
+      "scene": "hub",
+      "step": 5,
+      "cam": "full",
+      "take": 1,
+      "from": "下次看到"
+    },
+    {
+      "scene": "hub",
+      "step": 5,
+      "cam": "full",
+      "take": 1,
+      "from": "这条路线"
+    },
+    {
+      "scene": "refs",
+      "step": 0,
+      "cam": "desk",
+      "take": 0,
+      "quiet": true,
+      "refs": true
+    }
+  ]
+}
