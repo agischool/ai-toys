@@ -199,7 +199,18 @@ html[data-mode="stage"], html[data-mode="stage"] body { overscroll-behavior: non
 #toc::backdrop { background: rgba(32, 56, 69, .5) }
 .toc-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--line) }
 .toc-head h2 { margin: 0; font-size: 16px; line-height: 1.5 }
-#toc-list { list-style: none; margin: 0; padding: 20px; overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px }
+#toc-list { list-style: none; margin: 0; padding: 0 20px 20px; display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px }
+.toc-body { overflow: auto; min-height: 0 }
+.toc-head, .toc-foot { flex: none }
+.reader-library { padding: 16px 20px 8px }
+.reader-library h3, .toc-section-title { font-size: 16px; line-height: 1.5; margin: 0 0 8px }
+.toc-section-title { padding: 16px 20px 0 }
+.reader-library summary { padding: 10px 0; min-height: 44px; font-size: 16px; line-height: 1.5; cursor: pointer }
+.reader-library ol { margin: 0; padding-left: 24px }
+.reader-article, .reader-catalog { color: var(--art-teal-ink); font-size: 16px; line-height: 1.65; display: block; padding: 10px 4px; min-height: 44px; overflow-wrap: anywhere }
+.reader-article[aria-current] { font-weight: 800 }
+.reader-article small { font-size: 13px; white-space: nowrap }
+.reader-article:hover, .reader-catalog:hover { text-decoration: underline }
 .toc-foot { margin: 0; padding: 12px 20px 16px; border-top: 1px solid var(--line); font-size: 13px; line-height: 1.7; color: var(--art-muted) }
 .toc-card {
   display: flex; flex-direction: column; align-items: flex-start; gap: 10px;

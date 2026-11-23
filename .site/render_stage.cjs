@@ -154,7 +154,21 @@ const ICON_UP = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 10.5 8 
 const ICON_DOWN = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 5.5 8 10.5l5-5"/></svg>';
 const ICON_LIST = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 4h8M5.5 8h8M5.5 12h8M2.5 4h.01M2.5 8h.01M2.5 12h.01"/></svg>';
 
-function page({ title, summary, sceneSvgs, data, read, unit, local, count, hasNext }) {
+function libraryNav(folder) {
+  const folders = fs.readdirSync(base).filter(name => /^\d\d_/.test(name) && fs.existsSync(path.join(base, name, '分镜.json'))).sort();
+  const relative = file => path.relative(path.join(base, folder), file).split(path.sep).map(encodeURIComponent).join('/');
+  const groups = units.map(unit => {
+    const entries = folders.filter(name => Number(name.slice(0, 2)) >= unit.from && Number(name.slice(0, 2)) <= unit.to).map(name => {
+      const title = fs.readFileSync(path.join(base, name, '正文.md'), 'utf8').match(/^# (.+)$/m)[1];
+      const current = name === folder ? ' aria-current="page"' : '';
+      return '<li><a class="reader-article" href="' + relative(path.join(base, name, '互动版.html')) + '?stage"' + current + '>' + esc(title) + (current ? ' <small>当前</small>' : '') + '</a></li>';
+    });
+    return '<details><summary>' + esc(unit.name) + ' · ' + entries.length + ' 篇</summary><ol>' + entries.join('') + '</ol></details>';
+  });
+  return '<nav class="reader-library" aria-label="全部 24 篇"><h3>换篇阅读 · 全部 24 篇</h3>' + groups.join('') + '<a class="reader-catalog" href="' + relative(path.join(root, 'library.html')) + '#interactive">搜索文章与浏览素材</a></nav>';
+}
+
+function page({ title, summary, sceneSvgs, data, read, unit, local, count, library }) {
   const json = JSON.stringify(data).replace(/</g, '\\u003c');
   /* 共用源码在构建时打包，file:// 不必再读取隐藏目录里的 CSS/JS。 */
   const css = fs.readFileSync(path.join(__dirname, 'stage/stage.css'), 'utf8');
@@ -199,7 +213,7 @@ ${sceneSvgs}
 </main>
 <dialog id="toc" aria-labelledby="toc-title">
 <div class="toc-head"><h2 id="toc-title">${esc(title)}</h2><button class="pill" id="toc-close" type="button">关闭</button></div>
-<ol id="toc-list"></ol>
+<div class="toc-body">${library}<h3 class="toc-section-title">本篇章节</h3><ol id="toc-list"></ol></div>
 <p class="toc-foot">${esc(unit)}，${pager}。机器人角色为 AI 辅助制作，场景与图解由代码绘制。</p>
 </dialog>
 <div id="readwrap">
@@ -269,7 +283,7 @@ function compileOne(folder) {
     scenes: Object.fromEntries(activeScenes.map(s => [s.id, { cams: s.cams }])), beats: asm.beats
   };
   const summary = (fs.readFileSync(path.join(dir, '发布文案.md'), 'utf8').match(/## 摘要\s+```text\n([\s\S]*?)\n```/) || [, title])[1];
-  const html = page({ title, summary, sceneSvgs, data, read: renderRead(source, title), unit: unit.name, local, count });
+  const html = page({ title, summary, sceneSvgs, data, read: renderRead(source, title), unit: unit.name, local, count, library: libraryNav(folder) });
   return { folder, html, beats: asm.beats.length, consumed: asm.consumed, total: asm.total, bytes: Buffer.byteLength(html), complete: !!board.complete };
 }
 

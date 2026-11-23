@@ -8,7 +8,7 @@ from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECTS = {'Python实现', '少年AI观察室', '青少年AI科普连载'}
-ROOT_FILES = {'index.html', 'README.md', '.nojekyll'}
+ROOT_FILES = {'index.html', 'library.html', 'README.md', '.nojekyll'}
 RUNTIME_FILES = {'.site/library.css', '.site/library.js', '.site/assets/serial-robot.png',
                  '.site/stage/stage.css', '.site/stage/stage.js', '.site/assets/serial-robot-480.png'}
 

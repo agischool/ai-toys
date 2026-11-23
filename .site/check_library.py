@@ -13,10 +13,13 @@ class Links(HTMLParser):
         super().__init__()
         self.page = page
         self.links = {}
+        self.redirect = None
         self.feed(page.read_text(encoding='utf-8'))
 
     def handle_starttag(self, tag, attrs):
         attrs = dict(attrs)
+        if tag == 'meta' and attrs.get('http-equiv', '').lower() == 'refresh':
+            self.redirect = attrs.get('content', '').partition('url=')[2]
         if tag != 'a' or 'href' not in attrs:
             return
         value = urlsplit(attrs['href'])
@@ -38,17 +41,21 @@ def main():
     folders = sorted(p for p in SERIAL.glob('[0-9][0-9]_*') if p.is_dir())
     assert len(folders) == 24, '应有 24 篇完整互动文章'
     stages = [p / '互动版.html' for p in folders]
-    home = ROOT / 'index.html'
+    home = ROOT / 'library.html'
     check(home, stages)
     check(SERIAL / 'index.html', stages)
     assert stages[0] in Links(home).links.get('button', []), '首屏主按钮应直达第 01 篇互动版'
+    redirect = Links(ROOT / 'index.html').redirect
+    assert redirect and (ROOT / unquote(urlsplit(redirect).path)).resolve() == stages[0], '网站根地址应直接进入第一篇'
+    assert urlsplit(redirect).query == 'stage', '根地址应默认进入互动分镜'
     units = json.loads((ROOT / '.site/serial_units.json').read_text())
     for unit in units:
         check(SERIAL / (unit['id'] + '.html'), stages[unit['from'] - 1:unit['to']])
     for stage in stages:
         links = Links(stage.with_name('index.html')).links
         assert stage in links.get('button', []), f'素材页应直接打开互动版：{stage.parent}'
-    print('阅读入口检查通过：首页、总目录、五套系列直达全部 24 篇，素材页主入口完整')
+        assert Links(stage).links.get('reader-article') == stages, f'阅读器内应有完整选篇入口：{stage}'
+    print('阅读入口检查通过：根地址直接进入互动阅读，24 篇阅读器内均有完整选篇目录')
 
 
 if __name__ == '__main__':

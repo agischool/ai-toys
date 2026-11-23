@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>看得见的 AI · 项目说明</title><link rel="stylesheet" href="../library.css"></head>
-<body><header><div class="header-inner"><a class="brand" href="../../index.html">◉ 看得见的 AI</a><nav aria-label="项目导航"><a href="../../index.html#interactive">互动阅读</a><a href="../../%E5%B0%91%E5%B9%B4AI%E8%A7%82%E5%AF%9F%E5%AE%A4/index.html">五图观察</a><a href="../../Python%E5%AE%9E%E7%8E%B0/index.html">代码实验</a><a href="README.html">项目说明</a></nav></div></header>
+<body><header><div class="header-inner"><a class="brand" href="../../index.html">◉ 看得见的 AI</a><nav aria-label="项目导航"><a href="../../index.html">互动阅读</a><a href="../../%E5%B0%91%E5%B9%B4AI%E8%A7%82%E5%AF%9F%E5%AE%A4/index.html">五图观察</a><a href="../../Python%E5%AE%9E%E7%8E%B0/index.html">代码实验</a><a href="README.html">项目说明</a></nav></div></header>
 <main class="readme"><div class="actions"><a class="button secondary" href="../../index.html">返回首页</a><a class="text-link" href="../../README.md">查看 Markdown 源文件</a></div><article><h1 id="看得见的-ai">看得见的 AI</h1>
-<p>网站首页直接列出 24 篇互动科普，分成五套可独立阅读的短系列。点文章标题即可进入互动版；代码实验、五图观察和公众号发布素材也保留独立入口。</p>
-<p><a href="../../%E9%9D%92%E5%B0%91%E5%B9%B4AI%E7%A7%91%E6%99%AE%E8%BF%9E%E8%BD%BD/01_AI%E5%88%B0%E5%BA%95%E5%9C%A8%E5%81%9A%E4%BB%80%E4%B9%88%20%E4%BB%8E%E8%AE%A4%E7%8C%AB%E5%BC%80%E5%A7%8B/%E4%BA%92%E5%8A%A8%E7%89%88.html">开始互动阅读</a> · <a href="../../index.html#interactive">浏览全部 24 篇</a> · <a href="https://agischool.github.io/ai-toys/">在线阅读</a></p>
+<p>打开网站即进入第 01 篇互动阅读。在阅读器的「目录」中可切换全部 24 篇，分成五套可独立阅读的短系列。代码实验、五图观察和公众号发布素材也保留独立入口。</p>
+<p><a href="../../index.html">开始互动阅读</a> · <a href="../../library.html#interactive">搜索与浏览全部 24 篇</a> · <a href="https://agischool.github.io/ai-toys/">在线阅读</a></p>
 <h2 id="三个项目">三个项目</h2>
 <div class="readme-table"><table>
 <thead>
@@ -39,14 +39,16 @@
 ├── 少年AI观察室/         # 16 期五图观察
 ├── 青少年AI科普连载/     # 5 套公众号短系列
 ├── README.md            # 三个项目的介绍与入口
-├── index.html           # 24 篇互动阅读与其他项目的网页入口
+├── index.html           # 直接进入互动阅读
+├── library.html         # 24 篇搜索目录与其他项目入口
 ├── .site/               # 共用网页样式、复制功能与生成脚本
 ├── package.json         # 根目录构建、检查和预览命令
 ├── MANIFEST.sha256      # 构建文件校验清单
 └── .nojekyll            # GitHub Pages 按静态文件发布
 </code></pre>
 <h2 id="浏览网页">浏览网页</h2>
-<p>双击根目录 <a href="../../index.html">index.html</a>，首页即可按五套主题浏览、搜索全部 24 篇，标题直接打开互动版。每篇旁边的「排版与素材」保留正文、配图、封面与文案复制功能。五图观察和代码实验可从主导航进入。若浏览器限制自动复制，按提示手动复制已选中的文本。</p>
+<p>双击根目录 <a href="../../index.html">index.html</a>，直接进入第 01 篇互动分镜。阅读器左上角「目录」既可跳到本篇章节，也可按主题切换全部 24 篇。展开一个主题，再点文章标题即可换篇。</p>
+<p>需要搜索或取用发布素材时，点击目录中的「搜索文章与浏览素材」，进入<a href="../../library.html#interactive">完整目录</a>。每篇旁边的「排版与素材」保留正文、配图、封面与文案复制功能；五图观察和代码实验可从目录页主导航进入。若浏览器限制自动复制，按提示手动复制已选中的文本。</p>
 <p>互动实验需要 HTTP 环境。在仓库根目录运行：</p>
 <pre><code class="language-sh">npm run serve
 </code></pre>

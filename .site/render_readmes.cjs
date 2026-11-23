@@ -56,7 +56,7 @@ for (const rel of sources) {
   const home=relativeURL(destination,path.join(ROOT,'index.html'));
   const sourceURL=relativeURL(destination,source);
   const css=relativeURL(destination,path.join(__dirname,'library.css'));
-  const nav=[['index.html','互动阅读','#interactive'],['少年AI观察室/index.html','五图观察',''],['Python实现/index.html','代码实验',''],['.site/readmes/README.html','项目说明','']].map(([file,label,hash])=>`<a href="${relativeURL(destination,path.join(ROOT,file))}${hash}">${escape(label)}</a>`).join('');
+  const nav=[['index.html','互动阅读'],['少年AI观察室/index.html','五图观察'],['Python实现/index.html','代码实验'],['.site/readmes/README.html','项目说明']].map(([file,label])=>`<a href="${relativeURL(destination,path.join(ROOT,file))}">${escape(label)}</a>`).join('');
   const document=`<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${escape(title)} · 项目说明</title><link rel="stylesheet" href="${css}"></head>
 <body><header><div class="header-inner"><a class="brand" href="${home}">◉ 看得见的 AI</a><nav aria-label="项目导航">${nav}</nav></div></header>

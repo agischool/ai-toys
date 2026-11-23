@@ -55,7 +55,7 @@ def read_posts(folder):
 def write_page(page, title, meta, intro, body, kind='page', readme_button=False, reading_link='', hero_html='', reading_label='开始阅读'):
     css = url(page, ROOT / '.site/library.css')
     js = url(page, ROOT / '.site/library.js')
-    nav = f'<a href="{url(page, ROOT / "index.html")}#interactive">互动阅读</a>'
+    nav = link(page, ROOT / "index.html", "互动阅读")
     nav += link(page, ROOT / '少年AI观察室/index.html', '五图观察')
     nav += link(page, PYTHON / 'index.html', '代码实验')
     nav += link(page, ROOT / 'README.md', '项目说明')
@@ -122,7 +122,7 @@ def reading_library(page, folder, posts):
 def build():
     catalog = [(ROOT / slug, name, description, field, status, read_posts(ROOT / slug))
                for slug, name, description, field, status in SERIES]
-    page = ROOT / 'index.html'
+    page = ROOT / 'library.html'
     serial_folder, serial_posts = next((folder, posts) for folder, _, _, field, _, posts in catalog if field == '摘要')
     first_read = reading_target(serial_posts[0])
     hero = f'''<section class="reading-hero"><div><h1>AI 原理，<br>一页页看明白</h1><p>24 篇互动科普，分成五套短系列。翻动画面、试做小题，再按兴趣选下一篇。</p><div class="actions">{link(page, first_read, '开始互动阅读', 'button')}<a class="text-link" href="#interactive">浏览全部 24 篇</a></div></div><a class="reading-hero-art" href="{url(page, first_read)}" aria-label="从认猫开始，打开第一篇互动版"><img src="{url(page, serial_posts[0]['cover'])}" alt="从认猫开始：图片、数字与判断" width="940" height="400"><span>从认猫开始，跟着一条计算路线读下去</span></a></section>'''
@@ -130,6 +130,15 @@ def build():
     body += f'''<section class="reading-more" aria-labelledby="more-heading"><h2 id="more-heading">换一种方式探索</h2><div><article><h3>{link(page, ROOT / '少年AI观察室/index.html', '五图观察室')}</h3><p>16 期图解，每期用五张图沿着一条计算路线观察 AI。</p>{link(page, ROOT / '少年AI观察室/index.html', '逐图阅读', 'text-link')}</article><article><h3>{link(page, PYTHON / 'index.html', '代码与实验')}</h3><p>10 个机制的 NumPy 实现与浏览器实验，适合修改参数、检查计算。</p>{link(page, PYTHON / 'index.html', '打开代码实验', 'text-link')}</article></div></section>'''
     write_page(page, 'AI 原理互动阅读', '', '24 篇互动科普，五套独立短系列。点标题直接阅读，也可探索五图观察与代码实验。', body, kind='home', hero_html=hero)
     generated = [page]
+    home = ROOT / 'index.html'
+    target = url(home, first_read) + '?stage'
+    home.write_text(f'''<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>互动阅读 · 看得见的 AI</title><meta http-equiv="refresh" content="0;url={escape(target, quote=True)}">
+<script>(function(){{var target=new URL({json.dumps(target)},location.href);if(new URLSearchParams(location.search).has("read"))target.search="?read";target.hash=location.hash;location.replace(location.hash==="#interactive"?"library.html#interactive":target.href)}})()</script>
+</head><body><p><a href="{escape(target, quote=True)}">进入互动阅读</a></p><p><a href="library.html#interactive">浏览全部 24 篇</a></p></body></html>
+''', encoding='utf-8')
+    generated.append(home)
     page = PYTHON / 'index.html'
     body = '<div class="actions">' + link(page, PYTHON / 'docs/chapters.html', '打开互动实验', 'button') + link(page, PYTHON / 'source/series_python/README.md', '阅读完整实现说明', 'button secondary') + link(page, PYTHON / 'docs/ai-toys-python.zip', '下载 Python 实现', 'button secondary') + '</div>'
     body += '<div class="section-head"><h2>十个机制，十个实验</h2><span class="meta">T1—T10</span></div><div class="grid">'
