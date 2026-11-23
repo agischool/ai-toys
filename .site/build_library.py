@@ -12,7 +12,7 @@ SERIAL_UNITS = json.loads((ROOT / '.site/serial_units.json').read_text())
 # (目录名, 显示名, 系列简介, 发布文案字段, 状态)
 SERIES = (
     ('少年AI观察室', '少年 AI 观察室', '用 5 张图，沿着一条计算路线观察 AI。', '正文', '已完结'),
-    ('青少年AI科普连载', '青少年 AI 科普连载', '五套可以独立阅读的短系列，每套 4—6 篇。选择一个感兴趣的问题开始。', '摘要', '连载中'),
+    ('青少年AI科普连载', '青少年 AI 科普连载', '五套可以独立阅读的短系列，每套 4—6 篇。选择一个感兴趣的问题开始。', '摘要', '已完结'),
 )
 # 品牌标：「看得见」的眼睛，手绘 SVG，跟随文字颜色。
 BRAND_MARK = ('<svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true" focusable="false">'
@@ -52,20 +52,23 @@ def read_posts(folder):
     return posts
 
 
-def write_page(page, title, meta, intro, body, kind='page', readme_button=False, reading_link=''):
+def write_page(page, title, meta, intro, body, kind='page', readme_button=False, reading_link='', hero_html='', reading_label='开始阅读'):
     css = url(page, ROOT / '.site/library.css')
     js = url(page, ROOT / '.site/library.js')
-    nav = link(page, PYTHON / 'index.html', 'Python 实现')
-    nav += ''.join(link(page, ROOT / slug / 'index.html', name) for slug, name, *_ in SERIES)
+    nav = f'<a href="{url(page, ROOT / "index.html")}#interactive">互动阅读</a>'
+    nav += link(page, ROOT / '少年AI观察室/index.html', '五图观察')
+    nav += link(page, PYTHON / 'index.html', '代码实验')
+    nav += link(page, ROOT / 'README.md', '项目说明')
     readme = page.parent / 'README.md'
     footer = link(page, readme, '阅读项目说明', 'text-link') if readme.exists() else link(page, page.parent / '发布文案.md', '查看 Markdown 原稿', 'text-link')
     meta_html = f'<p class="hero-meta">{meta}</p>' if meta else ''
     buttons = ''
     if reading_link:
-        buttons += link(page, reading_link, '开始阅读 →', 'button')
+        buttons += link(page, reading_link, reading_label, 'button')
     if readme_button and readme.exists():
         buttons += link(page, readme, '项目介绍与使用说明', 'button secondary')
     actions = f'<div class="actions">{buttons}</div>' if buttons else ''
+    hero = hero_html or f'<section class="hero"><h1>{escape(title)}</h1>{meta_html}<p class="intro">{escape(intro)}</p></section>'
     brand = f'<a class="brand" href="{url(page, ROOT / "index.html")}">{BRAND_MARK}看得见的 AI</a>'
     page.write_text(f'''<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -73,13 +76,9 @@ def write_page(page, title, meta, intro, body, kind='page', readme_button=False,
 <title>{escape(title)} · 看得见的 AI</title><meta name="description" content="{escape(intro, quote=True)}">
 <link rel="stylesheet" href="{css}"><script src="{js}" defer></script></head>
 <body data-page="{kind}"><header><div class="header-inner">{brand}<nav aria-label="主导航">{nav}</nav></div></header>
-<main><section class="hero"><h1>{escape(title)}</h1>{meta_html}<p class="intro">{escape(intro)}</p></section>
+<main>{hero}
 {actions}{body}</main><footer><span>看得见的 AI</span>{footer}</footer></body></html>
 ''', encoding='utf-8')
-
-
-def series_card(page, folder, name, description, status, posts):
-    return f'''<article class="card"><a href="{url(page, folder / 'index.html')}"><img src="{url(page, posts[0]['cover'])}" alt="{escape(name)}首期封面" loading="lazy"><div class="card-body"><p class="meta">{escape(status)}</p><h2>{escape(name)}</h2><p>{escape(description)}</p><span class="go">进入系列 →</span></div></a></article>'''
 
 
 def copy_panel(label, value, index):
@@ -92,18 +91,44 @@ def figure(page, path, title):
     return f'''<figure class="figure"><a href="{href}"><img src="{href}" alt="{escape(title)}" loading="lazy"></a><figcaption><span>{escape(title)}</span><a class="text-link" href="{href}" download="{escape(path.name)}">保存图片</a></figcaption></figure>'''
 
 
+def reading_target(post):
+    stage = post['directory'] / '互动版.html'
+    return stage if stage.is_file() else post['directory'] / '公众号_排版.html'
+
+
+def reading_rows(page, posts, unit_name):
+    rows = []
+    for post in posts:
+        keywords = escape(f"{unit_name} {post['number']} {post['title']}", quote=True)
+        title = escape(post['title'])
+        material = link(page, post['directory'] / 'index.html', '排版与素材', 'reading-material')
+        rows.append(f'''<li data-entry="{keywords}"><div class="reading-row"><a class="reading-title" href="{url(page, reading_target(post))}"><span>{title}</span><span class="reading-go" aria-hidden="true">互动阅读</span></a>{material}</div></li>''')
+    return '<ol class="reading-list" role="list">' + ''.join(rows) + '</ol>'
+
+
+def reading_library(page, folder, posts):
+    nav = '<nav class="unit-nav" aria-label="按主题选读">' + ''.join(f'<a href="#{unit["id"]}">{escape(unit["name"])}</a>' for unit in SERIAL_UNITS) + '</nav>'
+    toolbar = f'''<div class="toolbar"><div class="search"><label for="reading-search">查找文章</label><input id="reading-search" type="search" data-search data-count-unit="篇" placeholder="搜索标题、主题或总索引" autocomplete="off"></div><span id="result-count" role="status" aria-live="polite">{len(posts)} / {len(posts)} 篇</span></div>'''
+    sections = []
+    for unit in SERIAL_UNITS:
+        group = posts[unit['from'] - 1:unit['to']]
+        series = folder / (unit['id'] + '.html')
+        cover = f'<a class="reading-cover" href="{url(page, reading_target(group[0]))}" aria-label="{escape(unit["name"], quote=True)}，从第一篇开始"><img src="{url(page, group[0]["cover"])}" alt="" loading="lazy" width="940" height="400"></a>'
+        heading = link(page, series, unit['name'])
+        sections.append(f'''<section class="reading-unit" id="{unit['id']}" data-unit aria-labelledby="heading-{unit['id']}"><div class="reading-unit-intro">{cover}<h3 id="heading-{unit['id']}">{heading}</h3><p>{escape(unit['description'])}</p><a class="text-link" href="{url(page, series)}">本套 {len(group)} 篇</a></div>{reading_rows(page, group, unit['name'])}</section>''')
+    return f'''<section class="reading-library" id="interactive" aria-labelledby="library-heading"><div class="reading-library-head"><h2 id="library-heading">24 篇互动阅读</h2><p>按兴趣选一篇，点标题直接进入。五套短系列均可独立阅读。</p></div>{nav}{toolbar}{''.join(sections)}<p class="empty" id="empty-state" hidden>没有找到匹配文章，请换个关键词。</p></section>'''
+
+
 def build():
     catalog = [(ROOT / slug, name, description, field, status, read_posts(ROOT / slug))
                for slug, name, description, field, status in SERIES]
     page = ROOT / 'index.html'
-    cards = f'''<article class="card experiment"><a href="{url(page, PYTHON / 'index.html')}"><div class="experiment-art" aria-hidden="true">输入 <span>→</span> 计算 <span>→</span> 输出</div><div class="card-body"><p class="meta">10 个机制，代码与互动实验</p><h2>Python 实现</h2><p>沿着 NumPy 代码检查计算，用互动实验观察参数如何改变结果。</p><span class="go">进入项目 →</span></div></a></article>'''
-    cards += ''.join(series_card(page, folder, name, desc, status, posts)
-                     for folder, name, desc, _, status, posts in catalog)
-    body = f'<div class="section-head"><h2>三个项目，三种入口</h2><span class="meta">代码实验 / 五图观察 / 长文科普</span></div><div class="grid three">{cards}</div>'
-    # 读者视角的最短路径：首页直达连载第一期的排版页（不经过系列目录与期目录）。
-    serial = next((folder, posts) for folder, _, _, field, _, posts in catalog if field == '摘要')
-    first_read = serial[0] / serial[1][0]['directory'].name / '公众号_排版.html'
-    write_page(page, '看得见的 AI', '', '从代码、图解与文章三个方向理解 AI。选择一个项目，开始实验、阅读或准备发布。', body, kind='home', readme_button=True, reading_link=first_read)
+    serial_folder, serial_posts = next((folder, posts) for folder, _, _, field, _, posts in catalog if field == '摘要')
+    first_read = reading_target(serial_posts[0])
+    hero = f'''<section class="reading-hero"><div><h1>AI 原理，<br>一页页看明白</h1><p>24 篇互动科普，分成五套短系列。翻动画面、试做小题，再按兴趣选下一篇。</p><div class="actions">{link(page, first_read, '开始互动阅读', 'button')}<a class="text-link" href="#interactive">浏览全部 24 篇</a></div></div><a class="reading-hero-art" href="{url(page, first_read)}" aria-label="从认猫开始，打开第一篇互动版"><img src="{url(page, serial_posts[0]['cover'])}" alt="从认猫开始：图片、数字与判断" width="940" height="400"><span>从认猫开始，跟着一条计算路线读下去</span></a></section>'''
+    body = reading_library(page, serial_folder, serial_posts)
+    body += f'''<section class="reading-more" aria-labelledby="more-heading"><h2 id="more-heading">换一种方式探索</h2><div><article><h3>{link(page, ROOT / '少年AI观察室/index.html', '五图观察室')}</h3><p>16 期图解，每期用五张图沿着一条计算路线观察 AI。</p>{link(page, ROOT / '少年AI观察室/index.html', '逐图阅读', 'text-link')}</article><article><h3>{link(page, PYTHON / 'index.html', '代码与实验')}</h3><p>10 个机制的 NumPy 实现与浏览器实验，适合修改参数、检查计算。</p>{link(page, PYTHON / 'index.html', '打开代码实验', 'text-link')}</article></div></section>'''
+    write_page(page, 'AI 原理互动阅读', '', '24 篇互动科普，五套独立短系列。点标题直接阅读，也可探索五图观察与代码实验。', body, kind='home', hero_html=hero)
     generated = [page]
     page = PYTHON / 'index.html'
     body = '<div class="actions">' + link(page, PYTHON / 'docs/chapters.html', '打开互动实验', 'button') + link(page, PYTHON / 'source/series_python/README.md', '阅读完整实现说明', 'button secondary') + link(page, PYTHON / 'docs/ai-toys-python.zip', '下载 Python 实现', 'button secondary') + '</div>'
@@ -127,26 +152,20 @@ def build():
         search_label = '查找短系列' if serial else '查找一期'
         toolbar = f'<div class="toolbar"><div class="search"><label for="search">{search_label}</label><input type="search" id="search" data-search data-count-unit="{noun}" placeholder="输入标题关键词或期号" autocomplete="off"></div><span class="meta" id="result-count" role="status">{count} / {count} {noun}</span></div>'
         if field == '摘要':
-            entries = []
             for unit in SERIAL_UNITS:
                 series_page = folder / (unit['id'] + '.html')
                 series_posts = posts[unit['from'] - 1:unit['to']]
                 count = len(series_posts)
-                series_body = '<ol>'
-                for article in series_posts:
-                    item = link(series_page, article['directory'] / 'index.html', article['title'])
-                    series_body += f'<li><p>{item} <small>（总索引 {article["number"]}）</small></p></li>'
-                series_body += '</ol>'
+                series_body = reading_rows(series_page, series_posts, unit['name'])
                 write_page(series_page, unit['name'], f'独立系列 · 共 {count} 篇', unit['description'], series_body,
-                           reading_link=series_posts[0]['directory'] / '公众号_排版.html')
+                           reading_link=reading_target(series_posts[0]), reading_label='开始互动阅读', kind='reading')
                 generated.append(series_page)
-                keywords = ' '.join(p['number'] + ' ' + p['title'] for p in series_posts)
-                entries.append(f'<article class="card" id="{unit["id"]}" data-entry="{escape(unit["name"] + " " + keywords, quote=True)}"><a href="{url(page, series_page)}"><img src="{url(page, series_posts[0]["cover"])}" alt="" loading="lazy"><div class="card-body"><p class="meta">{count} 篇</p><h2>{escape(unit["name"])}</h2><p>{escape(unit["description"])}</p></div></a></article>')
-            body = toolbar + '<div class="grid">' + ''.join(entries) + '</div>'
+            body = reading_library(page, folder, posts)
         else:
             body = toolbar + '<div class="grid">' + ''.join(cards) + '</div>'
-        body += '<p class="empty" id="empty-state" hidden>没有找到匹配内容，请换个关键词。</p>'
-        write_page(page, name, f'{len(SERIAL_UNITS)} 套短系列' if field == '摘要' else f'共 {len(posts)} 期', description, body, kind='catalog')
+        if not serial:
+            body += '<p class="empty" id="empty-state" hidden>没有找到匹配内容，请换个关键词。</p>'
+        write_page(page, name, f'{len(posts)} 篇互动版 · 五套短系列 · 已完结' if serial else f'共 {len(posts)} 期', description, body, kind='reading' if serial else 'catalog', reading_link=reading_target(posts[0]) if serial else '', reading_label='开始互动阅读')
         generated.append(page)
         for i, post in enumerate(posts):
             directory = post['directory']
@@ -157,9 +176,7 @@ def build():
                 series_page = folder / (unit['id'] + '.html')
                 local_number = i + 2 - unit['from']
                 body += '<p class="unit-description">' + link(page, series_page, '本系列目录 · ' + unit['name']) + '</p>'
-                body += '<div class="actions">' + link(page, directory / '公众号_排版.html', '阅读 / 复制排版正文', 'button') + link(page, directory / '正文.md', '查看正文 Markdown', 'button secondary') + '</div><p class="hint">打开排版页后点击「选中正文」，再复制到公众号正文编辑区。</p>'
-                if (directory / '互动版.html').is_file():
-                    body += '<div class="actions">' + link(page, directory / '互动版.html', '打开互动版', 'button') + '</div>'
+                body += '<div class="actions">' + link(page, reading_target(post), '打开互动版', 'button') + link(page, directory / '公众号_排版.html', '排版正文', 'button secondary') + link(page, directory / '正文.md', 'Markdown 原文', 'text-link') + '</div><p class="hint">阅读可直接打开互动版；需要发布时，再取用下面的文案、配图与封面。</p>'
             body += '<div class="section-head"><h2>发布文案</h2><span class="meta">点击按钮复制纯文本</span></div><div class="copy-grid">'
             body += copy_panel('标题', post['title'], 0) + copy_panel(field, post['fields'][field], 1) + '</div>'
             if field == '正文':
@@ -178,7 +195,7 @@ def build():
             body += link(page, posts[i - 1]['directory'] / 'index.html', '← 上一期：' + posts[i - 1]['title']) if i and (field != '摘要' or i + 1 > unit['from']) else '<span></span>'
             body += link(page, posts[i + 1]['directory'] / 'index.html', '下一期：' + posts[i + 1]['title'] + ' →') if i < len(posts) - 1 and (field != '摘要' or i + 1 < unit['to']) else link(page, series_page if field == '摘要' else folder / 'index.html', '返回系列目录 →')
             body += '</nav>'
-            intro = '复制标题与描述，按顺序发布 5 张正文图。' if field == '正文' else '打开排版页阅读全文，复制标题、摘要与排版正文。'
+            intro = '复制标题与描述，按顺序发布 5 张正文图。' if field == '正文' else '直接打开互动版阅读，或取用排版正文、文案与配图。'
             episode_meta = link(page, folder / 'index.html', name) + f'<span>第 {post["number"]} 期</span>'
             if field == '摘要':
                 episode_meta = link(page, series_page, unit['name']) + f'<span>第 {local_number} 篇 / 共 {unit["to"] - unit["from"] + 1} 篇 · 总索引 {post["number"]}</span>'
