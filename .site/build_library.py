@@ -56,6 +56,7 @@ def write_page(page, title, meta, intro, body, kind='page', readme_button=False,
     css = url(page, ROOT / '.site/library.css')
     js = url(page, ROOT / '.site/library.js')
     nav = link(page, ROOT / "index.html", "互动阅读")
+    nav += link(page, ROOT / 'library.html', '全站总览')
     nav += link(page, ROOT / '少年AI观察室/index.html', '五图观察')
     nav += link(page, PYTHON / 'index.html', '代码实验')
     nav += link(page, ROOT / 'README.md', '项目说明')
@@ -69,7 +70,7 @@ def write_page(page, title, meta, intro, body, kind='page', readme_button=False,
         buttons += link(page, readme, '项目介绍与使用说明', 'button secondary')
     actions = f'<div class="actions">{buttons}</div>' if buttons else ''
     hero = hero_html or f'<section class="hero"><h1>{escape(title)}</h1>{meta_html}<p class="intro">{escape(intro)}</p></section>'
-    brand = f'<a class="brand" href="{url(page, ROOT / "index.html")}">{BRAND_MARK}看得见的 AI</a>'
+    brand = f'<a class="brand" href="{url(page, ROOT / "library.html")}">{BRAND_MARK}看得见的 AI</a>'
     page.write_text(f'''<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#f6f5ef">
@@ -125,10 +126,18 @@ def build():
     page = ROOT / 'library.html'
     serial_folder, serial_posts = next((folder, posts) for folder, _, _, field, _, posts in catalog if field == '摘要')
     first_read = reading_target(serial_posts[0])
-    hero = f'''<section class="reading-hero"><div><h1>AI 原理，<br>一页页看明白</h1><p>24 篇互动科普，分成五套短系列。翻动画面、试做小题，再按兴趣选下一篇。</p><div class="actions">{link(page, first_read, '开始互动阅读', 'button')}<a class="text-link" href="#interactive">浏览全部 24 篇</a></div></div><a class="reading-hero-art" href="{url(page, first_read)}" aria-label="从认猫开始，打开第一篇互动版"><img src="{url(page, serial_posts[0]['cover'])}" alt="从认猫开始：图片、数字与判断" width="940" height="400"><span>从认猫开始，跟着一条计算路线读下去</span></a></section>'''
-    body = reading_library(page, serial_folder, serial_posts)
-    body += f'''<section class="reading-more" aria-labelledby="more-heading"><h2 id="more-heading">换一种方式探索</h2><div><article><h3>{link(page, ROOT / '少年AI观察室/index.html', '五图观察室')}</h3><p>16 期图解，每期用五张图沿着一条计算路线观察 AI。</p>{link(page, ROOT / '少年AI观察室/index.html', '逐图阅读', 'text-link')}</article><article><h3>{link(page, PYTHON / 'index.html', '代码与实验')}</h3><p>10 个机制的 NumPy 实现与浏览器实验，适合修改参数、检查计算。</p>{link(page, PYTHON / 'index.html', '打开代码实验', 'text-link')}</article></div></section>'''
-    write_page(page, 'AI 原理互动阅读', '', '24 篇互动科普，五套独立短系列。点标题直接阅读，也可探索五图观察与代码实验。', body, kind='home', hero_html=hero)
+    hero = f'''<section class="site-overview"><h1>看得见的 AI</h1><p>从互动分镜、五图观察和代码实验三个方向，理解 AI 怎样计算、判断和完成任务。</p><div class="actions">{link(page, first_read, '开始互动阅读', 'button')}<a class="text-link" href="#interactive">选读全部 24 篇</a></div></section>'''
+    observation = next(posts for folder, _, _, field, _, posts in catalog if field == '正文')
+    entries = [
+        ('#interactive', serial_posts[0]['cover'], '互动阅读', '24 篇 · 五套短系列', '翻动画面、试做小题，从认猫到语言模型，再到校园 AI 助手。', '按主题选篇'),
+        (url(page, ROOT / '少年AI观察室/index.html'), observation[0]['cover'], '五图观察', '16 期 · 每期五张图', '按图追踪输入、计算与输出，也可取用配图和公众号文案。', '打开五图观察室'),
+        (url(page, PYTHON / 'index.html'), PYTHON / 'source/series_python/outputs/t01/fit_loss_residual.png', '代码实验', '10 个机制 · NumPy 与浏览器实验', '阅读实现、修改参数、检查计算，或下载 Python 代码在本地运行。', '打开代码与实验'),
+    ]
+    body = '<section class="site-entries" aria-labelledby="site-entries-heading"><h2 id="site-entries-heading">全站内容</h2>'
+    for href, image, title, meta, description, action in entries:
+        body += f'''<a class="site-entry" href="{href}"><img src="{url(page, image)}" alt="" width="470" height="200"><div><h3>{title}</h3><p class="site-entry-meta">{meta}</p><p>{description}</p><span>{action}</span></div></a>'''
+    body += '</section>' + reading_library(page, serial_folder, serial_posts)
+    write_page(page, '全站总览', '', '互动阅读、五图观察与代码实验的完整入口。选读 24 篇互动科普，浏览 16 期五图内容，或运行 10 个机制实验。', body, kind='home', hero_html=hero)
     generated = [page]
     home = ROOT / 'index.html'
     target = url(home, first_read) + '?stage'

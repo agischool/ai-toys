@@ -127,6 +127,7 @@ html[data-mode="stage"], html[data-mode="stage"] body { overscroll-behavior: non
 }
 .hud-l, .hud-r { display: flex; gap: 8px; min-width: 0; pointer-events: auto }
 .hud-l { flex: 0 1 auto }
+.hud-r, #btn-toc, #sec-num { flex: none }
 
 .pill {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
@@ -231,7 +232,7 @@ html[data-mode="stage"], html[data-mode="stage"] body { overscroll-behavior: non
 
 .read-bar {
   position: sticky; top: 0; z-index: 5;
-  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
   padding: 10px 20px; background: var(--paper); border-bottom: 1px solid var(--line);
 }
 #read { max-width: 680px; margin: 0 auto; padding: 8px 20px 96px; font-size: 17px; line-height: 1.9; color: var(--ink) }

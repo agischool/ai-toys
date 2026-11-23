@@ -165,10 +165,10 @@ function libraryNav(folder) {
     });
     return '<details><summary>' + esc(unit.name) + ' · ' + entries.length + ' 篇</summary><ol>' + entries.join('') + '</ol></details>';
   });
-  return '<nav class="reader-library" aria-label="全部 24 篇"><h3>换篇阅读 · 全部 24 篇</h3>' + groups.join('') + '<a class="reader-catalog" href="' + relative(path.join(root, 'library.html')) + '#interactive">搜索文章与浏览素材</a></nav>';
+  return '<nav class="reader-library" aria-label="全部 24 篇"><h3>换篇阅读 · 全部 24 篇</h3>' + groups.join('') + '<a class="reader-catalog" href="' + relative(path.join(root, 'library.html')) + '#interactive">搜索全部文章与发布素材</a></nav>';
 }
 
-function page({ title, summary, sceneSvgs, data, read, unit, local, count, library }) {
+function page({ title, summary, sceneSvgs, data, read, unit, local, count, library, siteHref }) {
   const json = JSON.stringify(data).replace(/</g, '\\u003c');
   /* 共用源码在构建时打包，file:// 不必再读取隐藏目录里的 CSS/JS。 */
   const css = fs.readFileSync(path.join(__dirname, 'stage/stage.css'), 'utf8');
@@ -196,6 +196,7 @@ ${sceneSvgs}
 <span class="pill sec" id="sec"><span id="sec-num"></span><span id="sec-name"></span></span>
 </div>
 <div class="hud-r">
+<a class="pill reader-site" href="${siteHref}" aria-label="全站总览" title="全站总览：互动阅读、五图观察与代码实验">全站</a>
 <button class="pill" id="btn-play" type="button" data-playing="false">播放</button>
 <a class="pill" href="?read" data-action="read">全文</a>
 </div>
@@ -217,7 +218,7 @@ ${sceneSvgs}
 <p class="toc-foot">${esc(unit)}，${pager}。机器人角色为 AI 辅助制作，场景与图解由代码绘制。</p>
 </dialog>
 <div id="readwrap">
-<div class="read-bar"><a class="pill" href="?stage" data-action="stage">看分镜版</a><a class="pill" href="index.html">返回本篇页面</a></div>
+<div class="read-bar"><a class="pill" href="?stage" data-action="stage">看分镜版</a><a class="pill reader-site" href="${siteHref}">全站总览</a><a class="pill" href="index.html">本篇素材</a></div>
 <article id="read" lang="zh-CN">
 ${read}
 <div class="read-end"><a class="pill" href="?stage" data-action="stage">看分镜版</a><a class="pill" href="正文.md">查看正文 Markdown</a></div>
@@ -283,7 +284,8 @@ function compileOne(folder) {
     scenes: Object.fromEntries(activeScenes.map(s => [s.id, { cams: s.cams }])), beats: asm.beats
   };
   const summary = (fs.readFileSync(path.join(dir, '发布文案.md'), 'utf8').match(/## 摘要\s+```text\n([\s\S]*?)\n```/) || [, title])[1];
-  const html = page({ title, summary, sceneSvgs, data, read: renderRead(source, title), unit: unit.name, local, count, library: libraryNav(folder) });
+  const siteHref = path.relative(dir, path.join(root, 'library.html')).split(path.sep).map(encodeURIComponent).join('/');
+  const html = page({ title, summary, sceneSvgs, data, read: renderRead(source, title), unit: unit.name, local, count, library: libraryNav(folder), siteHref });
   return { folder, html, beats: asm.beats.length, consumed: asm.consumed, total: asm.total, bytes: Buffer.byteLength(html), complete: !!board.complete };
 }
 

@@ -34,6 +34,37 @@ async function main() {
   assert.equal(await page.locator('html').getAttribute('data-mode'), 'stage');
   assert.equal(new URL(page.url()).hash, '#b3');
   assert.equal(new URL(page.url()).search, '?stage');
+  const readerURL = page.url();
+  const sections = await page.evaluate(() => JSON.parse(document.getElementById('stage-data').textContent).sections.map(s => s.first + 1));
+  for (const width of [320, 390, 768, 1440]) {
+    await page.setViewportSize({ width, height: 844 });
+    for (const n of sections) {
+      await page.goto(readerURL.split('#')[0] + '#b' + n);
+      await page.waitForFunction(n => Number(document.getElementById('count').textContent.split('/')[0]) === n, n);
+      const issues = await page.locator('.hud .pill').evaluateAll(nodes => {
+        const boxes = nodes.map(n => n.getBoundingClientRect()).filter(r => r.width > 0 && r.height > 0);
+        const bad = boxes.some(r => r.left < 0 || r.right > innerWidth + 1);
+        const overlap = boxes.some((a, i) => boxes.some((b, j) => j > i && a.left < b.right - 1 && a.right > b.left + 1 && a.top < b.bottom - 1 && a.bottom > b.top + 1));
+        return bad || overlap;
+      });
+      assert.equal(issues, false, width + 'px 第' + n + '拍顶栏');
+      assert.ok(await page.locator('.hud .reader-site').isVisible());
+    }
+  }
+  await page.locator('.hud .reader-site').click();
+  await page.waitForURL('**/library.html');
+  assert.equal(await page.locator('.site-entry').count(), 3);
+  const siteEntries = await page.locator('.site-entry').evaluateAll(nodes => nodes.map(n => n.href));
+  for (const href of siteEntries.slice(1)) {
+    await page.goto(href);
+    await page.locator('header .brand').click();
+    await page.waitForURL('**/library.html');
+  }
+  await page.goto(readerURL.replace('?stage', '?read'));
+  await page.locator('.read-bar .reader-site').click();
+  await page.waitForURL('**/library.html');
+  console.log('✓ 阅读器顶栏和全文均一步返回全站，三类内容直达，子项目品牌链接可返回；各节顶栏四尺寸无遮挡');
+  await page.goto(readerURL);
   await page.locator('#btn-toc').click();
   assert.equal(await page.locator('.reader-article').count(), 24);
   assert.equal(await page.locator('.reader-article[aria-current="page"]').count(), 1);
@@ -128,6 +159,16 @@ async function main() {
     }
   }
   console.log('✓ 搜索目录、系列、素材及说明页在 320/390/768/1440px 无横向溢出');
+  for (const file of ['chapters.html', 'index.html', ...Array.from({ length: 9 }, (_, i) => 't' + (i + 2) + '.html')]) {
+    await page.goto(base + '/' + encodeURIComponent('Python实现') + '/docs/' + file);
+    assert.equal(await page.locator('header .site-return').getAttribute('href'), 'https://agischool.github.io/ai-toys/library.html');
+    for (const width of [320, 390, 1440]) {
+      await page.setViewportSize({ width, height: 900 });
+      assert.ok(await page.locator('header .site-return').isVisible(), file + ' ' + width + 'px 全站入口');
+      assert.ok(await page.locator('header').evaluate(header => header.scrollWidth <= header.clientWidth + 1), file + ' ' + width + 'px 顶栏');
+    }
+  }
+  console.log('✓ 11 个代码实验页面均有可见的全站返回入口，独立项目仍可运行');
   const offline = await browser.newContext({ javaScriptEnabled: false });
   const plain = await offline.newPage();
   await plain.goto(base + '/library.html');

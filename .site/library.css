@@ -294,6 +294,27 @@ h3 {
 .serial-unit .section-head{margin-bottom:8px}
 
 /* 阅读入口：文章标题直接到互动版，发布素材留作并列入口。 */
+.site-overview { padding: 40px 0 28px; max-width: 760px }
+.site-overview h1 { font-size: clamp(32px, 4vw, 48px); margin-bottom: 16px }
+.site-overview > p { font-size: 18px; margin-bottom: 0 }
+.site-overview .actions { margin: 24px 0 0; gap: 24px }
+.site-entries { margin-bottom: 48px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px 32px }
+.site-entries > h2 { font-size: 26px; margin-bottom: 0; grid-column: 1 / -1 }
+.site-entry { display: flex; flex-direction: column; gap: 16px; min-width: 0 }
+.site-entry img { width: 100%; aspect-ratio: 2.35 / 1; object-fit: cover }
+.site-entry h3 { font-size: 23px; margin: 0 0 4px }
+.site-entry p { margin: 4px 0; color: var(--ink) }
+.site-entry .site-entry-meta { color: var(--muted); font-size: 14px }
+.site-entry span { display: inline-block; color: var(--accent); text-decoration: underline; text-underline-offset: 4px; padding-top: 8px }
+.site-entry:hover h3 { color: var(--accent) }
+@media (max-width: 600px) {
+  .site-overview { padding-top: 28px }
+  .site-entries { grid-template-columns: 1fr; gap: 28px }
+  .site-entry { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 18px; align-items: start }
+  .site-entry img { margin-top: 6px }
+  .site-entry h3 { font-size: 21px }
+  .site-entry p { font-size: 15px }
+}
 [data-page="home"] header, [data-page="reading"] header,
 [data-page="home"] footer, [data-page="reading"] footer { border: 0 }
 .reading-hero {

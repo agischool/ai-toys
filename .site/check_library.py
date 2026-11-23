@@ -25,7 +25,7 @@ class Links(HTMLParser):
         value = urlsplit(attrs['href'])
         if value.scheme or value.netloc:
             return
-        target = (self.page.parent / unquote(value.path)).resolve()
+        target = (self.page.parent / unquote(value.path)).resolve() if value.path else self.page.resolve()
         for cls in attrs.get('class', '').split():
             self.links.setdefault(cls, []).append(target)
 
@@ -43,6 +43,8 @@ def main():
     stages = [p / '互动版.html' for p in folders]
     home = ROOT / 'library.html'
     check(home, stages)
+    expected_entries = [home, ROOT / '少年AI观察室/index.html', ROOT / 'Python实现/index.html']
+    assert Links(home).links.get('site-entry') == expected_entries, '全站总览应直接展示三个内容项目'
     check(SERIAL / 'index.html', stages)
     assert stages[0] in Links(home).links.get('button', []), '首屏主按钮应直达第 01 篇互动版'
     redirect = Links(ROOT / 'index.html').redirect
@@ -55,7 +57,10 @@ def main():
         links = Links(stage.with_name('index.html')).links
         assert stage in links.get('button', []), f'素材页应直接打开互动版：{stage.parent}'
         assert Links(stage).links.get('reader-article') == stages, f'阅读器内应有完整选篇入口：{stage}'
-    print('阅读入口检查通过：根地址直接进入互动阅读，24 篇阅读器内均有完整选篇目录')
+        assert Links(stage).links.get('reader-site') == [home, home], f'分镜与全文均应能直达全站总览：{stage}'
+    for page in [ROOT / '少年AI观察室/index.html', ROOT / 'Python实现/index.html', ROOT / '.site/readmes/README.html']:
+        assert Links(page).links.get('brand') == [home], f'品牌入口应返回全站总览：{page}'
+    print('阅读入口检查通过：默认互动阅读，全站总览展示三个项目，24 篇分镜与全文均可返回总览')
 
 
 if __name__ == '__main__':
